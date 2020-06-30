@@ -56,6 +56,10 @@ struct arp_cache* get_arp_cache(uint32 ip) {
     arpcache != 0 &&
     arpcache->ip == ip
   ) { }
+
+  if (entry->head == 0)
+    entry->head = arpcache;
+
   release(&entry->lock);
   return arpcache;
 }
