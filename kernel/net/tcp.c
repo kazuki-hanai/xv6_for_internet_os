@@ -36,6 +36,7 @@ void free_tcp_cb(struct tcp_cb *tcb) {
       tcb->prev->next = tcb->next;
     else
       entry->head = tcb->next;
+    bd_free(tcb);
     release(&entry->lock);
   }
 }
@@ -59,20 +60,20 @@ struct tcp_cb* get_tcb(uint32 raddr, uint16 sport, uint16 dport) {
   // new tcb
   if(tcb == 0) {
     tcb = bd_alloc(sizeof(struct tcp_cb));
+    if (tcb == 0)
+      panic("tcb alloc failed!\n");
+    init_tcp_cb(tcb, raddr, sport, dport);
+    if (prev != 0)
+      prev->next = tcb;
+    tcb->prev = prev;
   // Already exists
   } else if (
     tcb != 0 && 
     tcb->raddr == raddr &&
     tcb->sport == sport &&
     tcb->dport == dport
-  ){
-    release(&entry->lock);
-    return tcb;
-  }
-  init_tcp_cb(tcb, raddr, sport, dport);
-  if (prev != 0)
-    prev->next = tcb;
-  tcb->prev = prev;
+  ){ }
+  
   release(&entry->lock);
   return tcb;
 }
