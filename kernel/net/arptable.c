@@ -10,61 +10,82 @@
 #include "net/netutil.h"
 #include "net/arptable.h"
 
-struct arp_table arptable;
+struct arp_cache_entry arptable[ARP_DEFUALT_ENTRY_NUM];
 
-struct arp_entry* _get_arp_entry(uint32 ip, uint32 c) {
-  return &arptable.entries[(ip + c) % ARP_DEFUALT_ENTRY_NUM];
+void arp_cache_free(struct arp_cache *arpcache) {
+  struct arp_cache_entry *entry = &arptable[arpcache->ip % ARP_DEFUALT_ENTRY_NUM];
+  acquire(&entry->lock);
+  if (arpcache->prev != 0)
+    arpcache->prev->next = arpcache->next;
+  if (arpcache->next != 0)
+    arpcache->next->prev = arpcache->prev;
+  else
+    entry->head = arpcache->next;
+  bd_free(arpcache);
+  release(&entry->lock);
 }
 
-struct arp_entry* get_arp_entry(uint32 ip) {
-  struct arp_entry *entry;
-  for (int i = 0; i < ARP_DEFUALT_ENTRY_NUM; i++) {
-    entry = _get_arp_entry(ip, i);
-    if (entry->ip == 0 || entry->ip == ip) {
-      return entry;
-    }
+struct arp_cache* get_arp_cache(uint32 ip) {
+  struct arp_cache_entry *entry = &arptable[ip % ARP_DEFUALT_ENTRY_NUM];
+  struct arp_cache *arpcache;
+  struct arp_cache *prev;
+
+  acquire(&entry->lock);
+  arpcache = entry->head;
+  prev = 0;
+  while (arpcache != 0) {
+    if (arpcache->ip == ip)
+      break;
+    prev = arpcache;
+    arpcache = arpcache->next;
   }
-  return 0;
+
+  // new cache
+  if (arpcache == 0) {
+    arpcache = bd_alloc(sizeof(struct arp_cache));
+    if (arpcache == 0)
+      panic("arp alloc failed!\n");
+    arpcache->ip = ip;
+    if (prev != 0)
+      prev->next = arpcache;
+    arpcache->prev = prev;
+    arpcache->next = 0;
+    memset(arpcache->mac, 0, ETHADDR_LEN);
+  // already exists
+  } else if (
+    arpcache != 0 &&
+    arpcache->ip == ip
+  ) { }
+
+  if (entry->head == 0)
+    entry->head = arpcache;
+
+  release(&entry->lock);
+  return arpcache;
 }
 
 void arptable_init() {
-  memset(&arptable, 0, sizeof(arptable));
-  initlock(&arptable.lock, "arp table lock");
+  for (int i = 0; i < ARP_DEFUALT_ENTRY_NUM; i++) {
+    arptable[i].head = 0;
+    initlock(&arptable[i].lock, "arp table lock");
+  }
 }
 
 void arptable_add(uint32 ip, uint8 *mac) {
-  struct arp_entry *entry;
+  struct arp_cache *arpcache;
 
-  acquire(&arptable.lock);
-  entry = get_arp_entry(ip);
-  if (entry == 0)
-    panic("There are no remaining arp entries");
-  entry->ip = ip;
-  memmove(entry->mac, mac, ETHADDR_LEN);
-  release(&arptable.lock);
+  arpcache = get_arp_cache(ip);
+  memmove(arpcache->mac, mac, ETHADDR_LEN);
 }
 
-int arptable_get(uint32 ip, uint8 *mac) {
-  struct arp_entry *entry;
-
-  acquire(&arptable.lock);
-  entry = get_arp_entry(ip);
-  if (entry == 0)
-    panic("There are no remaining arp entries");
-  if (entry->ip == 0)
-    return -1;
-  memmove(mac, entry->mac, ETHADDR_LEN);
-  return 0;
+void arptable_get_mac(uint32 ip, uint8 *mac) {
+  struct arp_cache *arpcache = get_arp_cache(ip);
+  memmove(mac, arpcache->mac, ETHADDR_LEN);
 }
 
 void arptable_del(uint32 ip) {
-  struct arp_entry *entry;
+  struct arp_cache *arpcache;
 
-  acquire(&arptable.lock);
-  entry = get_arp_entry(ip);
-  if (entry == 0)
-    panic("There are no remaining arp entries");
-  entry->ip = 0;
-  memset(entry->mac, 0, ETHADDR_LEN);
-  release(&arptable.lock);
+  arpcache = get_arp_cache(ip);
+  arp_cache_free(arpcache);
 }

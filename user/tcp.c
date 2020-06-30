@@ -26,7 +26,7 @@ int
 main(int argc, char **argv)
 {
   if (argc < 3) {
-    printf("usage: %s ip port");
+    printf("usage: %s ip port\n", argv[0]);
     exit(1);
   }
   uint32 raddr = get_ip(argv[1]);
