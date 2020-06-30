@@ -72,7 +72,14 @@ struct tcp_cb* get_tcb(uint32 raddr, uint16 sport, uint16 dport) {
     tcb->raddr == raddr &&
     tcb->sport == sport &&
     tcb->dport == dport
-  ){ }
+  ){ 
+
+  } else {
+    panic("[get_tcb] invalid port!\n");
+  }
+
+  if (entry->head == 0)
+    entry->head = tcb;
   
   release(&entry->lock);
   return tcb;
