@@ -13,17 +13,20 @@
 
 struct tcp_cb_entry tcb_table[TCP_CB_LEN];
 
-void init_tcp_cb(struct tcp_cb *tcb, uint32 raddr, uint16 sport, uint16 dport) {
-  if (tcb != 0) {
-    memset(tcb, 0, sizeof(*tcb));
-    tcb->state = CLOSED;
-    initlock(&tcb->lock, "tcb lock");
-    tcb->raddr = raddr;
-    tcb->sport = sport;
-    tcb->dport = dport;
-    tcb->prev = 0;
-    tcb->next = 0;
-  }
+struct tcp_cb* init_tcp_cb(uint32 raddr, uint16 sport, uint16 dport) {
+  struct tcp_cb *tcb;
+  tcb = bd_alloc(sizeof(struct tcp_cb));
+  if (tcb == 0)
+    panic("[init_tcp_cb] could not allocate\n");
+  memset(tcb, 0, sizeof(*tcb));
+  tcb->state = CLOSED;
+  initlock(&tcb->lock, "tcb lock");
+  tcb->raddr = raddr;
+  tcb->sport = sport;
+  tcb->dport = dport;
+  tcb->prev = 0;
+  tcb->next = 0;
+  return tcb;
 }
 
 void free_tcp_cb(struct tcp_cb *tcb) {
@@ -59,10 +62,7 @@ struct tcp_cb* get_tcb(uint32 raddr, uint16 sport, uint16 dport) {
   
   // new tcb
   if(tcb == 0) {
-    tcb = bd_alloc(sizeof(struct tcp_cb));
-    if (tcb == 0)
-      panic("tcb alloc failed!\n");
-    init_tcp_cb(tcb, raddr, sport, dport);
+    tcb = init_tcp_cb(raddr, sport, dport);
     if (prev != 0)
       prev->next = tcb;
     tcb->prev = prev;
