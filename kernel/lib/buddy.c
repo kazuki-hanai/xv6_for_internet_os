@@ -167,6 +167,9 @@ bd_alloc(int nbytes)
 
   acquire(&bd_table.lock);
   char *p = lst_pop(&bd_table.bd_sizes[k].free);
+  if (p == 0) {
+    panic("[bd_alloc] there are no rest memory");
+  }
   int pindex = get_page_index(p);
   void *pbase = bd_table.plist[pindex].pageaddr;
   bit_set(bd_table.plist[pindex].alloc[k], blk_index(k, p, pbase));
@@ -196,6 +199,9 @@ lst_empty(struct bd_list *lst) {
 
 void
 lst_remove(struct bd_list *e) {
+  if (e == 0) {
+    panic("a list has no member");
+  }
   e->prev->next = e->next;
   e->next->prev = e->prev;
 }
@@ -203,6 +209,9 @@ lst_remove(struct bd_list *e) {
 void*
 lst_pop(struct bd_list *lst) {
   struct bd_list *p = lst->next;
+  if (p == 0) {
+    return 0;
+  }
   lst_remove(p);
   return (void *)p;
 }
@@ -211,9 +220,12 @@ void
 lst_push(struct bd_list *lst, void *p)
 {
   struct bd_list *e = (struct bd_list *) p;
+  if (lst == 0)
+    panic("[lst_push] list did not allocated\n");
+  if (e == 0)
+    panic("[lst_push] p did not allocated\n");
   e->next = lst->next;
   e->prev = lst;
   lst->next->prev = p;
   lst->next = e;
 }
-
