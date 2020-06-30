@@ -26,7 +26,8 @@ net_tx_eth(struct mbuf *m, uint16 ethtype, uint32 dip)
   ethhdr->type = htons(ethtype);
   memmove(ethhdr->shost, local_mac, ETHADDR_LEN);
 
-  if (ethtype != ETHTYPE_ARP && arptable_get(dip, (uint8 *)&ethhdr->dhost) == -1) {
+  arptable_get_mac(dip, (uint8 *)&ethhdr->dhost);
+  if (ethtype != ETHTYPE_ARP && ethhdr->dhost[0] != 0) {
     mbufq_pushtail(&arp_q, m);
     return;
   }
