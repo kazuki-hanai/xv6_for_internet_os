@@ -7,5 +7,9 @@
 void test_start() {
   printf("start testing...\n\n");
   
-  buddy_test();
+  if (cpuid() == 0) {
+    // buddy_test();
+    arp_test();
+    tcp_test();
+  }
 }
