@@ -19,6 +19,9 @@ uint32 get_ip(char *ip) {
         return 0;
     }
   }
+  res <<= 8;
+  res += b;
+
   return res;
 }
 
