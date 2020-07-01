@@ -1,4 +1,7 @@
 #pragma once
+
+#include "spinlock.h"
+
 #define TCP_CB_LEN 128
 
 enum tcp_cb_state {
@@ -44,3 +47,5 @@ struct tcp_cb_entry {
   struct tcp_cb *head;
 };
 
+void free_tcp_cb(struct tcp_cb*);
+struct tcp_cb* get_tcb(uint32, uint16, uint16);
