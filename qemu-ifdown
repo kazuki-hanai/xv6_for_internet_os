@@ -4,6 +4,9 @@
 # for example, accounting info here.
 
 
+TAPHOST="taphost"
+BR="br0"
+
 echo "Executing qemu-ifdown"
 sudo ip link set $1 down
-sudo ip link delete dev $1
+sudo ip link delete $1
