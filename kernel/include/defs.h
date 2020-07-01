@@ -1,4 +1,8 @@
 #pragma once
+
+#include "types.h"
+#include "arch/riscv.h"
+
 struct buf;
 struct context;
 struct file;
