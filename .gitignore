@@ -18,3 +18,4 @@ user/usys.S
 .tags
 .editorconfig
 packets.pcap
+.localconst
