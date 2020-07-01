@@ -1,8 +1,10 @@
 #pragma once
+
+#include "net/tcp_cb.h"
+
 #define TCP_COLLISION_NUM 11
 #define TCP_MOD 2 << 31
 #define TCP_DEFAULT_WINDOW 65535
-
 
 #define TCP_FLG_FIN 0x01
 #define TCP_FLG_SYN 0x02

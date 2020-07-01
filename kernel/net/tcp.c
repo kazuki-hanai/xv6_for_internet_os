@@ -11,86 +11,10 @@
 #include "net/ipv4.h"
 #include "net/tcp.h"
 
-struct tcp_cb_entry tcb_table[TCP_CB_LEN];
-
-struct tcp_cb* init_tcp_cb(uint32 raddr, uint16 sport, uint16 dport) {
-  struct tcp_cb *tcb;
-  tcb = bd_alloc(sizeof(struct tcp_cb));
-  if (tcb == 0)
-    panic("[init_tcp_cb] could not allocate\n");
-  memset(tcb, 0, sizeof(*tcb));
-  tcb->state = CLOSED;
-  initlock(&tcb->lock, "tcb lock");
-  tcb->raddr = raddr;
-  tcb->sport = sport;
-  tcb->dport = dport;
-  tcb->prev = 0;
-  tcb->next = 0;
-  return tcb;
-}
-
-void free_tcp_cb(struct tcp_cb *tcb) {
-  if (tcb != 0) {
-    struct tcp_cb_entry *entry = &tcb_table[(tcb->raddr + (tcb->sport << 16) + tcb->dport) % TCP_CB_LEN];
-    acquire(&entry->lock);
-    if (tcb->next != 0)
-      tcb->next->prev = tcb->prev;
-    if (tcb->prev != 0)
-      tcb->prev->next = tcb->next;
-    else
-      entry->head = tcb->next;
-    bd_free(tcb);
-    release(&entry->lock);
-  }
-}
-
-struct tcp_cb* get_tcb(uint32 raddr, uint16 sport, uint16 dport) {
-  struct tcp_cb_entry* entry;
-  struct tcp_cb *tcb;
-  struct tcp_cb *prev;
-  entry = &tcb_table[(raddr + (sport << 16) + dport) % TCP_CB_LEN];
-
-  acquire(&entry->lock);
-  tcb = entry->head;
-  prev = 0;
-  while (tcb != 0) {
-    if (tcb->raddr == raddr && tcb->sport == sport && tcb->dport == dport)
-      break;
-    prev = tcb;
-    tcb = tcb->next;
-  }
-  
-  // new tcb
-  if(tcb == 0) {
-    tcb = init_tcp_cb(raddr, sport, dport);
-    if (prev != 0)
-      prev->next = tcb;
-    tcb->prev = prev;
-  // Already exists
-  } else if (
-    tcb != 0 && 
-    tcb->raddr == raddr &&
-    tcb->sport == sport &&
-    tcb->dport == dport
-  ){ 
-
-  } else {
-    panic("[get_tcb] invalid port!\n");
-  }
-
-  if (entry->head == 0)
-    entry->head = tcb;
-  
-  release(&entry->lock);
-  return tcb;
-}
+extern struct tcp_cb_entry tcb_table[TCP_CB_LEN];
 
 void tcpinit() {
-  memset(tcb_table, 0, sizeof(tcb_table));
-  for (int i = 0; i < TCP_CB_LEN; i++) {
-    tcb_table[i].head = 0;
-    initlock(&tcb_table[i].lock, "tcb entry lock");
-  }
+  
 }
 
 static uint16 tcp_checksum(struct ipv4 *iphdr , struct tcp *tcphdr, uint16 len) {
@@ -107,7 +31,6 @@ static uint16 tcp_checksum(struct ipv4 *iphdr , struct tcp *tcphdr, uint16 len) 
 
 struct tcp_cb *tcp_open(uint32 raddr, uint16 sport, uint16 dport, int stype) {
   struct tcp_cb *tcb;
-
   tcb = get_tcb(raddr, sport, dport);
   if (stype == SOCK_TCP) {
     struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
@@ -220,6 +143,7 @@ void net_tx_tcp(struct tcp_cb *tcb, struct mbuf *m, uint8 flg) {
   tcphdr->sum = 0;
   tcphdr->urg = 0;
 
+  printf("ip: %x\n", tcb->raddr);
   net_tx_ip(m, IPPROTO_TCP, tcb->raddr);
 }
 

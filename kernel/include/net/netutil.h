@@ -1,4 +1,7 @@
 #pragma once
+
+#include "spinlock.h"
+
 struct mbuf;
 struct tcp_cb;
 // struct tcp;

@@ -17,19 +17,22 @@
 #include "net/tcp.h"
 #include "sys/sysnet.h"
 
-static struct spinlock lock;
-static struct sock *sockets;
+extern struct tcp_cb_entry tcb_table[TCP_CB_LEN];
 
 void
 sockinit(void)
 {
-  initlock(&lock, "socktbl");
+  memset(tcb_table, 0, sizeof(tcb_table));
+  for (int i = 0; i < TCP_CB_LEN; i++) {
+    tcb_table[i].head = 0;
+    initlock(&tcb_table[i].lock, "tcb entry lock");
+  }
 }
 
 int
 sockalloc(struct file **f, uint32 raddr, uint16 sport, uint16 dport, int stype)
 {
-  struct sock *si, *pos;
+  struct sock *si;
 
   si = 0;
   *f = 0;
@@ -54,6 +57,10 @@ sockalloc(struct file **f, uint32 raddr, uint16 sport, uint16 dport, int stype)
     si->tcb = 0;
   }
 
+  if(stype == SOCK_TCP_LISTEN || stype == SOCK_UDP_LISTEN) {
+    si->dport = 0;
+  }
+
   initlock(&si->lock, "sock");
   mbufq_init(&si->rxq);
   (*f)->type = FD_SOCK;
@@ -62,21 +69,21 @@ sockalloc(struct file **f, uint32 raddr, uint16 sport, uint16 dport, int stype)
   (*f)->sock = si;
 
   // add to list of sockets
-  acquire(&lock);
-  pos = sockets;
-  while (pos) {
-    if (pos->raddr == raddr &&
-        pos->sport == sport &&
-        pos->dport == dport
-    ) {
-      release(&lock);
-      goto bad;
-    }
-    pos = pos->next;
-  }
-  si->next = sockets;
-  sockets = si;
-  release(&lock);
+  // acquire(&lock);
+  // pos = sockets;
+  // while (pos) {
+  //   if (pos->raddr == raddr &&
+  //       pos->sport == sport &&
+  //       pos->dport == dport
+  //   ) {
+  //     release(&lock);
+  //     goto bad;
+  //   }
+  //   pos = pos->next;
+  // }
+  // si->next = sockets;
+  // sockets = si;
+  // release(&lock);
   return 0;
 
 bad:
@@ -95,22 +102,22 @@ void sockfree(struct sock *si) {
 void
 sockrecvudp(struct mbuf *m, uint32 raddr, uint16 sport, uint16 dport)
 {
-  acquire(&lock);
-  struct sock *sock;
-  sock = sockets;
-  while (sock) {
-    if (sock->raddr == raddr &&
-        sock->sport == sport &&
-        sock->dport == dport) {
-      release(&lock);
-      acquire(&sock->lock);
-      mbufq_pushtail(&sock->rxq, m);
-      release(&sock->lock);
-      return;
-    }
-    sock = sock->next;
-  }
-  release(&lock);
+  // acquire(&lock);
+  // struct sock *sock;
+  // sock = sockets;
+  // while (sock) {
+  //   if (sock->raddr == raddr &&
+  //       sock->sport == sport &&
+  //       sock->dport == dport) {
+  //     release(&lock);
+  //     acquire(&sock->lock);
+  //     mbufq_pushtail(&sock->rxq, m);
+  //     release(&sock->lock);
+  //     return;
+  //   }
+  //   sock = sock->next;
+  // }
+  // release(&lock);
   mbuffree(m);
 }
 

@@ -5,9 +5,8 @@
 #include "defs.h"
 #include "net/mbuf.h"
 #include "net/tcp.h"
+#include "net/tcp_cb.h"
 
-struct tcp_cb* get_tcb(uint32 raddr, uint16 sport, uint16 dport);
-void free_tcp_cb(struct tcp_cb *tcb);
 extern struct tcp_cb_entry tcb_table[TCP_CB_LEN];
 void tcb_hash_table_test();
 
