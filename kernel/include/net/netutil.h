@@ -23,5 +23,6 @@ uint16 cksum16(uint16 *, uint16, uint32);
 
 // define
 #define SOCK_UDP 1
-#define SOCK_TCP 2
-#define SOCK_TCP_LISTEN 3
+#define SOCK_UDP_LISTEN 1
+#define SOCK_TCP 3
+#define SOCK_TCP_LISTEN 4
