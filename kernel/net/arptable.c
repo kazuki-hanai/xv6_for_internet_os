@@ -45,6 +45,7 @@ struct arp_cache* get_arp_cache(uint32 ip) {
     arpcache = bd_alloc(sizeof(struct arp_cache));
     if (arpcache == 0)
       panic("arp alloc failed!\n");
+    arpcache->resolved = 0;
     arpcache->ip = ip;
     if (prev != 0)
       prev->next = arpcache;
@@ -75,12 +76,17 @@ void arptable_add(uint32 ip, uint8 *mac) {
   struct arp_cache *arpcache;
 
   arpcache = get_arp_cache(ip);
+  arpcache->resolved = 1;
   memmove(arpcache->mac, mac, ETHADDR_LEN);
 }
 
 void arptable_get_mac(uint32 ip, uint8 *mac) {
   struct arp_cache *arpcache = get_arp_cache(ip);
-  memmove(mac, arpcache->mac, ETHADDR_LEN);
+  uint8 broadcast_mac[ETHADDR_LEN] = { 0xFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF };
+  if (arpcache->resolved)
+    memmove(mac, arpcache->mac, ETHADDR_LEN);
+  else
+    memmove(mac, broadcast_mac, ETHADDR_LEN);
 }
 
 void arptable_del(uint32 ip) {

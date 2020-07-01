@@ -1,7 +1,9 @@
+#pragma once
 
 #define ARP_DEFUALT_ENTRY_NUM 32
 
 struct arp_cache {
+  int resolved;
   uint32 ip;
   uint8 mac[ETHADDR_LEN];
   struct arp_cache *prev;
