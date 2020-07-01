@@ -1,3 +1,4 @@
+#pragma once
 // an IP packet header (comes after an Ethernet header).
 struct ipv4 {
   uint8  ip_vhl; // version << 4 | header length >> 2

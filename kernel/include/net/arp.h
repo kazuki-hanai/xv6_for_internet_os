@@ -1,3 +1,4 @@
+#pragma once
 // an ARP packet (comes after an Ethernet header).
 struct arp {
   uint16 hrd; // format of hardware address

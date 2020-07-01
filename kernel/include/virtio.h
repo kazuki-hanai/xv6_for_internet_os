@@ -1,3 +1,4 @@
+#pragma once
 //
 // virtio device definitions.
 // for both the mmio interface, and virtio descriptors.

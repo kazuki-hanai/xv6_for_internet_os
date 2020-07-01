@@ -1,3 +1,4 @@
+#pragma once
 struct sock {
   struct sock *next; // the next socket in the list
   uint32 raddr;      // the remote IPv4 address

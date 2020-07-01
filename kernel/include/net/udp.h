@@ -1,3 +1,4 @@
+#pragma once
 // a UDP packet header (comes after an IP header).
 struct udp {
   uint16 sport; // source port
