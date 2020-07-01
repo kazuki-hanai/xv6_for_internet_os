@@ -1,3 +1,4 @@
+#pragma once
 #define TCP_CB_LEN 128
 
 enum tcp_cb_state {

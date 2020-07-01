@@ -1,3 +1,4 @@
+#pragma once
 // an DNS packet (comes after an UDP header).
 struct dns {
   uint16 id;  // request ID

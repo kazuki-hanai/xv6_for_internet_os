@@ -1,3 +1,4 @@
+#pragma once
 
 #define ETHADDR_LEN 6
 

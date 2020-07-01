@@ -1,3 +1,4 @@
+#pragma once
 #define MBUF_SIZE               2048
 #define MBUF_DEFAULT_HEADROOM   128
 

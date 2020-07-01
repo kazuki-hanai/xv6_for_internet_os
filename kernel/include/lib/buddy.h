@@ -1,3 +1,4 @@
+#pragma once
 #define LEAF_SIZE     32
 #define NSIZES        8
 #define MAX_SIZE     NSIZES-1
