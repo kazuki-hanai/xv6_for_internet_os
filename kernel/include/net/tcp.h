@@ -1,6 +1,6 @@
 #pragma once
 
-#include "net/tcp_cb.h"
+#include "net/sock_cb.h"
 
 #define TCP_COLLISION_NUM 11
 #define TCP_MOD 2 << 31
@@ -33,4 +33,4 @@ struct tcp {
   uint16 urg;
 };
 
-struct tcp_cb *tcp_open(uint32, uint16, uint16, int);
+struct sock_cb *tcp_open(uint32, uint16, uint16, int);

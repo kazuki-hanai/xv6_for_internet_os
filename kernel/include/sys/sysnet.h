@@ -1,12 +1,19 @@
 #pragma once
-struct sock {
-  struct sock *next; // the next socket in the list
-  uint32 raddr;      // the remote IPv4 address
-  uint16 sport;      // the local UDP port number
-  uint16 dport;      // the remote UDP port number
-  int stype;
-  struct spinlock lock; // protects the rxq
-  struct mbufq rxq;  // a queue of packets waiting to be received
-  struct tcp_cb *tcb;
-};
 
+#include "types.h"
+
+#define SOCK_PROTO_TCP 1
+#define SOCK_PROTO_UDP 2
+
+#define SOCK_LISTEN 1
+#define SOCK_CONNECT 2
+
+#define START_OF_SPORT 20000
+#define SPORT_NUM 100;
+#define MAX_SPORT (START_OF_SPORT + 100 * 8);
+
+uint8 sport_table[SPORT_NUM];
+#define SPORT_IS_USED(x) (sport_table[x/8] >> (x % 8) & 0x01)
+
+uint16 get_new_sport();
+void release_sport(uint16);
