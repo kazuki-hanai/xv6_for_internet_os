@@ -6,6 +6,7 @@ TEST_KSRCS += $K/test/test_start.c
 TEST_KSRCS += $K/test/lib/test_buddy.c
 TEST_KSRCS += $K/test/net/test_arp.c
 TEST_KSRCS += $K/test/net/test_tcp.c
+TEST_KSRCS += $K/test/net/test_sysnet.c
 
 
 TEST_KOBJS=$(patsubst %.S,%.o, $(addprefix $(BUILD_DIR)/, $(TEST_KSRCS:.c=.o)))
