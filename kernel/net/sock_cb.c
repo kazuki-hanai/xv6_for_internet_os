@@ -82,7 +82,7 @@ struct sock_cb* get_sock_cb(uint32 raddr, uint16 sport, uint16 dport, int sockty
   ){ 
 
   } else {
-    panic("[get_scb] invalid port!\n");
+    panic("[get_scb] invalid!\n");
   }
 
   if (entry->head == 0)

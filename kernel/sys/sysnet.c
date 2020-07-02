@@ -12,20 +12,51 @@
 #include "fs.h"
 #include "sleeplock.h"
 #include "file.h"
-#include "net/mbuf.h"
 #include "net/netutil.h"
 #include "net/tcp.h"
+#include "net/sock_cb.h"
 #include "sys/sysnet.h"
 
-extern struct tcp_cb_entry tcb_table[TCP_CB_LEN];
+struct sock_cb_entry scb_table[TCP_CB_LEN];
+
+struct spinlock sport_lock;
+uint16 current_sport = START_OF_SPORT;
+
+uint16 get_new_sport() {
+  int islooped = 0, i;
+  acquire(&sport_lock);
+  while(1) {
+    if (sport_table[current_sport] != 0xff) {
+      for (i = 1; sport_table[current_sport] & i == 0; i++);
+      break;
+    }
+    if (curren_sport == SPORT_NUM-1) {
+      current_sport = START_OF_SPORT;
+      if (islooped == 0) {
+        islooped += 1;
+      } else {
+        panic("[get_new_sport] sport is full");
+      }
+    } else {
+      current_sport += 1;
+    }
+  }
+  release(&sport_lock);
+  return START_OF_SPORT + current_sport * 8 + i;
+}
+
+void release_sport(uint16) {
+  
+}
 
 void
 sockinit(void)
 {
-  memset(tcb_table, 0, sizeof(tcb_table));
+  initlock(&sport_lock, "sportlock");
+  memset(scb_table, 0, sizeof(scb_table));
   for (int i = 0; i < TCP_CB_LEN; i++) {
-    tcb_table[i].head = 0;
-    initlock(&tcb_table[i].lock, "tcb entry lock");
+    scb_table[i].head = 0;
+    initlock(&scb_table[i].lock, "scb entry lock");
   }
 }
 
@@ -41,20 +72,24 @@ sockalloc(struct file **f, uint32 raddr, uint16 sport, uint16 dport, int stype)
   if ((si = (struct sock*)kalloc()) == 0)
     goto bad;
 
+  if (stype == SOCK_TCP || stype == SOCK_UDP) {
+    sport = 0;
+  } else {
+    dport = 0;
+  }
   // initialize objects
   si->raddr = raddr;
-  // TODO source port decision
   si->sport = sport;
   si->dport = dport;
   si->stype = stype;
 
   if(stype == SOCK_TCP || stype == SOCK_TCP_LISTEN) {
-    si->tcb = tcp_open(raddr, sport, dport, stype);
-    if (si->tcb == 0) {
+    si->scb = tcp_open(raddr, sport, dport, stype);
+    if (si->scb == 0) {
       goto bad;
     }
   } else {
-    si->tcb = 0;
+    si->scb = 0;
   }
 
   if(stype == SOCK_TCP_LISTEN || stype == SOCK_UDP_LISTEN) {
@@ -125,15 +160,10 @@ uint64
 sys_socket(void)
 {
   struct file *f;
-  int raddr;
-  int sport, dport;
   int stype;
 
   if(
-    argint(0, (int *)&raddr) < 0 ||
-    argint(1, (int *)&sport) < 0 ||
-    argint(2, (int *)&dport) < 0 ||
-    argint(3, (int *)&stype) < 0
+    argint(1, (int *)&stype) < 0
   )
     return -1;
 
@@ -142,6 +172,14 @@ sys_socket(void)
     return -1;
 
   return fd;
+}
+
+void sys_sockconn() {
+
+}
+
+void sys_socklisten() {
+
 }
 
 // UDP only now
@@ -158,8 +196,8 @@ sys_socksend(struct file *f, uint64 addr, int n)
   mbufput(m, n);
   if (s->stype == SOCK_TCP || s->stype == SOCK_TCP_LISTEN) {
     // TODO 
-    if (s->tcb != 0)
-      net_tx_tcp(s->tcb, m, 0);
+    if (s->scb != 0)
+      net_tx_tcp(s->scb, m, 0);
   } else {
     net_tx_udp(m, s->raddr, s->sport, s->dport);
   }
