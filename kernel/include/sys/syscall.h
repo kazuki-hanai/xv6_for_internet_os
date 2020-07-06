@@ -24,3 +24,11 @@
 #define SYS_socket 22
 #define SYS_connect 23
 #define SYS_listen 24
+
+int             argint(int, int*);
+int             argstr(int, char*, int);
+int             argaddr(int, uint64 *);
+int             argfd(int n, int *, struct file **);
+int             fetchstr(uint64, char*, int);
+int             fetchaddr(uint64, uint64*);
+void            syscall();
