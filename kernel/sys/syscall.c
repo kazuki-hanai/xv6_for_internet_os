@@ -124,8 +124,8 @@ extern uint64 sys_wait(void);
 extern uint64 sys_write(void);
 extern uint64 sys_uptime(void);
 extern uint64 sys_socket(void);
-extern uint64 sys_connect(void);
-extern uint64 sys_listen(void);
+extern uint64 sys_sockconnect(void);
+extern uint64 sys_socklisten(void);
 
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -150,8 +150,8 @@ static uint64 (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_socket]  sys_socket,
-[SYS_connect]  sys_connect,
-[SYS_listen]  sys_listen,
+[SYS_connect]  sys_sockconnect,
+[SYS_listen]  sys_socklisten,
 };
 
 void

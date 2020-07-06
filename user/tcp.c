@@ -32,12 +32,12 @@ main(int argc, char **argv)
     printf("usage: %s ip port\n", argv[0]);
     exit(1);
   }
-  uint32 raddr = get_ip(argv[1]);
-  uint16 sport = 26001;
-  uint16 dport = atoi(argv[2]);
+  // uint32 raddr = get_ip(argv[1]);
+  // uint16 sport = 26001;
+  // uint16 dport = atoi(argv[2]);
   int sock;
 
-  sock = socket(raddr, sport, dport, SOCK_TCP);
+  sock = socket(SOCK_TCP);
 
   while(1) {
     char rbuf[256];

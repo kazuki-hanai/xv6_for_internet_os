@@ -29,23 +29,33 @@ static uint16 tcp_checksum(struct ipv4 *iphdr , struct tcp *tcphdr, uint16 len) 
   return cksum16((uint16 *)tcphdr, len, pseudo);
 }
 
-struct sock_cb *tcp_open(uint32 raddr, uint16 sport, uint16 dport, int sock_type) {
-  struct sock_cb *scb;
-  scb = get_sock_cb(raddr, sport, dport, sock_type);
-  if (sock_type == SOCK_TCP) {
-    struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
-    net_tx_tcp(scb, m, TCP_FLG_SYN);
-    scb->state = SYN_SENT;
-  } else if (sock_type == SOCK_TCP_LISTEN) {
-    scb->state = LISTEN;
-  } else {
-    panic("[tcp_open] You tried udp, didn't you?");
+int tcp_listen(struct sock_cb *scb, uint16 sport) {
+  if (scb->socktype != SOCK_TCP) {
+    printf("not tcp socket!\n");
+    return -1;
   }
+  scb->state = LISTEN;
   // TODO LISTEN STATE
   // -> chenge the connection from passive to active
   // "error: connection already exists"
 
-  return scb;
+  return 0;
+}
+
+int tcp_connect(struct sock_cb *scb, uint32 raddr, uint16 dport) {
+  if (scb->socktype != SOCK_TCP) {
+    printf("not tcp socket!\n");
+    return -1;
+  }
+  struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+  net_tx_tcp(scb, m, TCP_FLG_SYN);
+  scb->state = SYN_SENT;
+
+  // TODO LISTEN STATE
+  // -> chenge the connection from passive to active
+  // "error: connection already exists"
+
+  return 0;
 }
 
 // https://tools.ietf.org/html/rfc793#page-56

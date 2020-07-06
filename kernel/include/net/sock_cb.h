@@ -21,9 +21,7 @@ enum sock_cb_state {
 
 #define SOCK_UNKNOWN 0
 #define SOCK_UDP 1
-#define SOCK_UDP_LISTEN 2
-#define SOCK_TCP 3
-#define SOCK_TCP_LISTEN 4
+#define SOCK_TCP 2
 
 /**
  * Struct connecting Socket and Tcb
