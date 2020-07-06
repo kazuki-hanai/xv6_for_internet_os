@@ -102,7 +102,7 @@ KSRCS += \
 	$K/net/ipv4.c \
 	$K/net/udp.c \
 	$K/net/tcp.c \
-	$K/net/tcp_cb.c \
+	$K/net/sock_cb.c \
 
 # System call and OS Interface for user
 KSRCS += \

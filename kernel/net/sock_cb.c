@@ -3,7 +3,7 @@
 #include "net/netutil.h"
 #include "net/sock_cb.h"
 
-struct sockcb_entry scb_table[TCP_CB_LEN];
+struct sock_cb_entry scb_table[TCP_CB_LEN];
 
 struct sock_cb* init_sock_cb(uint32 raddr, uint16 sport, uint16 dport, int socktype) {
   struct sock_cb *scb;
