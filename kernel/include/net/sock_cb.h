@@ -3,7 +3,7 @@
 #include "spinlock.h"
 #include "net/mbuf.h"
 
-#define TCP_CB_LEN 128
+#define SOCK_CB_LEN 128
 
 enum sock_cb_state {
   CLOSED,
@@ -57,5 +57,5 @@ struct sock_cb_entry {
   struct sock_cb *head;
 };
 
-void free_tcp_cb(struct sock_cb*);
+void free_sock_cb(struct sock_cb*);
 struct sock_cb* get_sock_cb(uint32, uint16, uint16, int);
