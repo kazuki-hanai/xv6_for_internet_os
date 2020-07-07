@@ -142,7 +142,6 @@ sys_socket(void)
   return fd;
 }
 
-
 uint64 sys_socklisten() {
   struct file *f;
   uint16 sport;
