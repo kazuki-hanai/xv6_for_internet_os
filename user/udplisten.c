@@ -27,16 +27,21 @@ uint32 get_ip(char *ip) {
 int
 main(int argc, char **argv)
 {
-  if (argc < 3) {
-    printf("usage: %s ip port\n", argv[0]);
+  if (argc < 2) {
+    printf("usage: %s port\n", argv[0]);
     exit(1);
   }
   // uint32 raddr = get_ip(argv[1]);
-  // uint16 sport = 26001;
+  uint16 sport = atoi(argv[1]);
   // uint16 dport = atoi(argv[2]);
   int sock;
 
   sock = socket(SOCK_UDP);
+  if (listen(sock, sport) < 0) {
+    printf("listen failed!\n");
+    close(sock);
+    exit(1);
+  }
 
   while(1) {
     char rbuf[256];

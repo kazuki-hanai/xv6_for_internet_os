@@ -11,5 +11,6 @@ void test_start() {
     // buddy_test();
     arp_test();
     tcp_test();
+    sysnet_test();
   }
 }

@@ -10,8 +10,9 @@
 #include "net/ethernet.h"
 #include "net/ipv4.h"
 #include "net/tcp.h"
+#include "net/sock_cb.h"
 
-extern struct sock_cb_entry scb_table[TCP_CB_LEN];
+extern struct sock_cb_entry tcp_scb_table[SOCK_CB_LEN];
 
 void tcpinit() {
   
@@ -29,7 +30,7 @@ static uint16 tcp_checksum(struct ipv4 *iphdr , struct tcp *tcphdr, uint16 len) 
   return cksum16((uint16 *)tcphdr, len, pseudo);
 }
 
-int tcp_listen(struct sock_cb *scb, uint16 sport) {
+int tcp_listen(struct sock_cb *scb) {
   if (scb->socktype != SOCK_TCP) {
     printf("not tcp socket!\n");
     return -1;
@@ -42,7 +43,7 @@ int tcp_listen(struct sock_cb *scb, uint16 sport) {
   return 0;
 }
 
-int tcp_connect(struct sock_cb *scb, uint32 raddr, uint16 dport) {
+int tcp_connect(struct sock_cb *scb) {
   if (scb->socktype != SOCK_TCP) {
     printf("not tcp socket!\n");
     return -1;
@@ -159,10 +160,6 @@ void net_tx_tcp(struct sock_cb *scb, struct mbuf *m, uint8 flg) {
   net_tx_ip(m, IPPROTO_TCP, scb->raddr);
 }
 
-
-// void tcp_rx_core(struct sock_cb *scb, struct mbuf *m, struct tcphdr *tcphdr, struct ipv4 *iphdr) {
-// }
-
 // segment arrives
 void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   struct tcp *tcphdr;
@@ -181,10 +178,10 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   }
 
   raddr = ntohl(iphdr->ip_src);
-  dport = ntohs(tcphdr->dport);
-  sport = ntohs(tcphdr->sport);
+  dport = ntohs(tcphdr->sport);
+  sport = ntohs(tcphdr->dport);
 
-  scb = get_sock_cb(raddr, dport, sport, SOCK_UNKNOWN);
+  scb = get_sock_cb(tcp_scb_table, sport);
 
   printf("ok?\n");
   acquire(&scb->lock);
@@ -210,7 +207,8 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
       // TODO check security
       // TODO If the SEG.PRC is greater than the TCB.PRC
       // TODO sport
-      scb->dport = sport;
+      scb->dport = dport;
+      scb->raddr = raddr;
 
       // TODO window
       scb->rcv.wnd = 65535;

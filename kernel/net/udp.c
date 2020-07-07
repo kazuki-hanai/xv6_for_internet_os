@@ -8,7 +8,11 @@
 #include "net/netutil.h"
 #include "net/ipv4.h"
 #include "net/udp.h"
+#include "net/sock_cb.h"
+#include "sys/sysnet.h"
 #include "defs.h"
+
+extern struct sock_cb_entry udp_scb_table[SOCK_CB_LEN];
 
 // sends a UDP packet
 void
@@ -28,16 +32,13 @@ net_tx_udp(struct mbuf *m, uint32 dip,
   net_tx_ip(m, IPPROTO_UDP, dip);
 }
 
-
-
 // receives a UDP packet
 void
 net_rx_udp(struct mbuf *m, uint16 len, struct ipv4 *iphdr)
 {
   struct udp *udphdr;
-  uint32 sip;
+  uint32 raddr;
   uint16 sport, dport;
-
 
   udphdr = mbufpullhdr(m, *udphdr);
   if (!udphdr)
@@ -55,12 +56,17 @@ net_rx_udp(struct mbuf *m, uint16 len, struct ipv4 *iphdr)
   mbuftrim(m, m->len - len);
 
   // parse the necessary fields
-  sip = ntohl(iphdr->ip_src);
-  sport = ntohs(udphdr->sport);
-  dport = ntohs(udphdr->dport);
-  sockrecvudp(m, sip, dport, sport);
-  return;
+  raddr = ntohl(iphdr->ip_src);
+  sport = ntohs(udphdr->dport);
+  dport = ntohs(udphdr->sport);
+  push_to_scb_rxq(udp_scb_table, m, raddr, sport, dport);
 
+  struct sock_cb *scb = get_sock_cb(udp_scb_table, sport);;
+  if (scb->raddr == 0 && scb->dport == 0) {
+    scb->raddr = raddr;
+    scb->dport = dport;
+  }
+  return;
 fail:
   mbuffree(m);
 }

@@ -33,4 +33,5 @@ struct tcp {
   uint16 urg;
 };
 
-struct sock_cb *tcp_open(uint32, uint16, uint16, int);
+int tcp_listen(struct sock_cb *);
+int tcp_connect(struct sock_cb *);

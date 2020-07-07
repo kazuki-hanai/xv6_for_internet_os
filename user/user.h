@@ -24,8 +24,8 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int socket(int);
-int connect(uint32, uint16);
-int listen(uint16);
+int connect(int, uint32, uint16);
+int listen(int, uint16);
 
 // ulib.c
 int stat(const char*, struct stat*);

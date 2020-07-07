@@ -12,6 +12,7 @@
 #include "file.h"
 #include "stat.h"
 #include "proc.h"
+#include "sys/sysnet.h"
 
 struct devsw devsw[NDEV];
 
@@ -102,7 +103,7 @@ fileclose(struct file *f)
     iput(ff.ip);
     end_op();
   } else if (ff.type == FD_SOCK) {
-    sockfree(ff.scb);
+    sock_cb_free(ff.scb);
   }
 }
 
@@ -147,7 +148,7 @@ fileread(struct file *f, uint64 addr, int n)
       f->off += r;
     iunlock(f->ip);
   } else if(f->type == FD_SOCK) {
-    r = sys_sockrecv(f, addr, n);
+    r = sockrecv(f, addr, n);
   } else {
     panic("fileread");
   }
@@ -200,7 +201,7 @@ filewrite(struct file *f, uint64 addr, int n)
     }
     ret = (i == n ? n : -1);
   } else if (f->type == FD_SOCK) {
-    ret = sys_socksend(f, addr, n);
+    ret = socksend(f, addr, n);
   } else {
     panic("filewrite");
   }
