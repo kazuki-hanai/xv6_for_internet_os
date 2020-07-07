@@ -212,7 +212,7 @@ socksend(struct file *f, uint64 addr, int n)
     return -1;
   }
   if (scb->socktype == SOCK_TCP) {
-    // TODO 
+    // TODO
     net_tx_tcp(scb, m, 0);
   } else {
     net_tx_udp(m, scb->raddr, scb->sport, scb->dport);

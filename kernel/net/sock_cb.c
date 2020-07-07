@@ -91,10 +91,6 @@ push_to_scb_rxq(struct sock_cb_entry table[], struct mbuf *m, uint32 raddr, uint
     printf("scb: %d\n", scb);
     return -1;
   }
-  if (scb->raddr == 0 && scb->dport == 0) {
-    scb->raddr = raddr;
-    scb->dport = dport;
-  }
   acquire(&scb->lock);
   mbufq_pushtail(&scb->rxq, m);
   release(&scb->lock);

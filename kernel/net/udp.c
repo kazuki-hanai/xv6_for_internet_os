@@ -60,8 +60,13 @@ net_rx_udp(struct mbuf *m, uint16 len, struct ipv4 *iphdr)
   sport = ntohs(udphdr->dport);
   dport = ntohs(udphdr->sport);
   push_to_scb_rxq(udp_scb_table, m, raddr, sport, dport);
-  return;
 
+  struct sock_cb *scb = get_sock_cb(udp_scb_table, sport);;
+  if (scb->raddr == 0 && scb->dport == 0) {
+    scb->raddr = raddr;
+    scb->dport = dport;
+  }
+  return;
 fail:
   mbuffree(m);
 }
