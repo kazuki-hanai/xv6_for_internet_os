@@ -14,6 +14,8 @@
 #include "file.h"
 #include "net/netutil.h"
 #include "net/tcp.h"
+#include "net/ethernet.h"
+#include "net/arp.h"
 #include "net/sock_cb.h"
 #include "sys/syscall.h"
 #include "sys/sysnet.h"
@@ -182,6 +184,10 @@ uint64 sys_sockconnect() {
   scb->raddr = raddr;
   scb->sport = get_new_sport();
   scb->dport = dport;
+
+  // arp resolve
+  uint8 broadcast_mac[ETHADDR_LEN] = { 0xFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF };
+  net_tx_arp(ARP_OP_REQUEST, broadcast_mac, raddr);
 
   if (scb->socktype == SOCK_TCP) {
     add_sock_cb(tcp_scb_table, scb);
