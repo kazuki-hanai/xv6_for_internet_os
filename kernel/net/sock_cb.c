@@ -3,7 +3,7 @@
 #include "net/netutil.h"
 #include "net/sock_cb.h"
 
-struct sockcb_entry scb_table[TCP_CB_LEN];
+struct sock_cb_entry scb_table[TCP_CB_LEN];
 
 struct sock_cb* init_sock_cb(uint32 raddr, uint16 sport, uint16 dport, int socktype) {
   struct sock_cb *scb;
@@ -26,11 +26,11 @@ void free_sock_cb(struct sock_cb *scb) {
   if (scb != 0) {
     struct sock_cb_entry *entry;
     uint16 port;
-    if (socktype == SOCK_UDP || socktype == SOCK_TCP)
+    if (scb->socktype == SOCK_UDP || scb->socktype == SOCK_TCP)
       port = scb->dport;
     else
       port = scb->sport;
-    entry = &scb_table[(raddr + port) % TCP_CB_LEN];
+    entry = &scb_table[(scb->raddr + port) % TCP_CB_LEN];
 
     acquire(&entry->lock);
     if (scb->next != 0)
@@ -69,7 +69,7 @@ struct sock_cb* get_sock_cb(uint32 raddr, uint16 sport, uint16 dport, int sockty
   
   // new scb
   if(scb == 0) {
-    scb = init_sock_cb(raddr, sport, dport);
+    scb = init_sock_cb(raddr, sport, dport, socktype);
     if (prev != 0)
       prev->next = scb;
     scb->prev = prev;

@@ -1,4 +1,6 @@
 #pragma once
+
+#include "net/sock_cb.h"
 struct file {
   enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE, FD_SOCK } type;
   int ref; // reference count
@@ -6,7 +8,7 @@ struct file {
   char writable;
   struct pipe *pipe; // FD_PIPE
   struct inode *ip;  // FD_INODE and FD_DEVICE
-  struct sock *sock;
+  struct sock_cb *scb;
   uint off;          // FD_INODE
   short major;       // FD_DEVICE
   struct file *prev;
