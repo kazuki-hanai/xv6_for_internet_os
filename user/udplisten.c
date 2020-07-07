@@ -32,11 +32,16 @@ main(int argc, char **argv)
     exit(1);
   }
   // uint32 raddr = get_ip(argv[1]);
-  // uint16 sport = 26001;
+  uint16 sport = atoi(argv[1]);
   // uint16 dport = atoi(argv[2]);
   int sock;
 
   sock = socket(SOCK_UDP);
+  if (listen(sock, sport) < 0) {
+    printf("listen failed!\n");
+    close(sock);
+    exit(1);
+  }
 
   while(1) {
     char rbuf[256];

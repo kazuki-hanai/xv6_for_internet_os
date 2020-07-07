@@ -218,7 +218,7 @@ void            tcpinit();
 int             fdalloc(struct file *);
 
 // sysnet.c
-void            sockinit();
+void            sysnet_init();
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

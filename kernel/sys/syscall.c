@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "sys/syscall.h"
+#include "file.h"
 #include "defs.h"
 
 // Fetch the uint64 at addr from the current process.
@@ -90,7 +91,7 @@ argfd(int n, int *pfd, struct file **pf)
 {
   int fd;
   struct file *f;
-
+  
   if(argint(n, &fd) < 0)
     return -1;
   if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)

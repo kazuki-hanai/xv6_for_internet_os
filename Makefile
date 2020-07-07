@@ -144,6 +144,7 @@ UPROGS=\
   	_xargs\
   	_zombie\
   	_udp\
+  	_udplisten\
   	_tcp\
   	_tcplisten\
 

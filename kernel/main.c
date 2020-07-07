@@ -32,7 +32,7 @@ main()
     pci_init();
     arpinit();
     tcpinit();
-    sockinit();
+    sysnet_init();
     userinit();      // first user process
     __sync_synchronize();
     started = 1;
