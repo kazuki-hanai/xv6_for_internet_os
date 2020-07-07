@@ -160,10 +160,6 @@ void net_tx_tcp(struct sock_cb *scb, struct mbuf *m, uint8 flg) {
   net_tx_ip(m, IPPROTO_TCP, scb->raddr);
 }
 
-
-// void tcp_rx_core(struct sock_cb *scb, struct mbuf *m, struct tcphdr *tcphdr, struct ipv4 *iphdr) {
-// }
-
 // segment arrives
 void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   struct tcp *tcphdr;
@@ -185,7 +181,7 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   dport = ntohs(tcphdr->sport);
   sport = ntohs(tcphdr->dport);
 
-  scb = get_sock_cb((struct sock_cb_entry **)&tcp_scb_table, sport);
+  scb = get_sock_cb(tcp_scb_table, sport);
 
   printf("ok?\n");
   acquire(&scb->lock);

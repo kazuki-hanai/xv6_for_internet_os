@@ -170,7 +170,7 @@ uint64 sys_sockconnect() {
   uint32 raddr;
   uint16 dport;
 
-  if (argfd(0, 0, &f) < 0 || argint(1, (int *)&raddr) < 0 || argint(2, (int *)&dport) < 0) {
+  if (argint(2, (int *)&dport) < 0 || argint(1, (int *)&raddr) < 0 || argfd(0, 0, &f) < 0) {
     return -1;
   }
 
