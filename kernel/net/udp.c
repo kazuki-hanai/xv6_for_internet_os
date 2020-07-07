@@ -8,6 +8,7 @@
 #include "net/netutil.h"
 #include "net/ipv4.h"
 #include "net/udp.h"
+#include "sys/sysnet.h"
 #include "defs.h"
 
 // sends a UDP packet

@@ -11,7 +11,7 @@
 #include "net/ipv4.h"
 #include "net/tcp.h"
 
-extern struct sock_cb_entry scb_table[TCP_CB_LEN];
+extern struct sock_cb_entry scb_table[SOCK_CB_LEN];
 
 void tcpinit() {
   
