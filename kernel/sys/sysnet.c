@@ -18,37 +18,44 @@
 #include "sys/syscall.h"
 #include "sys/sysnet.h"
 
-extern struct sock_cb_entry scb_table[TCP_CB_LEN];
+extern struct sock_cb_entry scb_table[SOCK_CB_LEN];
 uint8 sport_table[SPORT_NUM];
 
 struct spinlock sport_lock;
 uint16 current_sport = START_OF_SPORT;
 
 uint16 get_new_sport() {
-  int islooped = 0, i;
+  int islooped = 0;
   acquire(&sport_lock);
-  while(1) {
-    if (sport_table[current_sport] != 0xff) {
-      for (i = 1; (sport_table[current_sport] & i) == 0; i++);
-      break;
-    }
-    if (current_sport == SPORT_NUM-1) {
-      current_sport = START_OF_SPORT;
-      if (islooped == 0) {
-        islooped += 1;
-      } else {
-        panic("[get_new_sport] sport is full");
+  while (islooped < 2) {
+    if ((sport_table[current_sport/8] & 0xff) < 0xff) {
+      for (int i = 0; i < 8; i++) {
+        if ((sport_table[current_sport/8] & (1 << i)) == 0) {
+          sport_table[current_sport/8] |= (1 << i);
+          release(&sport_lock);
+          return current_sport + i;
+        }
       }
+    }
+    if (current_sport+8 >= MAX_SPORT) {
+      current_sport = START_OF_SPORT;
+      islooped += 1;
     } else {
-      current_sport += 1;
+      current_sport += 8;
     }
   }
   release(&sport_lock);
-  return START_OF_SPORT + current_sport * 8 + i;
+  panic("[get_new_sport] sport is full\n");
+  return -1;
 }
 
 void release_sport(uint16 sport) {
-  
+  acquire(&sport_lock);
+  if (((sport_table[sport/8]) & (1 << (sport % 8))) >= 1)
+    sport_table[sport/8] ^= 1 << (sport % 8);
+  else
+    panic("sport didn't use");
+  release(&sport_lock);
 }
 
 void
@@ -56,7 +63,7 @@ sockinit(void)
 {
   initlock(&sport_lock, "sportlock");
   memset(scb_table, 0, sizeof(scb_table));
-  for (int i = 0; i < TCP_CB_LEN; i++) {
+  for (int i = 0; i < SOCK_CB_LEN; i++) {
     scb_table[i].head = 0;
     initlock(&scb_table[i].lock, "scb entry lock");
   }
@@ -144,28 +151,49 @@ sys_socket(void)
 
 uint64 sys_socklisten() {
   struct file *f;
+  struct sock_cb *scb;
   uint16 sport;
 
   if (argfd(0, 0, &f) || argint(1, (int *)&sport) < 0) {
     return -1;
   }
 
-  // socket already open
-  if (f->scb == 0) {
+  scb = f->scb;
+  // file doesn*t equal socket or socket close
+  if (f->type !=  FD_SOCK || scb == 0) {
     return -1;
+  }
+
+  if (scb->socktype == SOCK_TCP) {
+    
+  } else {
+
   }
 
   return 0;
 }
 
 uint64 sys_sockconnect() {
-  
+  struct file *f;
+  struct sock_cb *scb;
+  uint16 sport;
+
+  if (argfd(0, 0, &f) || argint(1, (int *)&sport) < 0) {
+    return -1;
+  }
+
+  scb = f->scb;
+  // file doesn*t equal socket or socket close
+  if (f->type !=  FD_SOCK || scb == 0) {
+    return -1;
+  } 
+
   return 0;
 }
 
 // UDP only now
 int
-sys_socksend(struct file *f, uint64 addr, int n)
+socksend(struct file *f, uint64 addr, int n)
 {
   // TODO split data
   struct sock_cb *scb = f->scb;
@@ -189,7 +217,7 @@ sys_socksend(struct file *f, uint64 addr, int n)
 }
 
 int
-sys_sockrecv(struct file *f, uint64 addr, int n)
+sockrecv(struct file *f, uint64 addr, int n)
 {
   struct sock_cb *scb = f->scb;
   struct mbufq *rxq = &scb->rxq;
