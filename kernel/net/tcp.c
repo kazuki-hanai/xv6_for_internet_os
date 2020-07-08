@@ -49,6 +49,7 @@ int tcp_connect(struct sock_cb *scb) {
     return -1;
   }
   struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+  scb->rcv.wnd = 2048;
   net_tx_tcp(scb, m, TCP_FLG_SYN, 0);
   scb->state = SYN_SENT;
 
@@ -191,27 +192,33 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   }
 
   uint8 flg = tcphdr->flg;
+  uint32 ack = ntohl(tcphdr->ack);
+  uint32 seq = ntohl(tcphdr->seq);
 
   // TODO check seq & ack
 
   if (scb->state == CLOSED) {
+    // TODO if a incoming packet does not contain a RST, send a RST packet.
     goto fail;
   } else if (scb->state == LISTEN) {
-    // If received SYN, send SYN,ACK
+    // if received SYN, send SYN,ACK
     if (TCP_FLG_ISSET(flg, TCP_FLG_RST)) {
       goto fail;
-    } else if (TCP_FLG_ISSET(flg, TCP_FLG_ACK)) {
+    }
+    if (TCP_FLG_ISSET(flg, TCP_FLG_ACK)) {
+      struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+      net_tx_tcp(scb, m, TCP_FLG_RST | TCP_FLG_ACK, 0);
       goto fail;
       // TODO send RST
-    } else if (TCP_FLG_ISSET(flg, TCP_FLG_SYN)) {
+    }
+    if (TCP_FLG_ISSET(flg, TCP_FLG_SYN)) {
       // TODO check security
       // TODO If the SEG.PRC is greater than the TCB.PRC
-      // TODO sport
       scb->dport = dport;
       scb->raddr = raddr;
 
       // TODO window
-      scb->rcv.wnd = 65535;
+      scb->rcv.wnd = 2048;
       scb->rcv.init_seq = ntohl(tcphdr->seq);
       scb->rcv.nxt_seq = scb->rcv.init_seq + 1;
       scb->snd.init_seq = 0;
@@ -225,15 +232,38 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
     } else {
       goto fail;
     }
+  // SYN/ACK received
   } else if (scb->state == SYN_SENT) {
-  } else if (scb->state == SYN_RCVD) {
-  } else if (scb->state == ESTAB) {
-  } else if (scb->state == FIN_WAIT_1) {
-  } else if (scb->state == FIN_WAIT_2) {
-  } else if (scb->state == CLOSING) {
-  } else if (scb->state == TIME_WAIT) {
-  } else if (scb->state == CLOSE_WAIT) {
-  } else if (scb->state == LAST_ACK) {
+    if (TCP_FLG_ISSET(flg, TCP_FLG_ACK)) {
+      if (ack <= scb->snd.init_seq || ack > scb->snd.nxt_seq) {
+        struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+        net_tx_tcp(scb, m, TCP_FLG_RST | TCP_FLG_ACK, 0);
+        goto fail;
+      }
+    }
+    if (TCP_FLG_ISSET(flg, TCP_FLG_RST)) {
+      // TODO free sock
+      goto fail;
+    }
+    // TODO check the security and precedence
+
+    if (TCP_FLG_ISSET(flg, TCP_FLG_SYN | TCP_FLG_ACK)) {
+      scb->rcv.nxt_seq = seq + 1;
+      scb->rcv.init_seq = seq;
+      scb->snd.unack = ack;
+
+      if (scb->snd.unack > scb->snd.init_seq) {
+        scb->state = ESTAB;
+        struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+        net_tx_tcp(scb, m, TCP_FLG_ACK, 0);
+      } else {
+        scb->state = SYN_RCVD;
+        struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+        net_tx_tcp(scb, m, TCP_FLG_SYN | TCP_FLG_ACK, 0);
+      }
+    } else {
+      goto fail;
+    }
   } else {
 
   }
