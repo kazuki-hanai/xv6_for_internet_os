@@ -18,14 +18,14 @@ void tcpinit() {
   
 }
 
-static uint16 tcp_checksum(struct ipv4 *iphdr , struct tcp *tcphdr, uint16 len) {
+static uint16 tcp_checksum(uint32 ip_src, uint32 ip_dst, uint8 ip_p, struct tcp *tcphdr, uint16 len) {
   uint32 pseudo = 0;
 
-  pseudo += ntohs((iphdr->ip_src >> 16) & 0xffff);
-  pseudo += ntohs(iphdr->ip_src & 0xffff);
-  pseudo += ntohs((iphdr->ip_dst >> 16) & 0xffff);
-  pseudo += ntohs(iphdr->ip_dst & 0xffff);
-  pseudo += (uint16)iphdr->ip_p;
+  pseudo += ntohs((ip_src >> 16) & 0xffff);
+  pseudo += ntohs(ip_src & 0xffff);
+  pseudo += ntohs((ip_dst >> 16) & 0xffff);
+  pseudo += ntohs(ip_dst & 0xffff);
+  pseudo += (uint16)ip_p;
   pseudo += len;
   return cksum16((uint16 *)tcphdr, len, pseudo);
 }
@@ -49,7 +49,7 @@ int tcp_connect(struct sock_cb *scb) {
     return -1;
   }
   struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
-  net_tx_tcp(scb, m, TCP_FLG_SYN);
+  net_tx_tcp(scb, m, TCP_FLG_SYN, 0);
   scb->state = SYN_SENT;
 
   // TODO LISTEN STATE
@@ -140,7 +140,8 @@ int tcp_abort() {
   return -1;
 }
 
-void net_tx_tcp(struct sock_cb *scb, struct mbuf *m, uint8 flg) {
+void net_tx_tcp(struct sock_cb *scb, struct mbuf *m, uint8 flg, uint16 payload_len) {
+  extern uint32 local_ip;
   struct tcp *tcphdr;
 
   tcphdr = mbufpushhdr(m, *tcphdr);
@@ -152,11 +153,9 @@ void net_tx_tcp(struct sock_cb *scb, struct mbuf *m, uint8 flg) {
   tcphdr->flg = flg;
   printf("flg: %d\n", flg);
   tcphdr->wnd = htons(scb->rcv.wnd);
-  // tcphdr->sum = tcp_checksum(iphdr, tcphdr, len);
-  tcphdr->sum = 0;
   tcphdr->urg = 0;
-
-  printf("ip: %x\n", scb->raddr);
+  tcphdr->sum = 0;
+  tcphdr->sum = htons(tcp_checksum(htonl(local_ip), htonl(scb->raddr), IPPROTO_TCP, tcphdr, payload_len + sizeof(struct tcp)));
   net_tx_ip(m, IPPROTO_TCP, scb->raddr);
 }
 
@@ -171,7 +170,7 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   if (!tcphdr)
     goto fail;
 
-  uint16 sum = tcp_checksum(iphdr, tcphdr, len);
+  uint16 sum = tcp_checksum(iphdr->ip_src, iphdr->ip_dst, iphdr->ip_p, tcphdr, len);
   if (sum != 0) {
     printf("[bad tcp] checksum doesn't match\n");
     goto fail;
@@ -183,12 +182,13 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
 
   scb = get_sock_cb(tcp_scb_table, sport);
 
-  printf("ok?\n");
+  if (scb == 0)
+    goto fail;
+
   acquire(&scb->lock);
   if (scb == 0) {
     goto fail;
   }
-  printf("ok!\n");
 
   uint8 flg = tcphdr->flg;
 
@@ -217,7 +217,7 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
       scb->snd.init_seq = 0;
       scb->snd.nxt_seq = 0;
       struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
-      net_tx_tcp(scb, m, TCP_FLG_SYN | TCP_FLG_ACK);
+      net_tx_tcp(scb, m, TCP_FLG_SYN | TCP_FLG_ACK, 0);
       scb->snd.nxt_seq = scb->rcv.init_seq + 1;
       scb->snd.unack = scb->rcv.init_seq;
       // TODO timeout

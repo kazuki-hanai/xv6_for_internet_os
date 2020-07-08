@@ -13,44 +13,6 @@
 
 uint32 local_ip = MAKE_IP_ADDR(192, 168, 22, 2); // qemu's idea of the guest IP
 
-
-// This code is lifted from FreeBSD's ping.c, and is copyright by the Regents
-// of the University of California.
-static unsigned short
-in_cksum(const unsigned char *addr, int len)
-{
-  int nleft = len;
-  const unsigned short *w = (const unsigned short *)addr;
-  unsigned int sum = 0;
-  unsigned short answer = 0;
-
-  /*
-   * Our algorithm is simple, using a 32 bit accumulator (sum), we add
-   * sequential 16 bit words to it, and at the end, fold back all the
-   * carry bits from the top 16 bits into the lower 16 bits.
-   */
-  while (nleft > 1)  {
-    sum += *w++;
-    nleft -= 2;
-  }
-
-  /* mop up an odd byte, if necessary */
-  if (nleft == 1) {
-    *(unsigned char *)(&answer) = *(const unsigned char *)w;
-    sum += answer;
-  }
-
-  /* add back carry outs from top 16 bits to low 16 bits */
-  sum = (sum & 0xffff) + (sum >> 16);
-  sum += (sum >> 16);
-  /* guaranteed now that the lower 16 bits of sum are correct */
-
-  answer = ~sum; /* truncate to 16 bits */
-  return answer;
-}
-
-
-
 // sends an IP packet
 void
 net_tx_ip(struct mbuf *m, uint8 proto, uint32 dip)
@@ -66,7 +28,7 @@ net_tx_ip(struct mbuf *m, uint8 proto, uint32 dip)
   iphdr->ip_dst = htonl(dip);
   iphdr->ip_len = htons(m->len);
   iphdr->ip_ttl = 100;
-  iphdr->ip_sum = in_cksum((unsigned char *)iphdr, sizeof(*iphdr));
+  iphdr->ip_sum = htons(cksum16((uint16 *)iphdr, sizeof(*iphdr), 0));
 
   // now on to the ethernet layer
   net_tx_eth(m, ETHTYPE_IP, dip);
@@ -87,7 +49,7 @@ net_rx_ip(struct mbuf *m)
   if (iphdr->ip_vhl != ((4 << 4) | (20 >> 2)))
     goto fail;
   // validate IP checksum
-  if (in_cksum((unsigned char *)iphdr, sizeof(*iphdr)))
+  if (cksum16((uint16 *)iphdr, sizeof(*iphdr), 0))
     goto fail;
   // can't support fragmented IP packets
   if (IP_GET_OFF(htons(iphdr->ip_off)) != 0)
