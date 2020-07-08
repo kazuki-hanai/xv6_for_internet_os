@@ -106,13 +106,8 @@ bad:
   if (*f)
     fileclose(*f);
   if (scb)
-    sock_cb_free(scb);
+    free_sock_cb(scb);
   return -1;
-}
-
-void sock_cb_free(struct sock_cb *scb) {
-  release_sport(scb->sport);
-  bd_free((char*)scb);
 }
 
 uint64
@@ -219,7 +214,7 @@ socksend(struct file *f, uint64 addr, int n)
   }
   if (scb->socktype == SOCK_TCP) {
     // TODO
-    net_tx_tcp(scb, m, 0);
+    // net_tx_tcp(scb, m, TCP_FLG_ACK, 0);
   } else {
     net_tx_udp(m, scb->raddr, scb->sport, scb->dport);
   }

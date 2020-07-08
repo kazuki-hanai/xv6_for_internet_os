@@ -57,7 +57,7 @@ struct sock_cb_entry {
 };
 
 struct sock_cb* init_sock_cb(uint32, uint16, uint16, int);
-void free_sock_cb(struct sock_cb_entry [], struct sock_cb *);
+void free_sock_cb(struct sock_cb *);
 void add_sock_cb(struct sock_cb_entry [], struct sock_cb *);
 struct sock_cb* get_sock_cb(struct sock_cb_entry [], uint16);
 int push_to_scb_rxq(struct sock_cb_entry [], struct mbuf *, uint32, uint16, uint16);

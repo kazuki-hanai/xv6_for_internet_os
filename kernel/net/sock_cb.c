@@ -2,6 +2,7 @@
 #include "net/mbuf.h"
 #include "net/netutil.h"
 #include "net/sock_cb.h"
+#include "sys/sysnet.h"
 
 struct sock_cb_entry tcp_scb_table[SOCK_CB_LEN];
 struct sock_cb_entry udp_scb_table[SOCK_CB_LEN];
@@ -25,11 +26,17 @@ struct sock_cb* init_sock_cb(uint32 raddr, uint16 sport, uint16 dport, int sockt
   return scb;
 }
 
-void free_sock_cb(struct sock_cb_entry table[], struct sock_cb *scb) {
+void free_sock_cb(struct sock_cb *scb) {
   if (scb != 0) {
     struct sock_cb_entry *entry;
-    entry = &table[scb->sport % SOCK_CB_LEN];
 
+    if (scb->socktype == SOCK_TCP) {
+      entry = &tcp_scb_table[scb->sport % SOCK_CB_LEN];
+    } else {
+      entry = &udp_scb_table[scb->sport % SOCK_CB_LEN];
+    }
+
+    release_sport(scb->sport);
     acquire(&entry->lock);
     if (scb->next != 0)
       scb->next->prev = scb->prev;

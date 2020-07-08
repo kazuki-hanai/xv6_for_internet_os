@@ -103,7 +103,7 @@ fileclose(struct file *f)
     iput(ff.ip);
     end_op();
   } else if (ff.type == FD_SOCK) {
-    sock_cb_free(ff.scb);
+    free_sock_cb(ff.scb);
   }
 }
 
