@@ -52,6 +52,7 @@ int tcp_connect(struct sock_cb *scb) {
   scb->rcv.wnd = 2048;
   net_tx_tcp(scb, m, TCP_FLG_SYN, 0);
   scb->state = SYN_SENT;
+  scb->snd.nxt_seq = scb->snd.init_seq + 1;
 
   // TODO LISTEN STATE
   // -> chenge the connection from passive to active
