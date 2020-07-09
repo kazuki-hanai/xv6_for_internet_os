@@ -150,12 +150,12 @@ uint64 sys_socklisten() {
   scb->sport = sport;
 
   if (scb->socktype == SOCK_TCP) {
-    add_sock_cb(tcp_scb_table, scb);
+    add_sock_cb(scb);
     if (tcp_listen(scb) < 0) {
       return -1;
     }
   } else {
-    add_sock_cb(udp_scb_table, scb);
+    add_sock_cb(scb);
   }
 
   return 0;
@@ -185,12 +185,12 @@ uint64 sys_sockconnect() {
   net_tx_arp(ARP_OP_REQUEST, broadcast_mac, raddr);
 
   if (scb->socktype == SOCK_TCP) {
-    add_sock_cb(tcp_scb_table, scb);
+    add_sock_cb(scb);
     if (tcp_connect(scb) < 0) {
       return -1;
     }
   } else {
-    add_sock_cb(udp_scb_table, scb);
+    add_sock_cb(scb);
   }
 
   return 0;

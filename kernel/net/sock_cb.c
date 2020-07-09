@@ -66,12 +66,18 @@ void free_sock_cb(struct sock_cb *scb) {
   }
 }
 
-void add_sock_cb(struct sock_cb_entry table[], struct sock_cb *scb) {
+void add_sock_cb(struct sock_cb *scb) {
   if (scb == 0) {
     return;
   }
 
-  struct sock_cb_entry *entry = &table[scb->sport % SOCK_CB_LEN];
+  struct sock_cb_entry *entry;
+  
+  if (scb->socktype == SOCK_TCP) {
+    entry = &tcp_scb_table[scb->sport % SOCK_CB_LEN];
+  } else {
+    entry = &udp_scb_table[scb->sport % SOCK_CB_LEN];
+  }
 
   acquire(&entry->lock);
   struct sock_cb *tail = entry->head;
