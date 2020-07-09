@@ -55,17 +55,22 @@ net_rx_udp(struct mbuf *m, uint16 len, struct ipv4 *iphdr)
   // minimum packet size could be larger than the payload
   mbuftrim(m, m->len - len);
 
-  // parse the necessary fields
+
   raddr = ntohl(iphdr->ip_src);
   sport = ntohs(udphdr->dport);
   dport = ntohs(udphdr->sport);
-  push_to_scb_rxq(udp_scb_table, m, raddr, sport, dport);
-
+  
   struct sock_cb *scb = get_sock_cb(udp_scb_table, sport);;
+  if (scb == 0) {
+    goto fail;
+  }
   if (scb->raddr == 0 && scb->dport == 0) {
     scb->raddr = raddr;
     scb->dport = dport;
   }
+  // parse the necessary fields
+  push_to_scb_rxq(scb, m);
+
   return;
 fail:
   mbuffree(m);
