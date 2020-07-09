@@ -104,36 +104,6 @@ int tcp_send(struct sock_cb *scb) {
   return -1;
 }
 
-int tcp_recv(struct sock_cb *scb, struct mbuf *m, struct tcp *tcphdr) {
-  enum sock_cb_state state = scb->state;
-  if (TCP_FLG_ISSET(state, SOCK_CB_CLOSED)) {
-    // "error: connection illegal for this process"
-    return -1;
-  }
-
-  // SOCK_CB_LISTEN
-  // SOCK_CB_SYN_SENT
-  // SOCK_CB_SYN_RCVD
-  if (
-    TCP_FLG_ISSET(state, SOCK_CB_LISTEN) ||
-    TCP_FLG_ISSET(state, SOCK_CB_SYN_SENT) ||
-    TCP_FLG_ISSET(state, SOCK_CB_SYN_RCVD)
-  ) {
-    // queue mbuf
-  }
-  
-  // SOCK_CB_ESTAB
-  // SOCK_CB_FIN_WAIT_1
-  // SOCK_CB_FIN_WAIT_2
-  //
-  // SOCK_CB_CLOSE_WAIT
-  //
-  // SOCK_CB_CLOSING
-  // SOCK_CB_LAST_ACK
-  // SOCK_CB_TIME_WAIT
-  return -1;
-}
-
 int tcp_close(struct sock_cb *scb) {
   return -1;
 }
@@ -150,7 +120,10 @@ void net_tx_tcp(struct sock_cb *scb, struct mbuf *m, uint8 flg, uint16 payload_l
   tcphdr->sport = htons(scb->sport);
   tcphdr->dport = htons(scb->dport);
   tcphdr->seq = htonl(scb->snd.nxt_seq);
-  tcphdr->ack = htonl(scb->rcv.nxt_seq);
+  if (TCP_FLG_ISSET(flg, TCP_FLG_ACK))
+    tcphdr->ack = htonl(scb->rcv.nxt_seq);
+  else
+    tcphdr->ack = 0;
   tcphdr->off = (sizeof(struct tcp) >> 2) << 4;
   tcphdr->flg = flg;
   printf("flg: %d\n", flg);
@@ -187,16 +160,13 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   if (scb == 0)
     goto fail;
 
-  acquire(&scb->lock);
-  if (scb == 0) {
-    goto fail;
-  }
-
   uint8 flg = tcphdr->flg;
   uint32 ack = ntohl(tcphdr->ack);
   uint32 seq = ntohl(tcphdr->seq);
+  uint32 sndwnd = ntohl(tcphdr->wnd);
+  uint32 datalen = len - (tcphdr->off >> 2);
 
-  // TODO check seq & ack
+  scb->snd.wnd = sndwnd;
 
   if (scb->state == SOCK_CB_CLOSED) {
     // TODO if a incoming packet does not contain a RST, send a RST packet.
@@ -219,7 +189,7 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
       scb->raddr = raddr;
 
       // TODO window
-      scb->rcv.wnd = 2048;
+      scb->rcv.wnd = SOCK_CB_DEFAULT_WND_SIZE;
       scb->rcv.init_seq = ntohl(tcphdr->seq);
       scb->rcv.nxt_seq = scb->rcv.init_seq + 1;
       scb->snd.init_seq = 0;
@@ -248,7 +218,7 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
     }
     // TODO check the security and precedence
 
-    if (TCP_FLG_ISSET(flg, TCP_FLG_SYN | TCP_FLG_ACK)) {
+    if (TCP_FLG_ISSET(flg, TCP_FLG_SYN) && TCP_FLG_ISSET(flg, TCP_FLG_ACK)) {
       scb->rcv.nxt_seq = seq + 1;
       scb->rcv.init_seq = seq;
       scb->snd.unack = ack;
@@ -263,34 +233,209 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
         net_tx_tcp(scb, m, TCP_FLG_SYN | TCP_FLG_ACK, 0);
       }
     } else {
-      // first check sequence number
-      
-      // second check the RST bit
-
-      // TODO third check security and precednece
-      
-      // fource, check the SYN bit
-
-      // fifth check the ACK field
-
-      // sixth, check the URG bit
-
-      // seventh, process the segment text
-
-      // eighth, check the FIN bit
-
+      goto fail;
     }
   } else {
+    // first check sequence number
+    if (scb->rcv.wnd == 0) {
+      if (datalen <= 0) {
+        if (seq == scb->rcv.nxt_seq) {
+          goto not_acceptable;
+        }
+      } else {
+        goto not_acceptable;
+      }
+    } else {
+      if (datalen <= 0) {
+        if (seq < scb->rcv.nxt_seq || scb->rcv.nxt_seq + scb->rcv.wnd <= seq) {
+          goto not_acceptable;
+        }
+      } else {
+        if (
+          (seq < scb->rcv.nxt_seq || scb->rcv.nxt_seq + scb->rcv.wnd <= seq) &&
+          (seq + datalen - 1 < scb->rcv.nxt_seq || scb->rcv.nxt_seq + scb->rcv.wnd <= seq + datalen - 1)
+        ) {
+          goto not_acceptable;
+        }
+      }
+    }
 
+    // second check the RST bit
+    if (TCP_FLG_ISSET(flg, TCP_FLG_RST)) {
+      if (scb->state == SOCK_CB_SYN_RCVD) {
+        scb->state = SOCK_CB_LISTEN;
+        goto fail;
+      } else if (scb->state == SOCK_CB_SYN_SENT) {
+        // TODO close scb
+        goto fail;
+      } else if (
+        scb->state == SOCK_CB_SYN_SENT ||
+        scb->state == SOCK_CB_FIN_WAIT_1 ||
+        scb->state == SOCK_CB_FIN_WAIT_2 ||
+        scb->state == SOCK_CB_CLOSE_WAIT
+      ) {
+        // TODO
+        // segment queues should be flushed
+        // close scb
+        goto fail;
+      } else if (
+        scb->state == SOCK_CB_CLOSING ||
+        scb->state == SOCK_CB_LAST_ACK ||
+        scb->state == SOCK_CB_TIME_WAIT
+      ) {
+        // TODO
+        // close scb
+      }
+    }
+    // TODO third check security and precednece
+    
+    // fource, check the SYN bit
+    if (
+      scb->state == SOCK_CB_SYN_RCVD ||
+      scb->state == SOCK_CB_ESTAB ||
+      scb->state == SOCK_CB_FIN_WAIT_1 ||
+      scb->state == SOCK_CB_FIN_WAIT_2 ||
+      scb->state == SOCK_CB_CLOSE_WAIT ||
+      scb->state == SOCK_CB_CLOSING ||
+      scb->state == SOCK_CB_LAST_ACK ||
+      scb->state == SOCK_CB_TIME_WAIT
+    ) {
+      // TODO
+      // If the SYN is in the window it is an error, send reset, close scb
+    }
+
+    // fifth check the ACK field
+    if (TCP_FLG_ISSET(flg, TCP_FLG_ACK)) {
+      if (scb->state == SOCK_CB_SYN_RCVD) {
+        if (scb->snd.unack <= ack && ack <= scb->snd.nxt_seq) {
+          scb->state = SOCK_CB_ESTAB;
+        } else {
+          struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+          net_tx_tcp(scb, m, TCP_FLG_RST, 0);
+          goto fail;
+        }
+      } else if (
+        scb->state == SOCK_CB_ESTAB ||
+        scb->state == SOCK_CB_FIN_WAIT_1 ||
+        scb->state == SOCK_CB_FIN_WAIT_2 ||
+        scb->state == SOCK_CB_CLOSE_WAIT ||
+        scb->state == SOCK_CB_CLOSING ||
+        scb->state == SOCK_CB_LAST_ACK
+      ) {
+        if (scb->snd.unack < ack && ack <= scb->snd.nxt_seq) {
+          scb->snd.unack = ack;
+          // TODO
+          // Any segments on the retransmission queue which are thereby entirely
+          // acknowledged are removed
+          if (scb->snd.wl1 < seq || (scb->snd.wl1 == seq && scb->snd.wl2 <= ack)) {
+            scb->snd.wnd = sndwnd;
+            scb->snd.wl1 = seq;
+            scb->snd.wl2 = ack;
+          }
+        } else if (ack < scb->snd.unack) {
+          goto fail;
+        } else if (scb->snd.nxt_seq < ack) {
+          // TODO
+          // If the ACK acks something not yet sent then send an ACK, drop the segment
+        }
+
+        if (scb->state == SOCK_CB_FIN_WAIT_1) {
+          scb->state = SOCK_CB_FIN_WAIT_2;
+        }
+        if (scb->state == SOCK_CB_FIN_WAIT_2) {
+          // TODO check whether retransmission queue is empty
+          // ??????????????????????
+          scb->state = SOCK_CB_TIME_WAIT;
+        }
+        if (scb->state == SOCK_CB_CLOSING) {
+          scb->state = SOCK_CB_TIME_WAIT;
+        }
+      } else if (scb->state == SOCK_CB_TIME_WAIT) {
+        // TODO
+        // The only thing that can arrive in this state is a 
+        // retransmission of the remote FIN. Acknowledge it, and restart
+        // the 2 MSL timeout
+      }
+    } else {
+      goto fail;
+    }
+
+    // TODO sixth, check the URG bit
+
+    // seventh, process the segment text
+    // deliver segment text to user RECEIVE buffers
+    if (
+      scb->state == SOCK_CB_ESTAB ||
+      scb->state == SOCK_CB_FIN_WAIT_1 ||
+      scb->state == SOCK_CB_FIN_WAIT_2
+    ) {
+      push_to_scb_rxq(scb, m);
+      struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+      net_tx_tcp(scb, m, TCP_FLG_ACK, 0);
+      return;
+    } else if (
+      scb->state == SOCK_CB_CLOSE_WAIT ||
+      scb->state == SOCK_CB_CLOSING ||
+      scb->state == SOCK_CB_LAST_ACK ||
+      scb->state == SOCK_CB_TIME_WAIT
+    ) {
+      // This should not occur, since a FIN has been received from the
+      // remote side. Ignore the segment text.
+      goto fail;
+    }
+
+    // eighth, check the FIN bit
+    if (TCP_FLG_ISSET(flg, TCP_FLG_FIN)) {
+      if (
+        scb->state == SOCK_CB_CLOSED ||
+        scb->state == SOCK_CB_LISTEN ||
+        scb->state == SOCK_CB_SYN_SENT
+      ) {
+        goto fail;
+      }
+
+      // signal the user "connection closing"
+      // return any pending RECEIVEs with above message
+      // advance RCV.NXT over the FIN
+      // send ack for the FIN
+      // Note that FIN implies PUSH for any segment text not yet delivered to the user.
+      if (
+        scb->state == SOCK_CB_SYN_RCVD ||
+        scb->state == SOCK_CB_ESTAB
+      ) {
+        scb->state = SOCK_CB_CLOSE_WAIT;
+      } else if (scb->state == SOCK_CB_FIN_WAIT_1) {
+        // TODO
+        // If our FIN has been ACKed, then enter TIME_WAIT, start the time-wait timer
+        // otherwise enter the CLOSING state;
+        scb->state = SOCK_CB_TIME_WAIT;
+      } else if (scb->state == SOCK_CB_FIN_WAIT_2) {
+        scb->state = SOCK_CB_TIME_WAIT;
+      } else if (
+        scb->state == SOCK_CB_CLOSE_WAIT ||
+        scb->state == SOCK_CB_CLOSING ||
+        scb->state == SOCK_CB_LAST_ACK ||
+        scb->state == SOCK_CB_TIME_WAIT
+       ) {
+        // remain in the CLOSE_WAIT
+        // If state is TIME_WAIT, restart the 2 MSL time_wait timeout.
+       }
+    }
   }
 
   // TODO URG process
 
-  release(&scb->lock);
+  mbuffree(m);
   return;
 
 fail:
-  if(scb != 0)
-    release(&scb->lock);
   mbuffree(m);
+  return;
+not_acceptable:
+  if (!TCP_FLG_ISSET(flg, TCP_FLG_RST)) {
+    struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+    net_tx_tcp(scb, m, TCP_FLG_ACK, 0);
+  }
+  mbuffree(m);
+  return;
 }
