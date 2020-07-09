@@ -128,6 +128,25 @@ sys_socket(void)
   return fd;
 }
 
+uint64 sys_socklisten_core(struct sock_cb *scb, uint16 sport) {
+  // port already used
+  if (get_specified_sport(sport) < 0) {
+    return -1;
+  }
+  scb->sport = sport;
+
+  if (scb->socktype == SOCK_TCP) {
+    add_sock_cb(scb);
+    if (tcp_listen(scb) < 0) {
+      return -1;
+    }
+  } else {
+    add_sock_cb(scb);
+  }
+
+  return 0;
+}
+
 uint64 sys_socklisten() {
   int fd;
   struct file *f;
@@ -143,15 +162,22 @@ uint64 sys_socklisten() {
   if (f->type !=  FD_SOCK || scb == 0) {
     return -1;
   }
-  // port already used
-  if (get_specified_sport(sport) < 0) {
-    return -1;
-  }
-  scb->sport = sport;
+  
+  return sys_socklisten_core(scb, sport);
+}
+
+uint64 sys_sockconnect_core(struct sock_cb *scb, uint32 raddr, uint16 dport) {
+  scb->raddr = raddr;
+  scb->sport = get_new_sport();
+  scb->dport = dport;
+
+  // arp resolve
+  uint8 broadcast_mac[ETHADDR_LEN] = { 0xFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF };
+  net_tx_arp(ARP_OP_REQUEST, broadcast_mac, raddr);
 
   if (scb->socktype == SOCK_TCP) {
     add_sock_cb(scb);
-    if (tcp_listen(scb) < 0) {
+    if (tcp_connect(scb) < 0) {
       return -1;
     }
   } else {
@@ -175,25 +201,9 @@ uint64 sys_sockconnect() {
   // file doesn*t equal socket or socket close
   if (f->type !=  FD_SOCK || scb == 0) {
     return -1;
-  } 
-  scb->raddr = raddr;
-  scb->sport = get_new_sport();
-  scb->dport = dport;
-
-  // arp resolve
-  uint8 broadcast_mac[ETHADDR_LEN] = { 0xFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF };
-  net_tx_arp(ARP_OP_REQUEST, broadcast_mac, raddr);
-
-  if (scb->socktype == SOCK_TCP) {
-    add_sock_cb(scb);
-    if (tcp_connect(scb) < 0) {
-      return -1;
-    }
-  } else {
-    add_sock_cb(scb);
   }
 
-  return 0;
+  return sys_sockconnect_core(scb, raddr, dport); 
 }
 
 // UDP only now

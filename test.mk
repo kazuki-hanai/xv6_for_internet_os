@@ -1,7 +1,8 @@
 TEST_KERNEL = $(BUILD_DIR)/testkernel
-TEST_KSRCS = $(filter-out $K/start.c,$(KSRCS))
+TEST_KSRCS = $(filter-out $K/net/dev/e1000.c $K/start.c,$(KSRCS))
 
 TEST_KSRCS += $K/testinit.c
+TEST_KSRCS += $K/net/dev/nic_mock.c
 TEST_KSRCS += $K/test/test_start.c
 TEST_KSRCS += $K/test/lib/test_buddy.c
 TEST_KSRCS += $K/test/net/test_arp.c
