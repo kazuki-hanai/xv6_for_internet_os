@@ -49,7 +49,7 @@ int tcp_connect(struct sock_cb *scb) {
     return -1;
   }
   struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
-  scb->rcv.wnd = 2048;
+  scb->rcv.wnd = SOCK_CB_DEFAULT_WND_SIZE;
   net_tx_tcp(scb, m, TCP_FLG_SYN, 0);
   scb->state = SOCK_CB_SYN_SENT;
   scb->snd.nxt_seq = scb->snd.init_seq + 1;
@@ -263,7 +263,22 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
         net_tx_tcp(scb, m, TCP_FLG_SYN | TCP_FLG_ACK, 0);
       }
     } else {
-      goto fail;
+      // first check sequence number
+      
+      // second check the RST bit
+
+      // TODO third check security and precednece
+      
+      // fource, check the SYN bit
+
+      // fifth check the ACK field
+
+      // sixth, check the URG bit
+
+      // seventh, process the segment text
+
+      // eighth, check the FIN bit
+
     }
   } else {
 

@@ -21,6 +21,8 @@ struct sock_cb* init_sock_cb(uint32 raddr, uint16 sport, uint16 dport, int sockt
   scb->dport = dport;
   scb->prev = 0;
   scb->next = 0;
+  scb->wnd = kalloc();
+  scb->wnd_idx = 0;
   mbufq_init(&scb->txq);
   mbufq_init(&scb->rxq);
   return scb;
@@ -35,6 +37,8 @@ void free_sock_cb(struct sock_cb *scb) {
     } else {
       entry = &udp_scb_table[scb->sport % SOCK_CB_LEN];
     }
+
+    kfree(scb->wnd);
 
     release_sport(scb->sport);
     acquire(&entry->lock);
