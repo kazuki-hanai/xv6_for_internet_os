@@ -17,7 +17,7 @@
 
 #define TCP_HDR_LEN(hdr) (((hdr)->offset >> 4) << 2)
 #define TCP_DATA_LEN(hdr, len) ((len)-TCP_HDR_LEN(hdr))
-#define TCP_FLG_ISSET(x, y) (((x)&0x3f) == (y))
+#define TCP_FLG_ISSET(x, y) (((x)&0x3f) & (y))
 
 struct tcp {
   uint16 sport;
