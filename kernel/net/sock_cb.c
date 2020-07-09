@@ -13,7 +13,7 @@ struct sock_cb* init_sock_cb(uint32 raddr, uint16 sport, uint16 dport, int sockt
   if (scb == 0)
     panic("[init_sock_cb] could not allocate\n");
   memset(scb, 0, sizeof(*scb));
-  scb->state = CLOSED;
+  scb->state = SOCK_CB_CLOSED;
   initlock(&scb->lock, "scb lock");
   scb->socktype = socktype;
   scb->raddr = raddr;
@@ -23,6 +23,19 @@ struct sock_cb* init_sock_cb(uint32 raddr, uint16 sport, uint16 dport, int sockt
   scb->next = 0;
   scb->wnd = kalloc();
   scb->wnd_idx = 0;
+  
+  scb->snd.init_seq = 0;
+  scb->snd.nxt_seq = 0;
+  scb->snd.unack = 0;
+  scb->snd.wl1 = 0;
+  scb->snd.wl2 = 0;
+  scb->snd.wnd = 0;
+
+  scb->rcv.init_seq = 0;
+  scb->rcv.nxt_seq = 0;
+  scb->rcv.unack = 0;
+  scb->rcv.wnd = PGSIZE;
+
   mbufq_init(&scb->txq);
   mbufq_init(&scb->rxq);
   return scb;
@@ -95,9 +108,8 @@ struct sock_cb* get_sock_cb(struct sock_cb_entry table[], uint16 sport) {
 }
 
 int
-push_to_scb_rxq(struct sock_cb_entry table[], struct mbuf *m, uint32 raddr, uint16 sport, uint16 dport)
+push_to_scb_rxq(struct sock_cb *scb, struct mbuf *m)
 {
-  struct sock_cb *scb = get_sock_cb(table, sport);
   if (scb == 0) {
     printf("scb: %d\n", scb);
     return -1;
@@ -109,9 +121,8 @@ push_to_scb_rxq(struct sock_cb_entry table[], struct mbuf *m, uint32 raddr, uint
 }
 
 int
-push_to_scb_txq(struct sock_cb_entry table[], struct mbuf *m, uint32 raddr, uint16 sport, uint16 dport)
+push_to_scb_txq(struct sock_cb *scb, struct mbuf *m)
 {
-  struct sock_cb *scb = get_sock_cb(table, sport);
   if (scb == 0) {
     return -1;
   }
