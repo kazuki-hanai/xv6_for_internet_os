@@ -35,8 +35,8 @@ int tcp_listen(struct sock_cb *scb) {
     printf("not tcp socket!\n");
     return -1;
   }
-  scb->state = LISTEN;
-  // TODO LISTEN STATE
+  scb->state = SOCK_CB_LISTEN;
+  // TODO SOCK_CB_LISTEN STATE
   // -> chenge the connection from passive to active
   // "error: connection already exists"
 
@@ -51,10 +51,10 @@ int tcp_connect(struct sock_cb *scb) {
   struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
   scb->rcv.wnd = 2048;
   net_tx_tcp(scb, m, TCP_FLG_SYN, 0);
-  scb->state = SYN_SENT;
+  scb->state = SOCK_CB_SYN_SENT;
   scb->snd.nxt_seq = scb->snd.init_seq + 1;
 
-  // TODO LISTEN STATE
+  // TODO SOCK_CB_LISTEN STATE
   // -> chenge the connection from passive to active
   // "error: connection already exists"
 
@@ -65,12 +65,12 @@ int tcp_connect(struct sock_cb *scb) {
 int tcp_send(struct sock_cb *scb) {
   enum sock_cb_state state = scb->state;
 
-  if (TCP_FLG_ISSET(state, CLOSED)) {
+  if (TCP_FLG_ISSET(state, SOCK_CB_CLOSED)) {
     // "error: connection illegal for this process"
     return -1;
   }
 
-  if (TCP_FLG_ISSET(state, LISTEN)) {
+  if (TCP_FLG_ISSET(state, SOCK_CB_LISTEN)) {
     if (scb->raddr) {
       uint32 seq = 0; // initial send sequence number;
       // uint8 flag = TCP_FLG_SYN;
@@ -78,7 +78,7 @@ int tcp_send(struct sock_cb *scb) {
       acquire(&scb->lock);
       scb->snd.unack = seq;
       scb->snd.nxt_seq = seq+1;
-      scb->state = SYN_SENT;
+      scb->state = SOCK_CB_SYN_SENT;
       // TODO The urgent bit if requested in the command must be sent with the data segments sent
       // as a result of this command.
 
@@ -92,45 +92,45 @@ int tcp_send(struct sock_cb *scb) {
   }
 
   // TODO
-  // SYN_SENT
-  // SYN_RCVD
-  // ESTAB
-  // CLOSE_WAIT
-  // FIN_WAIT_1
-  // FIN_WAIT_2
-  // CLOSING
-  // LAST_ACK
-  // TIME_WAIT
+  // SOCK_CB_SYN_SENT
+  // SOCK_CB_SYN_RCVD
+  // SOCK_CB_ESTAB
+  // SOCK_CB_CLOSE_WAIT
+  // SOCK_CB_FIN_WAIT_1
+  // SOCK_CB_FIN_WAIT_2
+  // SOCK_CB_CLOSING
+  // SOCK_CB_LAST_ACK
+  // SOCK_CB_TIME_WAIT
   return -1;
 }
 
 int tcp_recv(struct sock_cb *scb, struct mbuf *m, struct tcp *tcphdr) {
   enum sock_cb_state state = scb->state;
-  if (TCP_FLG_ISSET(state, CLOSED)) {
+  if (TCP_FLG_ISSET(state, SOCK_CB_CLOSED)) {
     // "error: connection illegal for this process"
     return -1;
   }
 
-  // LISTEN
-  // SYN_SENT
-  // SYN_RCVD
+  // SOCK_CB_LISTEN
+  // SOCK_CB_SYN_SENT
+  // SOCK_CB_SYN_RCVD
   if (
-    TCP_FLG_ISSET(state, LISTEN) ||
-    TCP_FLG_ISSET(state, SYN_SENT) ||
-    TCP_FLG_ISSET(state, SYN_RCVD)
+    TCP_FLG_ISSET(state, SOCK_CB_LISTEN) ||
+    TCP_FLG_ISSET(state, SOCK_CB_SYN_SENT) ||
+    TCP_FLG_ISSET(state, SOCK_CB_SYN_RCVD)
   ) {
     // queue mbuf
   }
   
-  // ESTAB
-  // FIN_WAIT_1
-  // FIN_WAIT_2
+  // SOCK_CB_ESTAB
+  // SOCK_CB_FIN_WAIT_1
+  // SOCK_CB_FIN_WAIT_2
   //
-  // CLOSE_WAIT
+  // SOCK_CB_CLOSE_WAIT
   //
-  // CLOSING
-  // LAST_ACK
-  // TIME_WAIT
+  // SOCK_CB_CLOSING
+  // SOCK_CB_LAST_ACK
+  // SOCK_CB_TIME_WAIT
   return -1;
 }
 
@@ -198,10 +198,10 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
 
   // TODO check seq & ack
 
-  if (scb->state == CLOSED) {
+  if (scb->state == SOCK_CB_CLOSED) {
     // TODO if a incoming packet does not contain a RST, send a RST packet.
     goto fail;
-  } else if (scb->state == LISTEN) {
+  } else if (scb->state == SOCK_CB_LISTEN) {
     // if received SYN, send SYN,ACK
     if (TCP_FLG_ISSET(flg, TCP_FLG_RST)) {
       goto fail;
@@ -229,12 +229,12 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
       scb->snd.nxt_seq = scb->rcv.init_seq + 1;
       scb->snd.unack = scb->rcv.init_seq;
       // TODO timeout
-      scb->state = SYN_RCVD;
+      scb->state = SOCK_CB_SYN_RCVD;
     } else {
       goto fail;
     }
   // SYN/ACK received
-  } else if (scb->state == SYN_SENT) {
+  } else if (scb->state == SOCK_CB_SYN_SENT) {
     if (TCP_FLG_ISSET(flg, TCP_FLG_ACK)) {
       if (ack <= scb->snd.init_seq || ack > scb->snd.nxt_seq) {
         struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
@@ -254,11 +254,11 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
       scb->snd.unack = ack;
 
       if (scb->snd.unack > scb->snd.init_seq) {
-        scb->state = ESTAB;
+        scb->state = SOCK_CB_ESTAB;
         struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
         net_tx_tcp(scb, m, TCP_FLG_ACK, 0);
       } else {
-        scb->state = SYN_RCVD;
+        scb->state = SOCK_CB_SYN_RCVD;
         struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
         net_tx_tcp(scb, m, TCP_FLG_SYN | TCP_FLG_ACK, 0);
       }
