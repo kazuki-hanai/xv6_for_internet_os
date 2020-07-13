@@ -201,6 +201,10 @@ void
 lst_remove(struct bd_list *e) {
   if (e == 0) {
     panic("a list has no member");
+  } else if (e->prev == 0) {
+    panic("a list prev has no member");
+  } else if (e->next == 0) {
+    panic("a list next has no member");
   }
   e->prev->next = e->next;
   e->next->prev = e->prev;
