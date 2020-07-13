@@ -7,14 +7,14 @@
 #include "defs.h"
 #include "net/mbuf.h"
 
-struct mbufq tx_buf;
+struct mbufq tx_queue;
 struct spinlock tx_lock;
 
 void
 e1000_init(uint32 *xregs)
 {
   initlock(&tx_lock, "tx lock");
-  mbufq_init(&tx_buf);
+  mbufq_init(&tx_queue);
 }
 
 int
@@ -22,7 +22,7 @@ e1000_transmit(struct mbuf *m)
 {
   // push mbuf to queue
   acquire(&tx_lock);
-  mbufq_pushtail(&tx_buf, m);
+  mbufq_pushtail(&tx_queue, m);
   release(&tx_lock);
   
   printf("transmit!\n");

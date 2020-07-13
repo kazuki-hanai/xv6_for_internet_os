@@ -58,7 +58,7 @@ mbufalloc(unsigned int headroom)
  
   if (headroom > MBUF_SIZE)
     return 0;
-  m = kalloc();
+  m = bd_alloc(sizeof(struct mbuf));
   if (m == 0)
     return 0;
   m->next = 0;
@@ -72,7 +72,7 @@ mbufalloc(unsigned int headroom)
 void
 mbuffree(struct mbuf *m)
 {
-  kfree(m);
+  bd_free(m);
 }
 
 // Pushes an mbuf to the end of the queue.

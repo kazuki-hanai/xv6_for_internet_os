@@ -36,9 +36,7 @@ net_tx_eth(struct mbuf *m, uint16 ethtype, uint32 dip)
     return;
   }
 
-  if (e1000_transmit(m)) {
-    mbuffree(m);
-  }
+  e1000_transmit(m);
 }
 
 // called by e1000 driver's interrupt handler to deliver a packet to the
