@@ -14,3 +14,4 @@ sudo ip tuntap add $1 mode tap
 sudo ip link set address $MAC dev $1
 sudo ip link set $1 up promisc on
 sudo ip route add 192.168.22.0/24 dev $1
+sudo ip addr add $TAPIP dev $1
