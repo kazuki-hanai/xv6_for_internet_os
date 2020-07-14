@@ -37,7 +37,7 @@ net_tx_eth(struct mbuf *m, uint16 ethtype, uint32 dip)
   memmove(ethhdr->shost, local_mac, ETHADDR_LEN);
   memmove(ethhdr->dhost, dhost, ETHADDR_LEN);
 
-  if (e1000_transmit(m) == 0) {
+  if (e1000_transmit(m)) {
     mbuffree(m);
   };
 }
