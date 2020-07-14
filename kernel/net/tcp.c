@@ -369,7 +369,7 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
       scb->state == SOCK_CB_FIN_WAIT_1 ||
       scb->state == SOCK_CB_FIN_WAIT_2
     ) {
-      if (len - sizeof(struct tcp) > 0 && scb->rcv.nxt_seq == seq) {
+      if (TCP_DATA_LEN(tcphdr, len) > 0 && scb->rcv.nxt_seq == seq) {
         push_to_scb_rxq(scb, m);
         struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
         net_tx_tcp(scb, m, TCP_FLG_ACK, 0);
