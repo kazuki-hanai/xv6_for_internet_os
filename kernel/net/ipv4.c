@@ -20,6 +20,7 @@ net_tx_ip(struct mbuf *m, uint8 proto, uint32 dip)
   struct ipv4 *iphdr;
 
   // push the IP header
+  m->raddr = dip;
   iphdr = mbufpushhdr(m, *iphdr);
   memset(iphdr, 0, sizeof(*iphdr));
   iphdr->ip_vhl = (4 << 4) | (20 >> 2);

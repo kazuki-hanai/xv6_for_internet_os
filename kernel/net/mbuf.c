@@ -61,6 +61,7 @@ mbufalloc(unsigned int headroom)
   m = bd_alloc(sizeof(struct mbuf));
   if (m == 0)
     return 0;
+  m->raddr = 0;
   m->next = 0;
   m->head = (char *)m->buf + headroom;
   m->len = 0;

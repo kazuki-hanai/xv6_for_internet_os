@@ -3,10 +3,11 @@
 #define MBUF_DEFAULT_HEADROOM   128
 
 struct mbuf {
-    struct mbuf *next;
-    char *head;
-    unsigned int len;
-    char buf[MBUF_SIZE];
+  uint32 raddr;
+  struct mbuf *next;
+  char *head;
+  unsigned int len;
+  char buf[MBUF_SIZE];
 };
 
 char *mbufpull(struct mbuf *m, unsigned int len);
