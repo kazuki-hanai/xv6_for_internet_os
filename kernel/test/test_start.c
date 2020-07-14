@@ -17,7 +17,8 @@ void test_start() {
     // buddy_test();
     arp_test();
     sock_cb_test();
-    tcp_test();
     sysnet_test();
+    tcp_test();
   }
+  printf("test done!!!\n\n");
 }
