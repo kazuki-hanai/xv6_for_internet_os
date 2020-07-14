@@ -17,5 +17,5 @@ struct arp_cache_entry {
 
 void arptable_init();
 void arptable_add(uint32, uint8*);
-void arptable_get_mac(uint32, uint8*);
+int arptable_get_mac(uint32, uint8*);
 void arptable_del(uint32);

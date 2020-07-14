@@ -22,19 +22,20 @@ net_tx_eth(struct mbuf *m, uint16 ethtype, uint32 dip)
 {
   struct eth *ethhdr;
 
+  uint8 dhost[ETHADDR_LEN] = {0, 0, 0, 0, 0, 0};
+  if (arptable_get_mac(dip, (uint8 *)dhost) == -1) {
+    if (ethtype != ETHTYPE_ARP) {
+      net_tx_arp(ARP_OP_REQUEST, broadcast_mac, dip);
+      mbufq_pushtail(&arp_q, m);
+      return;
+    } else {
+      memmove(dhost, broadcast_mac, ETHADDR_LEN);
+    }
+  }
   ethhdr = mbufpushhdr(m, *ethhdr);
   ethhdr->type = htons(ethtype);
   memmove(ethhdr->shost, local_mac, ETHADDR_LEN);
-
-  arptable_get_mac(dip, (uint8 *)&ethhdr->dhost);
-  if (
-    ethtype != ETHTYPE_ARP &&
-    memcmp(ethhdr->dhost, broadcast_mac, ETHADDR_LEN) == 0
-  ) {
-    net_tx_arp(ARP_OP_REQUEST, broadcast_mac, dip);
-    mbufq_pushtail(&arp_q, m);
-    return;
-  }
+  memmove(ethhdr->dhost, dhost, ETHADDR_LEN);
 
   e1000_transmit(m);
 }

@@ -78,17 +78,29 @@ net_rx_arp(struct mbuf *m)
   sip = ntohl(arphdr->sip); // sender's IP address (qemu's slirp)
   arptable_add(sip, smac);
 
+  // check queue
+  struct mbuf *prev = 0;
+  struct mbuf *now = arp_q.head;
+  while(now != 0) {
+    if (now->raddr == sip) {
+      net_tx_eth(now, ETHTYPE_IP, now->raddr);
+      if (prev != 0) {
+        prev->next = now->next;
+        now = now->next;
+      } else {
+        arp_q.head = now->next;
+        now = now->next;
+      }
+      continue;
+    }
+    prev = now;
+    now = now->next;
+  }
+
   // only requests are supported so far
   // check if our IP was solicited
   if (ntohs(arphdr->op) != ARP_OP_REQUEST || tip != local_ip)
     goto done;
-
-  // check queue
-  while(!mbufq_empty(&arp_q)) {
-    // struct mbuf *wait_m;
-    // mbufq_pophead()
-    break;
-  }
 
   // handle the ARP request
   net_tx_arp(ARP_OP_REPLY, smac, sip);
