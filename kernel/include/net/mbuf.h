@@ -31,6 +31,7 @@ char *mbuftrim(struct mbuf *m, unsigned int len);
 
 struct mbuf *mbufalloc(unsigned int headroom);
 void mbuffree(struct mbuf *m);
+struct mbuf *mbuf_copy(struct mbuf *m);
 
 struct mbufq {
   struct mbuf *head;  // the first element in the queue

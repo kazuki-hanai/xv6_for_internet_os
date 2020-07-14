@@ -99,7 +99,6 @@ e1000_transmit(struct mbuf *m)
 
   regs[E1000_TDT] = (index + 1) % TX_RING_SIZE;
 
-  mbuffree(m);
   return 0;
 }
 

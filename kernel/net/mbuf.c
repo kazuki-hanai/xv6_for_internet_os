@@ -76,6 +76,15 @@ mbuffree(struct mbuf *m)
   bd_free(m);
 }
 
+struct mbuf *
+mbuf_copy(struct mbuf *m) {
+  struct mbuf *dst = mbufalloc(0);
+  memmove((void *)dst, (void *)m, sizeof(struct mbuf));
+  dst->next = 0;
+  dst->head = (dst->buf) + (m->head - m->buf);
+  return dst;
+}
+
 // Pushes an mbuf to the end of the queue.
 void
 mbufq_pushtail(struct mbufq *q, struct mbuf *m)

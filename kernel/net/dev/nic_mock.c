@@ -22,7 +22,7 @@ e1000_transmit(struct mbuf *m)
 {
   // push mbuf to queue
   acquire(&tx_lock);
-  mbufq_pushtail(&tx_queue, m);
+  mbufq_pushtail(&tx_queue, mbuf_copy(m));
   release(&tx_lock);
   
   printf("transmit!\n");

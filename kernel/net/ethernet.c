@@ -37,7 +37,9 @@ net_tx_eth(struct mbuf *m, uint16 ethtype, uint32 dip)
   memmove(ethhdr->shost, local_mac, ETHADDR_LEN);
   memmove(ethhdr->dhost, dhost, ETHADDR_LEN);
 
-  e1000_transmit(m);
+  if (e1000_transmit(m) == 0) {
+    mbuffree(m);
+  };
 }
 
 // called by e1000 driver's interrupt handler to deliver a packet to the
