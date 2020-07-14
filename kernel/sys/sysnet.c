@@ -31,10 +31,10 @@ uint16 get_new_sport() {
   int islooped = 0;
   acquire(&sport_lock);
   while (islooped < 2) {
-    if ((sport_table[current_sport/8] & 0xff) < 0xff) {
+    if ((sport_table[(current_sport - START_OF_SPORT)/8] & 0xff) < 0xff) {
       for (int i = 0; i < 8; i++) {
-        if ((sport_table[current_sport/8] & (1 << i)) == 0) {
-          sport_table[current_sport/8] |= (1 << i);
+        if ((sport_table[(current_sport - START_OF_SPORT)/8] & (1 << i)) == 0) {
+          sport_table[(current_sport - START_OF_SPORT)/8] |= (1 << i);
           release(&sport_lock);
           return current_sport + i;
         }
@@ -55,8 +55,8 @@ uint16 get_new_sport() {
 uint16 get_specified_sport(uint16 sport) {
   uint16 res = -1;
   acquire(&sport_lock);
-  if ((sport_table[sport/8] & (1 << (sport % 8))) == 0) {
-    sport_table[sport/8] |= (1 << (sport % 8));
+  if ((sport_table[(sport - START_OF_SPORT)/8] & (1 << ((sport - START_OF_SPORT) % 8))) == 0) {
+    sport_table[(sport - START_OF_SPORT)/8] |= (1 << ((sport - START_OF_SPORT) % 8));
     res = sport;
   }
   release(&sport_lock);
@@ -65,8 +65,8 @@ uint16 get_specified_sport(uint16 sport) {
 
 void release_sport(uint16 sport) {
   acquire(&sport_lock);
-  if (((sport_table[sport/8]) & (1 << (sport % 8))) >= 1)
-    sport_table[sport/8] ^= 1 << (sport % 8);
+  if (((sport_table[(sport - START_OF_SPORT)/8]) & (1 << ((sport - START_OF_SPORT) % 8))) >= 1)
+    sport_table[(sport - START_OF_SPORT)/8] ^= 1 << ((sport - START_OF_SPORT) % 8);
   release(&sport_lock);
 }
 
@@ -74,6 +74,8 @@ void
 sysnet_init(void)
 {
   initlock(&sport_lock, "sportlock");
+  printf("sport: %d\n", sport_table[(current_sport - START_OF_SPORT)/8]);
+  memset(sport_table, 0, sizeof(sport_table));
   memset(tcp_scb_table, 0, sizeof(tcp_scb_table));
   memset(udp_scb_table, 0, sizeof(udp_scb_table));
   for (int i = 0; i < SOCK_CB_LEN; i++) {
@@ -170,10 +172,6 @@ uint64 sys_sockconnect_core(struct sock_cb *scb, uint32 raddr, uint16 dport) {
   scb->raddr = raddr;
   scb->sport = get_new_sport();
   scb->dport = dport;
-
-  // arp resolve
-  uint8 broadcast_mac[ETHADDR_LEN] = { 0xFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF };
-  net_tx_arp(ARP_OP_REQUEST, broadcast_mac, raddr);
 
   if (scb->socktype == SOCK_TCP) {
     add_sock_cb(scb);
