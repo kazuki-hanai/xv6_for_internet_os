@@ -95,6 +95,7 @@ printf(char *fmt, ...)
       break;
     case 'u':
       printint(va_arg(ap, uint), 10, 0);
+      break;
     case 's':
       if((s = va_arg(ap, char*)) == 0)
         s = "(null)";
