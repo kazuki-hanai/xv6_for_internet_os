@@ -196,8 +196,8 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
       scb->snd.nxt_seq = 0;
       struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
       net_tx_tcp(scb, m, TCP_FLG_SYN | TCP_FLG_ACK, 0);
-      scb->snd.nxt_seq = scb->rcv.init_seq + 1;
-      scb->snd.unack = scb->rcv.init_seq;
+      scb->snd.nxt_seq = scb->snd.init_seq + 1;
+      scb->snd.unack = scb->snd.init_seq;
       // TODO timeout
       scb->state = SOCK_CB_SYN_RCVD;
     } else {
@@ -369,10 +369,11 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
       scb->state == SOCK_CB_FIN_WAIT_1 ||
       scb->state == SOCK_CB_FIN_WAIT_2
     ) {
-      push_to_scb_rxq(scb, m);
-      struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
-      net_tx_tcp(scb, m, TCP_FLG_ACK, 0);
-      return;
+      if (len - sizeof(struct tcp) > 0 && scb->rcv.nxt_seq == seq) {
+        push_to_scb_rxq(scb, m);
+        struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+        net_tx_tcp(scb, m, TCP_FLG_ACK, 0);
+      }
     } else if (
       scb->state == SOCK_CB_CLOSE_WAIT ||
       scb->state == SOCK_CB_CLOSING ||
