@@ -69,17 +69,17 @@ void arp_table_test() {
   uint32 ip2 = 0x00000002;
   uint32 ip3 = ip1 + ARP_DEFUALT_ENTRY_NUM;
 
-  uint8 mac1[ETHADDR_LEN];
-  memset(mac1, 0, ETHADDR_LEN);
-  mac1[ETHADDR_LEN-1] = 0x1;
+  uint8 mac1[ETH_ADDR_LEN];
+  memset(mac1, 0, ETH_ADDR_LEN);
+  mac1[ETH_ADDR_LEN-1] = 0x1;
 
-  uint8 mac2[ETHADDR_LEN];
-  memset(mac2, 0, ETHADDR_LEN);
-  mac2[ETHADDR_LEN-1] = 0x2;
+  uint8 mac2[ETH_ADDR_LEN];
+  memset(mac2, 0, ETH_ADDR_LEN);
+  mac2[ETH_ADDR_LEN-1] = 0x2;
 
-  uint8 mac3[ETHADDR_LEN];
-  memset(mac3, 0, ETHADDR_LEN);
-  mac3[ETHADDR_LEN-1] = 0x3;
+  uint8 mac3[ETH_ADDR_LEN];
+  memset(mac3, 0, ETH_ADDR_LEN);
+  mac3[ETH_ADDR_LEN-1] = 0x3;
 
   arptable_add(ip1, mac1);
   arptable_add(ip2, mac2);
@@ -91,7 +91,7 @@ void arp_table_test() {
   if (arpcache->ip != ip1) {
     panic("ip1 does not exist\n");
   }
-  if (memcmp(mac1, arpcache->mac, ETHADDR_LEN) != 0) {
+  if (memcmp(mac1, arpcache->mac, ETH_ADDR_LEN) != 0) {
     panic("mac1 does not exist\n");
   }
   if (arpcache->prev != 0) {
@@ -105,7 +105,7 @@ void arp_table_test() {
   if (arpcache->ip != ip2) {
     panic("ip2 does not exist\n");
   }
-  if (memcmp(mac2, arpcache->mac, ETHADDR_LEN) != 0) {
+  if (memcmp(mac2, arpcache->mac, ETH_ADDR_LEN) != 0) {
     panic("mac2 does not exist\n");
   }
   
@@ -113,7 +113,7 @@ void arp_table_test() {
   if (arpcache->ip != ip3) {
     panic("ip3 does not exist\n");
   }
-  if (memcmp(mac3, arpcache->mac, ETHADDR_LEN) != 0) {
+  if (memcmp(mac3, arpcache->mac, ETH_ADDR_LEN) != 0) {
     panic("mac3 does not exist\n");
   }
   if (arpcache->prev->ip != ip1) {

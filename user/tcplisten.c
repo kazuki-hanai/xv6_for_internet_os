@@ -39,13 +39,13 @@ main(int argc, char **argv)
 
   while(1) {
     char rbuf[256];
-    char wbuf[256];
-
-    int wsize = read(1, wbuf, 256);
-    write(sock, wbuf, wsize);
+    // char wbuf[256];
 
     read(sock, rbuf, 256);
     printf("%s", rbuf);
+    // int wsize = read(1, wbuf, 256);
+    // write(sock, wbuf, wsize);
+
   }
 
   close(sock);
