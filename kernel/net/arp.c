@@ -24,7 +24,7 @@ void arpinit() {
 
 // sends an ARP packet
 int
-net_tx_arp(uint16 op, uint8 dmac[ETHADDR_LEN], uint32 dip)
+net_tx_arp(uint16 op, uint8 dmac[ETH_ADDR_LEN], uint32 dip)
 {
   struct mbuf *m;
   struct arp *arphdr;
@@ -36,19 +36,19 @@ net_tx_arp(uint16 op, uint8 dmac[ETHADDR_LEN], uint32 dip)
   // generic part of ARP header
   arphdr = mbufputhdr(m, *arphdr);
   arphdr->hrd = htons(ARP_HRD_ETHER);
-  arphdr->pro = htons(ETHTYPE_IP);
-  arphdr->hln = ETHADDR_LEN;
+  arphdr->pro = htons(ETH_TYPE_IP);
+  arphdr->hln = ETH_ADDR_LEN;
   arphdr->pln = sizeof(uint32);
   arphdr->op = htons(op);
 
   // ethernet + IP part of ARP header
-  memmove(arphdr->sha, local_mac, ETHADDR_LEN);
+  memmove(arphdr->sha, local_mac, ETH_ADDR_LEN);
   arphdr->sip = htonl(local_ip);
-  memmove(arphdr->tha, dmac, ETHADDR_LEN);
+  memmove(arphdr->tha, dmac, ETH_ADDR_LEN);
   arphdr->tip = htonl(dip);
 
   // header is ready, send the packet
-  net_tx_eth(m, ETHTYPE_ARP, dip);
+  net_tx_eth(m, ETH_TYPE_ARP, dip);
   return 0;
 }
 
@@ -57,7 +57,7 @@ void
 net_rx_arp(struct mbuf *m)
 {
   struct arp *arphdr;
-  uint8 smac[ETHADDR_LEN];
+  uint8 smac[ETH_ADDR_LEN];
   uint32 sip, tip;
 
   arphdr = mbufpullhdr(m, *arphdr);
@@ -66,14 +66,14 @@ net_rx_arp(struct mbuf *m)
 
   // validate the ARP header
   if (ntohs(arphdr->hrd) != ARP_HRD_ETHER ||
-      ntohs(arphdr->pro) != ETHTYPE_IP ||
-      arphdr->hln != ETHADDR_LEN ||
+      ntohs(arphdr->pro) != ETH_TYPE_IP ||
+      arphdr->hln != ETH_ADDR_LEN ||
       arphdr->pln != sizeof(uint32)) {
     goto done;
   }
 
   
-  memmove(smac, arphdr->sha, ETHADDR_LEN); // sender's ethernet address
+  memmove(smac, arphdr->sha, ETH_ADDR_LEN); // sender's ethernet address
   tip = ntohl(arphdr->tip); // target IP address
   sip = ntohl(arphdr->sip); // sender's IP address (qemu's slirp)
   arptable_add(sip, smac);
@@ -83,7 +83,7 @@ net_rx_arp(struct mbuf *m)
   struct mbuf *now = arp_q.head;
   while(now != 0) {
     if (now->raddr == sip) {
-      net_tx_eth(now, ETHTYPE_IP, now->raddr);
+      net_tx_eth(now, ETH_TYPE_IP, now->raddr);
       if (prev != 0) {
         prev->next = now->next;
         now = now->next;

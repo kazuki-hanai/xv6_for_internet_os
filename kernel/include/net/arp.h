@@ -7,9 +7,9 @@ struct arp {
   uint8  pln; // length of protocol address
   uint16 op;  // operation
 
-  char   sha[ETHADDR_LEN]; // sender hardware address
+  char   sha[ETH_ADDR_LEN]; // sender hardware address
   uint32 sip;              // sender IP address
-  char   tha[ETHADDR_LEN]; // target hardware address
+  char   tha[ETH_ADDR_LEN]; // target hardware address
   uint32 tip;              // target IP address
 } __attribute__((packed));
 

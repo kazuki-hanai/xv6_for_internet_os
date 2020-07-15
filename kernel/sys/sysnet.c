@@ -210,12 +210,15 @@ socksend(struct file *f, uint64 addr, int n)
 {
   // TODO split data
   struct sock_cb *scb = f->scb;
-  struct mbuf *m = mbufalloc(1518-(n+1));
+  struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
   struct proc *pr = myproc();
 
+  if (m == 0) {
+    return -1;
+  }
+  mbufpush(m, n);
   copyin(pr->pagetable, m->head, addr, n);
 
-  mbufput(m, n);
   if (scb == 0) {
     printf("scb is null\n");
     return -1;

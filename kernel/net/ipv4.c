@@ -32,7 +32,7 @@ net_tx_ip(struct mbuf *m, uint8 proto, uint32 dip)
   iphdr->ip_sum = htons(cksum16((uint16 *)iphdr, sizeof(*iphdr), 0));
 
   // now on to the ethernet layer
-  net_tx_eth(m, ETHTYPE_IP, dip);
+  net_tx_eth(m, ETH_TYPE_IP, dip);
 }
 
 // receives an IP packet
