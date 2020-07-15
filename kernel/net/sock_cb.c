@@ -126,6 +126,17 @@ push_to_scb_rxq(struct sock_cb *scb, struct mbuf *m)
   return 0;
 }
 
+struct mbuf *pop_from_scb_rxq(struct sock_cb *scb) {
+  if (scb == 0) {
+    printf("scb: %d\n", scb);
+    return 0;
+  }
+  acquire(&scb->lock);
+  struct mbuf *m = mbufq_pophead(&scb->rxq);
+  release(&scb->lock);
+  return m;
+}
+
 int
 push_to_scb_txq(struct sock_cb *scb, struct mbuf *m)
 {
@@ -136,4 +147,15 @@ push_to_scb_txq(struct sock_cb *scb, struct mbuf *m)
   mbufq_pushtail(&scb->txq, m);
   release(&scb->lock);
   return 0;
+}
+
+struct mbuf *pop_from_scb_txq(struct sock_cb *scb) {
+  if (scb == 0) {
+    printf("scb: %d\n", scb);
+    return 0;
+  }
+  acquire(&scb->lock);
+  struct mbuf *m = mbufq_pophead(&scb->txq);
+  release(&scb->lock);
+  return m;
 }
