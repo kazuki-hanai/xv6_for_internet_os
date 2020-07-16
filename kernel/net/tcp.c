@@ -27,7 +27,8 @@ static uint16 tcp_checksum(uint32 ip_src, uint32 ip_dst, uint8 ip_p, struct tcp 
   pseudo += ntohs(ip_dst & 0xffff);
   pseudo += (uint16)ip_p;
   pseudo += len;
-  return cksum16((uint16 *)tcphdr, len, pseudo);
+  uint32 res = cksum16((uint8 *)tcphdr, len, pseudo);
+  return res;
 }
 
 int tcp_listen(struct sock_cb *scb) {
@@ -50,7 +51,7 @@ int tcp_connect(struct sock_cb *scb) {
   }
   struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
   scb->rcv.wnd = SOCK_CB_DEFAULT_WND_SIZE;
-  net_tx_tcp(scb, m, TCP_FLG_SYN, 0);
+  net_tx_tcp(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_SYN, 0);
   scb->state = SOCK_CB_SYN_SENT;
   scb->snd.nxt_seq = scb->snd.init_seq + 1;
 
@@ -112,26 +113,26 @@ int tcp_abort() {
   return -1;
 }
 
-void net_tx_tcp(struct sock_cb *scb, struct mbuf *m, uint8 flg, uint16 payload_len) {
+void net_tx_tcp(struct mbuf *m, uint32 raddr, uint16 sport, uint16 dport, uint32 sndnxt, uint32 rcvnxt, uint32 rcvwnd, uint8 flg, uint16 payload_len) {
   extern uint32 local_ip;
   struct tcp *tcphdr;
 
   tcphdr = mbufpushhdr(m, *tcphdr);
-  tcphdr->sport = htons(scb->sport);
-  tcphdr->dport = htons(scb->dport);
-  tcphdr->seq = htonl(scb->snd.nxt_seq);
+  tcphdr->sport = htons(sport);
+  tcphdr->dport = htons(dport);
+  tcphdr->seq = htonl(sndnxt);
   if (TCP_FLG_ISSET(flg, TCP_FLG_ACK))
-    tcphdr->ack = htonl(scb->rcv.nxt_seq);
+    tcphdr->ack = htonl(rcvnxt);
   else
     tcphdr->ack = 0;
   tcphdr->off = (sizeof(struct tcp) >> 2) << 4;
   tcphdr->flg = flg;
   printf("flg: %d\n", flg);
-  tcphdr->wnd = htons(scb->rcv.wnd);
+  tcphdr->wnd = htons(rcvwnd);
   tcphdr->urg = 0;
   tcphdr->sum = 0;
-  tcphdr->sum = htons(tcp_checksum(htonl(local_ip), htonl(scb->raddr), IPPROTO_TCP, tcphdr, payload_len + sizeof(struct tcp)));
-  net_tx_ip(m, IPPROTO_TCP, scb->raddr);
+  tcphdr->sum = htons(tcp_checksum(htonl(local_ip), htonl(raddr), IPPROTO_TCP, tcphdr, payload_len + sizeof(struct tcp)));
+  net_tx_ip(m, IPPROTO_TCP, raddr);
 }
 
 // segment arrives
@@ -146,8 +147,8 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
 
   // checksum
   uint16 sum = tcp_checksum(iphdr->ip_src, iphdr->ip_dst, iphdr->ip_p, tcphdr, len);
-  if (sum != 0) {
-    printf("[bad tcp] checksum doesn't match\n");
+  if (sum) {
+    printf("[bad tcp] checksum doesn't match, %d, len: %d\n", sum, len);
     goto fail;
   }
 
@@ -168,6 +169,10 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
 
   scb->snd.wnd = sndwnd;
 
+  if (scb->state != SOCK_CB_LISTEN && scb->state != SOCK_CB_CLOSED && scb->dport != dport) {
+    goto fail;
+  }
+
   switch(scb->state) {
     case SOCK_CB_CLOSED:
       // TODO if a incoming packet does not contain a RST, send a RST packet.
@@ -179,10 +184,9 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
         goto fail;
       }
       if (TCP_FLG_ISSET(flg, TCP_FLG_ACK)) {
-        struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
-        net_tx_tcp(scb, m, TCP_FLG_RST | TCP_FLG_ACK, 0);
+        struct mbuf *ack_m = mbufalloc(ETH_MAX_SIZE);
+        net_tx_tcp(ack_m, raddr, sport, dport, ack, 0, scb->rcv.wnd, TCP_FLG_RST | TCP_FLG_ACK, 0);
         goto fail;
-        // TODO send RST
       }
       if (TCP_FLG_ISSET(flg, TCP_FLG_SYN)) {
         // TODO check security
@@ -192,14 +196,13 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
 
         // TODO window
         scb->rcv.wnd = SOCK_CB_DEFAULT_WND_SIZE;
-        scb->rcv.init_seq = ntohl(tcphdr->seq);
-        scb->rcv.nxt_seq = scb->rcv.init_seq + 1;
+        scb->rcv.init_seq = seq;
+        scb->rcv.nxt_seq = seq + 1;
         scb->snd.init_seq = 0;
-        scb->snd.nxt_seq = 0;
-        struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
-        net_tx_tcp(scb, m, TCP_FLG_SYN | TCP_FLG_ACK, 0);
-        scb->snd.nxt_seq = scb->snd.init_seq + 1;
+        scb->snd.nxt_seq = 1;
         scb->snd.unack = scb->snd.init_seq;
+        struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+        net_tx_tcp(m, scb->raddr, scb->sport, scb->dport, scb->snd.init_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_SYN | TCP_FLG_ACK, 0);
         // TODO timeout
         scb->state = SOCK_CB_SYN_RCVD;
       } else {
@@ -211,7 +214,8 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
       if (TCP_FLG_ISSET(flg, TCP_FLG_ACK)) {
         if (ack <= scb->snd.init_seq || ack > scb->snd.nxt_seq) {
           struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
-          net_tx_tcp(scb, m, TCP_FLG_RST | TCP_FLG_ACK, 0);
+          net_tx_tcp(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_RST | TCP_FLG_ACK, 0);
+        scb->snd.nxt_seq = scb->snd.init_seq + 1;
           goto fail;
         }
       }
@@ -229,11 +233,11 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
         if (scb->snd.unack > scb->snd.init_seq) {
           scb->state = SOCK_CB_ESTAB;
           struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
-          net_tx_tcp(scb, m, TCP_FLG_ACK, 0);
+          net_tx_tcp(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
         } else {
           scb->state = SOCK_CB_SYN_RCVD;
           struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
-          net_tx_tcp(scb, m, TCP_FLG_SYN | TCP_FLG_ACK, 0);
+          net_tx_tcp(m, scb->raddr, scb->sport, scb->dport, scb->snd.init_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_SYN | TCP_FLG_ACK, 0);
         }
       } else {
         goto fail;
@@ -263,7 +267,7 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
         // send ack(unless the RST bit is set, if so drop the segment and return)
         if (!TCP_FLG_ISSET(flg, TCP_FLG_RST)) {
           struct mbuf *rst_m = mbufalloc(ETH_MAX_SIZE);
-          net_tx_tcp(scb, rst_m, TCP_FLG_ACK, 0);
+          net_tx_tcp(rst_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
         }
         goto fail;
       }
@@ -322,9 +326,10 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
               scb->state = SOCK_CB_ESTAB;
             } else {
               struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
-              net_tx_tcp(scb, m, TCP_FLG_RST, 0);
+              net_tx_tcp(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_RST, 0);
               goto fail;
             }
+            break;
           case SOCK_CB_ESTAB:
           case SOCK_CB_FIN_WAIT_1:
           case SOCK_CB_FIN_WAIT_2:
@@ -375,16 +380,15 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
 
       // seventh, process the segment text
       // deliver segment text to user RECEIVE buffers
-      int plen = TCP_DATA_LEN(tcphdr, len);
       switch(scb->state) {
         case SOCK_CB_ESTAB:
         case SOCK_CB_FIN_WAIT_1:
         case SOCK_CB_FIN_WAIT_2:
-          if (plen > 0 && scb->rcv.nxt_seq == seq) {
-            scb->rcv.nxt_seq += plen;
+          if (datalen > 0 && scb->rcv.nxt_seq == seq) {
+            scb->rcv.nxt_seq += datalen;
             push_to_scb_rxq(scb, m);
             struct mbuf *ack_m = mbufalloc(ETH_MAX_SIZE);
-            net_tx_tcp(scb, ack_m, TCP_FLG_ACK, 0);
+            net_tx_tcp(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
           }
           break;
         case SOCK_CB_CLOSE_WAIT:
@@ -438,7 +442,7 @@ void net_rx_tcp(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   }
 
   // TODO URG process
-
+  return;
 fail:
   mbuffree(m);
   return;

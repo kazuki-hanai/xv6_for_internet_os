@@ -236,15 +236,15 @@ int
 sockrecv(struct file *f, uint64 addr, int n)
 {
   struct sock_cb *scb = f->scb;
-  struct mbufq *rxq = &scb->rxq;
   struct proc *pr = myproc();
 
-  struct mbuf *m = mbufq_pophead(rxq);
+  struct mbuf *m = 0;
   // TODO fix busy wait
   while (m == 0x0) {
-    m = mbufq_pophead(rxq);
+    m = pop_from_scb_rxq(scb);
   }
-  copyout(pr->pagetable, addr, m->head, n);
+  int datasize = n > m->len ? m->len : n;
+  copyout(pr->pagetable, addr, m->head, datasize);
   mbuffree(m);
   return n;
 }
