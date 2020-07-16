@@ -90,8 +90,10 @@ e1000_transmit(struct mbuf *m)
 {
   int index = regs[E1000_TDT];
   
-  if(!tx_ring[index].status & E1000_TXD_STAT_DD)
+  if(!tx_ring[index].status & E1000_TXD_STAT_DD) {
+    printf("[e1000_transmit] still in progress\n");
     return -1;
+  }
   
   // free mbuf
   struct mbuf *prev_mbuf = tx_mbuf[index == 0 ? TX_RING_SIZE-1: index-1];
@@ -122,6 +124,7 @@ e1000_recv(void)
     memmove((void *)m->buf, (void *)rx_ring[index].addr, len);
     mbufput(m, len);
 
+    rx_ring[index].status ^= E1000_RXD_STAT_DD;
     regs[E1000_RDT] = index;
     index += 1;
     net_rx(m);
