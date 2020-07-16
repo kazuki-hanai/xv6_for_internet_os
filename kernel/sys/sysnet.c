@@ -224,8 +224,11 @@ socksend(struct file *f, uint64 addr, int n)
     return -1;
   }
   if (scb->socktype == SOCK_TCP) {
-    // TODO
-    // net_tx_tcp(scb, m, TCP_FLG_ACK, 0);
+    if (tcp_send(scb, m) == -1) {
+      mbuffree(m);
+      printf("[socksend] tcp_send error\n");
+      return -1;
+    }
   } else {
     net_tx_udp(m, scb->raddr, scb->sport, scb->dport);
   }
@@ -240,6 +243,7 @@ sockrecv(struct file *f, uint64 addr, int n)
 
   struct mbuf *m = 0;
   // TODO fix busy wait
+  // TODO tcp push check
   while (m == 0x0) {
     m = pop_from_scb_rxq(scb);
   }

@@ -73,46 +73,68 @@ int tcp_connect(struct sock_cb *scb) {
 }
 
 // https://tools.ietf.org/html/rfc793#page-56
-int tcp_send(struct sock_cb *scb) {
-  enum sock_cb_state state = scb->state;
+int tcp_send(struct sock_cb *scb, struct mbuf *m) {
+  if (scb == 0)
+    return -1;
+  if (m == 0)
+    return -1;
 
-  if (TCP_FLG_ISSET(state, SOCK_CB_CLOSED)) {
+  if (scb->state == SOCK_CB_CLOSED) {
     // "error: connection illegal for this process"
     return -1;
   }
 
-  if (TCP_FLG_ISSET(state, SOCK_CB_LISTEN)) {
-    if (scb->raddr) {
-      uint32 seq = 0; // initial send sequence number;
-      // uint8 flag = TCP_FLG_SYN;
+  switch(scb->state) {
+  case SOCK_CB_LISTEN:
+    // TODO
+    // if (scb->raddr) {
+    //   uint32 seq = 0; // initial send sequence number;
+    //   // uint8 flag = TCP_FLG_SYN;
 
-      acquire(&scb->lock);
-      scb->snd.unack = seq;
-      scb->snd.nxt_seq = seq+1;
-      scb->state = SOCK_CB_SYN_SENT;
-      // TODO The urgent bit if requested in the command must be sent with the data segments sent
-      // as a result of this command.
+    //   scb->snd.unack = seq;
+    //   scb->snd.nxt_seq = seq+1;
+    //   scb->state = SOCK_CB_SYN_SENT;
+    //   // TODO The urgent bit if requested in the command must be sent with the data segments sent
+    //   // as a result of this command.
 
-      release(&scb->lock);
-
-      return 0;
-    } else {
-      // "error: foreign socket unspecified";
-      return -1;
+    //   return 0;
+    // } else {
+    //   // "error: foreign socket unspecified";
+    //   return -1;
+    // }
+    return -1;
+    break;
+  case SOCK_CB_SYN_SENT:
+  case SOCK_CB_SYN_RCVD:
+    push_to_scb_txq(scb, m);
+    break;
+  case SOCK_CB_ESTAB:
+  case SOCK_CB_CLOSE_WAIT:
+    // send packet
+    push_to_scb_txq(scb, m);
+    struct mbuf *send_m = pop_from_scb_txq(scb);
+    while(send_m) {
+      // TODO buffer processing
+      uint16 len = send_m->len;
+      net_tx_tcp(send_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK | TCP_FLG_PSH, send_m->len);
+      scb->snd.nxt_seq += len;
+      send_m = pop_from_scb_txq(scb);
     }
+    break;
+  case SOCK_CB_FIN_WAIT_1:
+  case SOCK_CB_FIN_WAIT_2:
+  case SOCK_CB_CLOSING:
+  case SOCK_CB_LAST_ACK:
+  case SOCK_CB_TIME_WAIT:
+    // "error:  connection closing" and do not service request.
+    return -1;
+    break;
+  default:
+    return -1;
+    break;
   }
 
-  // TODO
-  // SOCK_CB_SYN_SENT
-  // SOCK_CB_SYN_RCVD
-  // SOCK_CB_ESTAB
-  // SOCK_CB_CLOSE_WAIT
-  // SOCK_CB_FIN_WAIT_1
-  // SOCK_CB_FIN_WAIT_2
-  // SOCK_CB_CLOSING
-  // SOCK_CB_LAST_ACK
-  // SOCK_CB_TIME_WAIT
-  return -1;
+  return 0;
 }
 
 int tcp_close(struct sock_cb *scb) {

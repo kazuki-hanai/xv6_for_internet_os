@@ -35,3 +35,4 @@ struct tcp {
 
 int tcp_listen(struct sock_cb *);
 int tcp_connect(struct sock_cb *);
+int tcp_send(struct sock_cb *, struct mbuf *m);
