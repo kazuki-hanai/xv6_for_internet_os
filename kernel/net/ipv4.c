@@ -29,7 +29,7 @@ net_tx_ip(struct mbuf *m, uint8 proto, uint32 dip)
   iphdr->ip_dst = htonl(dip);
   iphdr->ip_len = htons(m->len);
   iphdr->ip_ttl = 100;
-  iphdr->ip_sum = htons(cksum16((uint16 *)iphdr, sizeof(*iphdr), 0));
+  iphdr->ip_sum = htons(cksum16((uint8 *)iphdr, sizeof(*iphdr), 0));
 
   // now on to the ethernet layer
   net_tx_eth(m, ETH_TYPE_IP, dip);
@@ -50,7 +50,7 @@ net_rx_ip(struct mbuf *m)
   if (iphdr->ip_vhl != ((4 << 4) | (20 >> 2)))
     goto fail;
   // validate IP checksum
-  if (cksum16((uint16 *)iphdr, sizeof(*iphdr), 0))
+  if (cksum16((uint8 *)iphdr, sizeof(*iphdr), 0))
     goto fail;
   // can't support fragmented IP packets
   if (IP_GET_OFF(htons(iphdr->ip_off)) != 0)

@@ -9,15 +9,16 @@
 #include "net/netutil.h"
 #include "net/ethernet.h"
 
-uint16 cksum16(uint16 *data, uint16 size, uint32 init) {
+uint16 cksum16(uint8 *data, uint16 size, uint32 init) {
   uint32 sum;
   sum = init;
   while(size > 1) {
-    sum += ntohs(*(data++));
+    sum += (*(data++)) << 8;
+    sum += (*(data++));
     size -= 2;
   }
   if (size) {
-    sum += *(uint8 *)data;
+    sum += (*data) << 8;
   }
   sum = (sum & 0xffff) + (sum >> 16);
   sum = (sum & 0xffff) + (sum >> 16);

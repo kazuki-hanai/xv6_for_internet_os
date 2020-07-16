@@ -24,4 +24,4 @@ void net_tx_eth(struct mbuf*, uint16, uint32);
 void net_rx(struct mbuf*);
 
 // util
-uint16 cksum16(uint16 *, uint16, uint32);
+uint16 cksum16(uint8 *, uint16, uint32);
