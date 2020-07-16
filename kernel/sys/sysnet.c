@@ -243,7 +243,8 @@ sockrecv(struct file *f, uint64 addr, int n)
   while (m == 0x0) {
     m = pop_from_scb_rxq(scb);
   }
-  int datasize = n > m->len ? m->len : n;
+  int datasize = n > (m->len+1) ? (m->len+1) : n;
+  m->head[datasize] = 0;
   copyout(pr->pagetable, addr, m->head, datasize);
   mbuffree(m);
   return n;
