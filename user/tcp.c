@@ -67,18 +67,18 @@ int sock_connect(char **argv) {
 
 void chat(int sock) {
   while(1) {
-    char rbuf[256];
-    char wbuf[256];
+    char rbuf[1500];
+    char wbuf[1500];
     wbuf[0] = 0;
 
-    if (read(sock, rbuf, 256) == -1) {
+    if (read(sock, rbuf, sizeof(rbuf)) == -1) {
       printf("read failed! connection closed.\n");
       break;
     }
     printf("you: %s", rbuf);
 
     printf("me: ");
-    int wsize = read(1, wbuf, 256);
+    int wsize = read(1, wbuf, sizeof(wbuf));
     if (wbuf[0] == 0)
       break;
     if (write(sock, wbuf, wsize) == -1) {
@@ -89,11 +89,12 @@ void chat(int sock) {
 }
 
 void send_file(int sock) {
+  // TODO big stack
+  char filebuf[2000];
   int fd = open("ls", O_RDONLY);
-  char filebuf[25000];
   struct stat st;
   fstat(fd, &st);
-  read(fd, filebuf, st.size);
+  read(fd, filebuf, st.size > 2000 ? 2000 : 2000);
   write(sock, filebuf, sizeof(filebuf));
 }
 
@@ -129,7 +130,7 @@ main(int argc, char **argv)
   // Test
   } else if (op == 2) {
     if (strcmp(argv[2], "file") == 0) {
-      int sock = sock_listen(&argv[3]);
+      int sock = sock_connect(&argv[3]);
       send_file(sock);
       recv_file(sock);
       close(sock);
