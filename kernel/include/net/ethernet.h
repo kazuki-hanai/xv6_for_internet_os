@@ -13,3 +13,6 @@ struct eth {
 #define ETH_TYPE_ARP 0x0806 // Address resolution protocol
 
 #define ETH_MAX_SIZE 1518
+
+void eth_send(struct mbuf *, uint16, uint32 dip);
+void eth_recv(struct mbuf *);

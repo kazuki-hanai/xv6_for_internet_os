@@ -1,4 +1,7 @@
 #pragma once
+
+#include "net/mbuf.h"
+
 // an IP packet header (comes after an Ethernet header).
 struct ipv4 {
   uint8  ip_vhl; // version << 4 | header length >> 2
@@ -23,4 +26,5 @@ struct ipv4 {
   (((uint32)a << 24) | ((uint32)b << 16) | \
    ((uint32)c << 8) | (uint32)d)
 
-
+void ip_send(struct mbuf *, uint8 proto, uint32 dip);
+void ip_recv(struct mbuf *);

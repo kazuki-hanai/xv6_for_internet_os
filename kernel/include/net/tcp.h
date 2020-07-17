@@ -1,6 +1,7 @@
 #pragma once
 
 #include "net/sock_cb.h"
+#include "net/ipv4.h"
 
 #define TCP_COLLISION_NUM 11
 #define TCP_MOD 2 << 31
@@ -37,3 +38,4 @@ int tcp_listen(struct sock_cb *);
 int tcp_connect(struct sock_cb *);
 int tcp_send(struct sock_cb *, struct mbuf *m, uint8);
 int tcp_close(struct sock_cb *);
+void tcp_recv(struct mbuf *, uint16, struct ipv4 *);

@@ -20,3 +20,5 @@ enum {
   ARP_OP_REPLY = 2,   // replies a hw addr given protocol addr
 };
 
+int arp_send(uint16, uint8 [], uint32);
+void arp_recv(struct mbuf *);

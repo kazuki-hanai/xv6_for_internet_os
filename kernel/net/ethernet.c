@@ -9,6 +9,7 @@
 #include "net/ethernet.h"
 #include "net/arptable.h"
 #include "net/arp.h"
+#include "net/ipv4.h"
 #include "net/netutil.h"
 
 extern struct mbufq arp_q;
@@ -18,14 +19,14 @@ uint8 broadcast_mac[ETH_ADDR_LEN] = { 0xFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF };
 
 // sends an ethernet packet
 void
-net_tx_eth(struct mbuf *m, uint16 ethtype, uint32 dip)
+eth_send(struct mbuf *m, uint16 ethtype, uint32 dip)
 {
   struct eth *ethhdr;
 
   uint8 dhost[ETH_ADDR_LEN] = {0, 0, 0, 0, 0, 0};
   if (arptable_get_mac(dip, (uint8 *)dhost) == -1) {
     if (ethtype != ETH_TYPE_ARP) {
-      net_tx_arp(ARP_OP_REQUEST, broadcast_mac, dip);
+      arp_send(ARP_OP_REQUEST, broadcast_mac, dip);
       mbufq_pushtail(&arp_q, m);
       return;
     } else {
@@ -44,7 +45,7 @@ net_tx_eth(struct mbuf *m, uint16 ethtype, uint32 dip)
 
 // called by e1000 driver's interrupt handler to deliver a packet to the
 // networking stack
-void net_rx(struct mbuf *m)
+void eth_recv(struct mbuf *m)
 {
   struct eth *ethhdr;
   uint16 type;
@@ -57,9 +58,9 @@ void net_rx(struct mbuf *m)
 
   type = ntohs(ethhdr->type);
   if (type == ETH_TYPE_IP) {
-    net_rx_ip(m);
+    ip_recv(m);
   } else if (type == ETH_TYPE_ARP) {
-    net_rx_arp(m);
+    arp_recv(m);
   } else
     mbuffree(m);
 }

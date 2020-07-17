@@ -8,6 +8,14 @@ struct mbuf {
   char *head;
   unsigned int len;
   char buf[MBUF_SIZE];
+  union {
+    struct {
+      uint32 sndnxt;
+      uint8 flg;
+      uint16 datalen;
+    } tcp;
+  } params;
+  
 };
 
 char *mbufpull(struct mbuf *m, unsigned int len);

@@ -9,13 +9,15 @@
 #include "net/netutil.h"
 #include "net/ethernet.h"
 #include "net/ipv4.h"
+#include "net/tcp.h"
+#include "net/udp.h"
 #include "defs.h"
 
 uint32 local_ip = MAKE_IP_ADDR(192, 168, 22, 2); // qemu's idea of the guest IP
 
 // sends an IP packet
 void
-net_tx_ip(struct mbuf *m, uint8 proto, uint32 dip)
+ip_send(struct mbuf *m, uint8 proto, uint32 dip)
 {
   struct ipv4 *iphdr;
 
@@ -32,12 +34,12 @@ net_tx_ip(struct mbuf *m, uint8 proto, uint32 dip)
   iphdr->ip_sum = htons(cksum16((uint8 *)iphdr, sizeof(*iphdr), 0));
 
   // now on to the ethernet layer
-  net_tx_eth(m, ETH_TYPE_IP, dip);
+  eth_send(m, ETH_TYPE_IP, dip);
 }
 
 // receives an IP packet
 void
-net_rx_ip(struct mbuf *m)
+ip_recv(struct mbuf *m)
 {
   struct ipv4 *iphdr;
   uint16 len;
@@ -62,9 +64,9 @@ net_rx_ip(struct mbuf *m)
   len = ntohs(iphdr->ip_len) - sizeof(*iphdr);
 
   if (iphdr->ip_p == IPPROTO_UDP) {
-    net_rx_udp(m, len, iphdr);
+    udp_recv(m, len, iphdr);
   } else if (iphdr->ip_p == IPPROTO_TCP) {
-    net_rx_tcp(m, len, iphdr);
+    tcp_recv(m, len, iphdr);
   } else {
     goto fail;
   }

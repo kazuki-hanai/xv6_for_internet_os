@@ -16,7 +16,7 @@ extern struct sock_cb_entry udp_scb_table[SOCK_CB_LEN];
 
 // sends a UDP packet
 void
-net_tx_udp(struct mbuf *m, uint32 dip,
+udp_send(struct mbuf *m, uint32 dip,
            uint16 sport, uint16 dport)
 {
   struct udp *udphdr;
@@ -29,12 +29,12 @@ net_tx_udp(struct mbuf *m, uint32 dip,
   udphdr->sum = 0; // zero means no checksum is provided
 
   // now on to the IP layer
-  net_tx_ip(m, IPPROTO_UDP, dip);
+  ip_send(m, IPPROTO_UDP, dip);
 }
 
 // receives a UDP packet
 void
-net_rx_udp(struct mbuf *m, uint16 len, struct ipv4 *iphdr)
+udp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr)
 {
   struct udp *udphdr;
   uint32 raddr;

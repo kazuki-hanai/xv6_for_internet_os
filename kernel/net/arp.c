@@ -24,7 +24,7 @@ void arpinit() {
 
 // sends an ARP packet
 int
-net_tx_arp(uint16 op, uint8 dmac[ETH_ADDR_LEN], uint32 dip)
+arp_send(uint16 op, uint8 dmac[ETH_ADDR_LEN], uint32 dip)
 {
   struct mbuf *m;
   struct arp *arphdr;
@@ -48,13 +48,13 @@ net_tx_arp(uint16 op, uint8 dmac[ETH_ADDR_LEN], uint32 dip)
   arphdr->tip = htonl(dip);
 
   // header is ready, send the packet
-  net_tx_eth(m, ETH_TYPE_ARP, dip);
+  eth_send(m, ETH_TYPE_ARP, dip);
   return 0;
 }
 
 // receives an ARP packet
 void
-net_rx_arp(struct mbuf *m)
+arp_recv(struct mbuf *m)
 {
   struct arp *arphdr;
   uint8 smac[ETH_ADDR_LEN];
@@ -83,7 +83,7 @@ net_rx_arp(struct mbuf *m)
   struct mbuf *now = arp_q.head;
   while(now != 0) {
     if (now->raddr == sip) {
-      net_tx_eth(now, ETH_TYPE_IP, now->raddr);
+      eth_send(now, ETH_TYPE_IP, now->raddr);
       if (prev != 0) {
         prev->next = now->next;
         now = now->next;
@@ -103,7 +103,7 @@ net_rx_arp(struct mbuf *m)
     goto done;
 
   // handle the ARP request
-  net_tx_arp(ARP_OP_REPLY, smac, sip);
+  arp_send(ARP_OP_REPLY, smac, sip);
 
 done:
   mbuffree(m);

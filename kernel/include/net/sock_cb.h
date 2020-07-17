@@ -70,5 +70,5 @@ void add_sock_cb(struct sock_cb *);
 struct sock_cb* get_sock_cb(struct sock_cb_entry [], uint16);
 int push_to_scb_rxq(struct sock_cb *, struct mbuf *);
 struct mbuf *pop_from_scb_rxq(struct sock_cb *scb);
-int push_to_scb_txq(struct sock_cb *, struct mbuf *);
+int push_to_scb_txq(struct sock_cb *, struct mbuf *, uint32 sndnxt, uint8 flg, uint16 datalen);
 struct mbuf *pop_from_scb_txq(struct sock_cb *scb);

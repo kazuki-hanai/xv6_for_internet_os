@@ -5,8 +5,9 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-#include "e1000_dev.h"
+#include "net/dev/e1000_dev.h"
 #include "net/mbuf.h"
+#include "net/ethernet.h"
 
 #define TX_RING_SIZE 16
 static struct tx_desc tx_ring[TX_RING_SIZE] __attribute__((aligned(16)));
@@ -127,7 +128,7 @@ e1000_recv(void)
 
     regs[E1000_RDT] = index;
     index += 1;
-    net_rx(m);
+    eth_recv(m);
   }
 }
 
