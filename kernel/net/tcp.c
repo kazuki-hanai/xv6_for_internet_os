@@ -122,9 +122,9 @@ int tcp_send(struct sock_cb *scb, struct mbuf *m, uint8 flg) {
     struct mbuf *send_m = pop_from_scb_txq(scb);
     while(send_m) {
       // TODO buffer processing
-      int sndnxt = m->params.tcp.sndnxt;
-      int flg = m->params.tcp.flg;
-      int len = m->params.tcp.datalen;
+      int sndnxt = send_m->params.tcp.sndnxt;
+      int flg = send_m->params.tcp.flg;
+      int len = send_m->params.tcp.datalen;
       tcp_send_core(send_m, scb->raddr, scb->sport, scb->dport, sndnxt, scb->rcv.nxt_seq, scb->rcv.wnd, flg, len);
       scb->snd.nxt_seq += len;
       send_m = pop_from_scb_txq(scb);

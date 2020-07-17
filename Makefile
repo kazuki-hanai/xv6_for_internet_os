@@ -146,7 +146,6 @@ UPROGS=\
   	_udp\
   	_udplisten\
   	_tcp\
-  	_tcplisten\
 
 all: qemu
 
