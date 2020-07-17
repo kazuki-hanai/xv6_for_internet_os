@@ -23,7 +23,6 @@ static int check_ack(struct sock_cb *, uint8, uint32, uint32, uint32);
 struct rx_tcp_context {
   struct sock_cb *scb;
   struct mbuf *m;
-  struct tcp *tcphdr;
   uint32 raddr;
   uint16 sport;
   uint16 dport;
@@ -236,7 +235,7 @@ static int is_seq_valid(uint32 rcvwnd, uint32 rcvnxt, uint32 segseq, uint16 segl
 }
 
 static int tcp_recv_listen(struct rx_tcp_context *ctxt) {
-  struct tcp *tcphdr = ctxt->tcphdr;
+  struct tcp *tcphdr = ctxt->m->tcphdr;
   struct sock_cb *scb = ctxt->scb;
   uint32 raddr = ctxt->raddr;
   uint16 sport = ctxt->sport;
@@ -278,7 +277,7 @@ static int tcp_recv_listen(struct rx_tcp_context *ctxt) {
 }
 
 static int tcp_recv_syn_sent(struct rx_tcp_context *ctxt) {
-  struct tcp *tcphdr = ctxt->tcphdr;
+  struct tcp *tcphdr = ctxt->m->tcphdr;
   struct sock_cb *scb = ctxt->scb;
   uint32 ack = ntohl(tcphdr->ack);
   uint32 seq = ntohl(tcphdr->seq);
@@ -410,7 +409,7 @@ static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uin
 }
 
 static int tcp_recv_core(struct rx_tcp_context *ctxt) {
-  struct tcp *tcphdr = ctxt->tcphdr;
+  struct tcp *tcphdr = ctxt->m->tcphdr;
   struct sock_cb *scb = ctxt->scb;
   struct mbuf *m = ctxt->m;
   uint32 ack = ntohl(tcphdr->ack);
@@ -465,6 +464,8 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
     case SOCK_CB_FIN_WAIT_2:
       if (datalen > 0 && scb->rcv.nxt_seq == seq) {
         scb->rcv.nxt_seq += datalen;
+        scb->rcv.wnd -= m->len;
+        m->params.tcp.flg = tcphdr->flg;
         push_to_scb_rxq(scb, m);
         struct mbuf *ack_m = mbufalloc(ETH_MAX_SIZE);
         tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
@@ -527,6 +528,7 @@ void tcp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   struct tcp *tcphdr = mbufpullhdr(m, *tcphdr);
   if (!tcphdr)
     goto fail;
+  m->tcphdr = tcphdr;
   uint32 raddr = ntohl(iphdr->ip_src);
   uint16 sport = ntohs(tcphdr->dport);
   uint16 dport = ntohs(tcphdr->sport);
@@ -552,7 +554,6 @@ void tcp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   struct rx_tcp_context ctxt;
   ctxt.scb = scb;
   ctxt.m = m;
-  ctxt.tcphdr = tcphdr;
   ctxt.raddr = raddr;
   ctxt.sport = sport;
   ctxt.dport = dport;

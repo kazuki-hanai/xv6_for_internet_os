@@ -65,6 +65,7 @@ mbufalloc(unsigned int headroom)
   m->next = 0;
   m->head = (char *)m->buf + headroom;
   m->len = 0;
+  m->tcphdr = 0;
   memset((void *)&m->params, 0, sizeof(m->params));
   memset(m->buf, 0, sizeof(m->buf));
   return m;

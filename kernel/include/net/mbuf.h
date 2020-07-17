@@ -15,7 +15,7 @@ struct mbuf {
       uint16 datalen;
     } tcp;
   } params;
-  
+  struct tcp *tcphdr;
 };
 
 char *mbufpull(struct mbuf *m, unsigned int len);
