@@ -92,23 +92,19 @@ int tcp_send(struct sock_cb *scb, struct mbuf *m, uint8 flg) {
 
   switch(scb->state) {
   case SOCK_CB_LISTEN:
-    // TODO
-    // if (scb->raddr) {
-    //   uint32 seq = 0; // initial send sequence number;
-    //   // uint8 flag = TCP_FLG_SYN;
-
-    //   scb->snd.unack = seq;
-    //   scb->snd.nxt_seq = seq+1;
-    //   scb->state = SOCK_CB_SYN_SENT;
-    //   // TODO The urgent bit if requested in the command must be sent with the data segments sent
-    //   // as a result of this command.
-
-    //   return 0;
-    // } else {
-    //   // "error: foreign socket unspecified";
-    //   return -1;
-    // }
-    return -1;
+    if (scb->raddr) {
+      uint32 seq = 0; // initial send sequence number;
+      // TODO The urgent bit if requested in the command must be sent with the data segments sent
+      // as a result of this command.
+      tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_SYN, 0);
+      scb->state = SOCK_CB_SYN_SENT;
+      scb->snd.unack = seq;
+      scb->snd.nxt_seq = seq+1;
+      return 0;
+    } else {
+      // "error: foreign socket unspecified";
+      return -1;
+    }
     break;
   case SOCK_CB_SYN_SENT:
   case SOCK_CB_SYN_RCVD:
