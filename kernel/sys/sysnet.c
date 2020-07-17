@@ -14,6 +14,7 @@
 #include "file.h"
 #include "net/netutil.h"
 #include "net/tcp.h"
+#include "net/udp.h"
 #include "net/ethernet.h"
 #include "net/arp.h"
 #include "net/sock_cb.h"
@@ -224,13 +225,13 @@ socksend(struct file *f, uint64 addr, int n)
     return -1;
   }
   if (scb->socktype == SOCK_TCP) {
-    if (tcp_send(scb, m) == -1) {
+    if (tcp_send(scb, m, TCP_FLG_PSH | TCP_FLG_ACK) == -1) {
       mbuffree(m);
       printf("[socksend] tcp_send error\n");
       return -1;
     }
   } else {
-    net_tx_udp(m, scb->raddr, scb->sport, scb->dport);
+    udp_send(m, scb->raddr, scb->sport, scb->dport);
   }
   return n;
 }
@@ -252,4 +253,20 @@ sockrecv(struct file *f, uint64 addr, int n)
   copyout(pr->pagetable, addr, m->head, datasize);
   mbuffree(m);
   return n;
+}
+
+void sockclose(struct file *f)
+{
+  struct sock_cb *scb = f->scb;
+
+  if (!scb) {
+    panic("[sockclose] scb is already freed");
+  }
+  if (scb->socktype == SOCK_TCP) {
+    if (tcp_close(scb) == -1) {
+
+    }
+  } else {
+    free_sock_cb(f->scb);
+  }
 }

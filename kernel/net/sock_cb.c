@@ -138,11 +138,16 @@ struct mbuf *pop_from_scb_rxq(struct sock_cb *scb) {
 }
 
 int
-push_to_scb_txq(struct sock_cb *scb, struct mbuf *m)
+push_to_scb_txq(struct sock_cb *scb, struct mbuf *m, uint32 sndnxt, uint8 flg, uint16 datalen)
 {
   if (scb == 0) {
     return -1;
   }
+
+  m->params.tcp.sndnxt = sndnxt;
+  m->params.tcp.flg = flg;
+  m->params.tcp.datalen = datalen;
+
   acquire(&scb->lock);
   mbufq_pushtail(&scb->txq, m);
   release(&scb->lock);

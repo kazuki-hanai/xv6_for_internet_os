@@ -12,6 +12,7 @@
 
 int socksend(struct file *, uint64, int);
 int sockrecv(struct file *, uint64, int);
+void sockclose(struct file *);
 
 uint16 get_new_sport();
 uint16 get_specified_sport(uint16);
