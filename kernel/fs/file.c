@@ -82,7 +82,7 @@ fileclose(struct file *f)
   }
   ff = *f;
   f->ref = 0;
-  f->type = FD_NONE;
+  // f->type = FD_NONE;
 
   if (f->prev == 0) {
     ftable.file = f->next;
@@ -103,7 +103,7 @@ fileclose(struct file *f)
     iput(ff.ip);
     end_op();
   } else if (ff.type == FD_SOCK) {
-    free_sock_cb(ff.scb);
+    sockclose(&ff);
   }
 }
 
