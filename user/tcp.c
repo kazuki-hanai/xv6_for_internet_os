@@ -1,6 +1,6 @@
 #include "kernel/include/types.h"
 #include "kernel/include/stat.h"
-#include "kernel/include/net/netutil.h"
+#include "kernel/include/net/sock_cb.h"
 #include "user/user.h"
 
 uint32 get_ip(char *ip) {

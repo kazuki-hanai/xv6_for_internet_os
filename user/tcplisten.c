@@ -1,6 +1,6 @@
 #include "kernel/include/types.h"
 #include "kernel/include/stat.h"
-#include "kernel/include/net/netutil.h"
+#include "kernel/include/net/sock_cb.h"
 #include "user/user.h"
 
 uint32 get_ip(char *ip) {
@@ -40,10 +40,14 @@ main(int argc, char **argv)
   while(1) {
     char rbuf[256];
     char wbuf[256];
+    wbuf[0] = 0;
 
     read(sock, rbuf, 256);
     printf("%s\n", rbuf);
     int wsize = read(1, wbuf, 256);
+
+    if (wbuf[0] == 0)
+      break;
     write(sock, wbuf, wsize);
 
   }
