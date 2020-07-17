@@ -211,27 +211,39 @@ socksend(struct file *f, uint64 addr, int n)
 {
   // TODO split data
   struct sock_cb *scb = f->scb;
-  struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
   struct proc *pr = myproc();
 
-  if (m == 0) {
-    return -1;
-  }
-  mbufpush(m, n);
-  copyin(pr->pagetable, m->head, addr, n);
+  int bufsize = 0;
 
-  if (scb == 0) {
-    printf("scb is null\n");
-    return -1;
-  }
-  if (scb->socktype == SOCK_TCP) {
-    if (tcp_send(scb, m, TCP_FLG_PSH | TCP_FLG_ACK) == -1) {
-      mbuffree(m);
-      printf("[socksend] tcp_send error\n");
+  while (n > 0) {
+    struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+    if (m == 0) {
       return -1;
     }
-  } else {
-    udp_send(m, scb->raddr, scb->sport, scb->dport);
+    if (scb->socktype == SOCK_TCP) {
+      bufsize = n < TCP_MAX_DATA ? n : TCP_MAX_DATA;
+    } else {
+      bufsize = n < UDP_MAX_DATA ? n : UDP_MAX_DATA;
+    }
+    mbufpush(m, bufsize);
+    copyin(pr->pagetable, m->head, addr, bufsize);
+
+    if (scb == 0) {
+      printf("scb is null\n");
+      return -1;
+    }
+    if (scb->socktype == SOCK_TCP) {
+      int flg = n < TCP_MAX_DATA ? TCP_FLG_PSH | TCP_FLG_ACK : TCP_FLG_ACK;
+      if (tcp_send(scb, m, flg) == -1) {
+        mbuffree(m);
+        printf("[socksend] tcp_send error\n");
+        return -1;
+      }
+    } else {
+      udp_send(m, scb->raddr, scb->sport, scb->dport);
+    }
+    n -= bufsize;
+    addr += bufsize;
   }
   return n;
 }

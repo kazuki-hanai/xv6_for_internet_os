@@ -1,5 +1,6 @@
 #pragma once
 
+#include "net/ethernet.h"
 #include "net/sock_cb.h"
 #include "net/ipv4.h"
 
@@ -15,10 +16,13 @@
 #define TCP_FLG_URG 0x20
 
 #define TCP_MIN_PORT 25000
+#define TCP_MAX_DATA (ETH_MAX_SIZE - sizeof(struct eth) - sizeof(struct ipv4) - sizeof(struct tcp))
+
 
 #define TCP_HDR_LEN(hdr) (((hdr)->off >> 4) << 2)
 #define TCP_DATA_LEN(hdr, len) ((len)-TCP_HDR_LEN(hdr))
 #define TCP_FLG_ISSET(x, y) (((x)&0x3f) & (y))
+
 
 struct tcp {
   uint16 sport;
