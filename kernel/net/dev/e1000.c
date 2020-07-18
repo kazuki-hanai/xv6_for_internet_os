@@ -120,14 +120,14 @@ e1000_recv(void)
   // init
   int index = (regs[E1000_RDT]+1) % RX_RING_SIZE;
   while(rx_ring[index].status & E1000_RXD_STAT_DD) {
-    rx_ring[index].status ^= E1000_RXD_STAT_DD;
     struct mbuf *m = mbufalloc(0);
-    int len = rx_ring[index].length;
+    uint16 len = rx_ring[index].length;
+    rx_ring[index].status ^= E1000_RXD_STAT_DD;
     memmove((void *)m->buf, (void *)rx_ring[index].addr, len);
     mbufput(m, len);
 
     regs[E1000_RDT] = index;
-    index += 1;
+    index = (index+1) % RX_RING_SIZE;
     eth_recv(m);
   }
 }

@@ -47,6 +47,7 @@ struct mbufq {
 };
 
 void mbufq_pushtail(struct mbufq *q, struct mbuf *m);
+void mbufq_pushhead(struct mbufq *q, struct mbuf *m);
 struct mbuf *mbufq_pophead(struct mbufq *q);
 int mbufq_empty(struct mbufq *q);
 void mbufq_init(struct mbufq *q);

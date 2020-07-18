@@ -100,6 +100,14 @@ mbufq_pushtail(struct mbufq *q, struct mbuf *m)
   q->tail = m;
 }
 
+void
+mbufq_pushhead(struct mbufq *q, struct mbuf *m)
+{
+  m->next = q->head;
+  q->head = m;
+  return;
+}
+
 // Pops an mbuf from the start of the queue.
 struct mbuf *
 mbufq_pophead(struct mbufq *q)
