@@ -36,11 +36,11 @@ void tcp_scb_table_test() {
     panic("two sports hash should equal!\n");
   
   struct sock_cb *scb;
-  scb = init_sock_cb(raddr1, sport1, dport1, SOCK_TCP);
+  scb = init_sock_cb(0, raddr1, sport1, dport1, SOCK_TCP);
   add_sock_cb(scb);
-  scb = init_sock_cb(raddr2, sport2, dport2, SOCK_TCP);
+  scb = init_sock_cb(0, raddr2, sport2, dport2, SOCK_TCP);
   add_sock_cb(scb);
-  scb = init_sock_cb(raddr3, sport3, dport3, SOCK_TCP);
+  scb = init_sock_cb(0, raddr3, sport3, dport3, SOCK_TCP);
   add_sock_cb(scb);
 
   struct sock_cb *scb1 = get_sock_cb(tcp_scb_table, sport1);
@@ -134,11 +134,11 @@ void udp_scb_table_test() {
     panic("two sports hash should equal!\n");
   
   struct sock_cb *scb;
-  scb = init_sock_cb(raddr1, sport1, dport1, SOCK_UDP);
+  scb = init_sock_cb(0, raddr1, sport1, dport1, SOCK_UDP);
   add_sock_cb(scb);
-  scb = init_sock_cb(raddr2, sport2, dport2, SOCK_UDP);
+  scb = init_sock_cb(0, raddr2, sport2, dport2, SOCK_UDP);
   add_sock_cb(scb);
-  scb = init_sock_cb(raddr3, sport3, dport3, SOCK_UDP);
+  scb = init_sock_cb(0, raddr3, sport3, dport3, SOCK_UDP);
   add_sock_cb(scb);
 
   struct sock_cb *scb1 = get_sock_cb(udp_scb_table, sport1);

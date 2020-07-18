@@ -30,6 +30,7 @@ enum sock_cb_state {
  * Struct connecting Socket and Tcb
  **/
 struct sock_cb {
+  struct file *f;
   struct spinlock lock;
   int socktype;
   enum sock_cb_state state;
@@ -46,7 +47,6 @@ struct sock_cb {
   } snd;
   struct {
     uint32 init_seq; // initial receive sequence number
-    uint32 unack; // oldest unacknowledged sequence number
     uint32 nxt_seq; // next sequence number to be sent
     uint32 wnd;
   } rcv;
@@ -64,7 +64,7 @@ struct sock_cb_entry {
   struct sock_cb *head;
 };
 
-struct sock_cb* init_sock_cb(uint32, uint16, uint16, int);
+struct sock_cb* init_sock_cb(struct file *, uint32, uint16, uint16, int);
 void free_sock_cb(struct sock_cb *);
 void add_sock_cb(struct sock_cb *);
 struct sock_cb* get_sock_cb(struct sock_cb_entry [], uint16);

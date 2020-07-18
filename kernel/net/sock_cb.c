@@ -3,16 +3,18 @@
 #include "net/netutil.h"
 #include "net/sock_cb.h"
 #include "sys/sysnet.h"
+#include "file.h"
 
 struct sock_cb_entry tcp_scb_table[SOCK_CB_LEN];
 struct sock_cb_entry udp_scb_table[SOCK_CB_LEN];
 
-struct sock_cb* init_sock_cb(uint32 raddr, uint16 sport, uint16 dport, int socktype) {
+struct sock_cb* init_sock_cb(struct file *f, uint32 raddr, uint16 sport, uint16 dport, int socktype) {
   struct sock_cb *scb;
   scb = bd_alloc(sizeof(struct sock_cb));
   if (scb == 0)
     panic("[init_sock_cb] could not allocate\n");
   memset(scb, 0, sizeof(*scb));
+  scb->f = f;
   scb->state = SOCK_CB_CLOSED;
   initlock(&scb->lock, "scb lock");
   scb->socktype = socktype;
@@ -51,7 +53,21 @@ void free_sock_cb(struct sock_cb *scb) {
       entry = &udp_scb_table[scb->sport % SOCK_CB_LEN];
     }
 
+    if (scb->f) {
+      filefree(scb->f);
+    }
+
     kfree(scb->wnd);
+
+    acquire(&scb->lock);
+    struct mbuf *m;
+    while((m = pop_from_scb_rxq(scb)) != 0) {
+      mbuffree(m);
+    }
+    while((m = pop_from_scb_txq(scb)) != 0) {
+      mbuffree(m);
+    }
+    release(&scb->lock);
 
     release_sport(scb->sport);
     acquire(&entry->lock);
