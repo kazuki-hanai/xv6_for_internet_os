@@ -146,15 +146,15 @@ int tcp_close(struct sock_cb *scb) {
   switch(scb->state) {
   case SOCK_CB_CLOSED:
     // "error:  connection illegal for this process".
-    return -1;
+    return 0;
     break;
   case SOCK_CB_LISTEN:
     // "error:  closing"
-    return -1;
+    return 0;
     break;
   case SOCK_CB_SYN_SENT:
     // "error closing"
-    return -1;
+    return 0;
     break;
   case SOCK_CB_SYN_RCVD:
     m = mbufalloc(ETH_MAX_SIZE);
@@ -167,21 +167,22 @@ int tcp_close(struct sock_cb *scb) {
     break;
   case SOCK_CB_ESTAB:
     m = mbufalloc(ETH_MAX_SIZE);
-    push_to_scb_txq(scb, m, scb->snd.nxt_seq, TCP_FLG_FIN, m->len);
-    // TODO send and entering FIN_WAIT_1
+    tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN, m->len);
+    scb->state = SOCK_CB_FIN_WAIT_1;
     break;
   case SOCK_CB_FIN_WAIT_1:
   case SOCK_CB_FIN_WAIT_2:
     // "error: connection closing"
-    return -1;
+    return 0;
     break;
   case SOCK_CB_CLOSE_WAIT:
     m = mbufalloc(ETH_MAX_SIZE);
-    push_to_scb_txq(scb, m, scb->snd.nxt_seq, TCP_FLG_FIN, m->len);
-    // TODO send and entering CLOSING
+    scb->snd.nxt_seq += 1;
+    tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN, m->len);
+    scb->state = SOCK_CB_LAST_ACK;
     break;
   default:
-    return -1;
+    return 0;
   }
   return 0;
 }
@@ -332,13 +333,15 @@ static int check_rst_flg(struct sock_cb *scb, uint8 flg) {
         // TODO
         // segment queues should be flushed
         // close scb
+        scb->state = SOCK_CB_CLOSED;
         return -1;
         break;
       case SOCK_CB_CLOSING:
       case SOCK_CB_LAST_ACK:
       case SOCK_CB_TIME_WAIT:
-        // TODO
         // close scb
+        scb->state = SOCK_CB_CLOSED;
+        return -1;
         break;
       default:
         break;
@@ -351,9 +354,14 @@ static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uin
   if (!TCP_FLG_ISSET(flg, TCP_FLG_ACK)) {
     return -1;
   }
+
+  int is_valid_nxtack  = scb->snd.unack < ack && ack <= scb->snd.nxt_seq;
+  int is_old_ack        = ack < scb->snd.unack;
+  int is_future_ack     = scb->snd.nxt_seq < ack;
+
   switch(scb->state) {
     case SOCK_CB_SYN_RCVD:
-      if (scb->snd.unack <= ack && ack <= scb->snd.nxt_seq) {
+      if (is_valid_nxtack) {
         scb->state = SOCK_CB_ESTAB;
       } else {
         struct mbuf *rst_m = mbufalloc(ETH_MAX_SIZE);
@@ -366,35 +374,42 @@ static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uin
     case SOCK_CB_FIN_WAIT_2:
     case SOCK_CB_CLOSE_WAIT:
     case SOCK_CB_CLOSING:
-    case SOCK_CB_LAST_ACK:
-      if (scb->snd.unack < ack && ack <= scb->snd.nxt_seq) {
+      if (is_valid_nxtack) {
         scb->snd.unack = ack;
-        // TODO
         // Any segments on the retransmission queue which are thereby entirely
         // acknowledged are removed
-        if (scb->snd.wl1 < seq || (scb->snd.wl1 == seq && scb->snd.wl2 <= ack)) {
+        int can_update_sndwnd = scb->snd.wl1 < seq || (scb->snd.wl1 == seq && scb->snd.wl2 <= ack);
+        if (can_update_sndwnd) {
           scb->snd.wnd = sndwnd;
           scb->snd.wl1 = seq;
           scb->snd.wl2 = ack;
         }
-      } else if (ack < scb->snd.unack) {
+      } else if (is_old_ack) {
+        // ignore
         return -1;
-      } else if (scb->snd.nxt_seq < ack) {
-        // TODO
-        // If the ACK acks something not yet sent then send an ACK, drop the segment
+      } else if (is_future_ack) {
+        // send ack
+        struct mbuf *ack_m = mbufalloc(ETH_MAX_SIZE);
+        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
+        return -1;
       }
 
+      // state transition
       if (scb->state == SOCK_CB_FIN_WAIT_1) {
         scb->state = SOCK_CB_FIN_WAIT_2;
       }
       if (scb->state == SOCK_CB_FIN_WAIT_2) {
         // TODO check whether retransmission queue is empty
-        // ??????????????????????
-        scb->state = SOCK_CB_TIME_WAIT;
+        // if state really equal FIN_WAIT_2, something is wrong.
       }
       if (scb->state == SOCK_CB_CLOSING) {
-        scb->state = SOCK_CB_TIME_WAIT;
+        scb->state = SOCK_CB_CLOSED;
+        return -1;
       }
+      break;
+    case SOCK_CB_LAST_ACK:
+      scb->state = SOCK_CB_CLOSED;
+      return -1;
       break;
     case SOCK_CB_TIME_WAIT:
       // TODO
@@ -487,6 +502,7 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
 
   // eighth, check the FIN bit
   if (TCP_FLG_ISSET(flg, TCP_FLG_FIN)) {
+    struct mbuf *ack_m = 0;
     switch(scb->state) {
       case SOCK_CB_CLOSED:
       case SOCK_CB_LISTEN:
@@ -506,10 +522,12 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
         // TODO
         // If our FIN has been ACKed, then enter TIME_WAIT, start the time-wait timer
         // otherwise enter the CLOSING state;
-        scb->state = SOCK_CB_TIME_WAIT;
+        ack_m = mbufalloc(ETH_MAX_SIZE);
+        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
+        free_sock_cb(scb);
         break;
       case SOCK_CB_FIN_WAIT_2:
-        scb->state = SOCK_CB_TIME_WAIT;
+        free_sock_cb(scb);
         break;
       case SOCK_CB_CLOSE_WAIT:
       case SOCK_CB_CLOSING:

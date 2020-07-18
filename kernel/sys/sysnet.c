@@ -98,7 +98,7 @@ socket_alloc(struct file **f, int socktype)
     goto bad;
 
   // initialize objects
-  scb = init_sock_cb(0, 0, 0, socktype);
+  scb = init_sock_cb(*f, 0, 0, 0, socktype);
   (*f)->type = FD_SOCK;
   (*f)->readable = 1;
   (*f)->writable = 1;
@@ -318,8 +318,8 @@ void sockclose(struct file *f)
     panic("[sockclose] scb is already freed");
   }
   if (scb->socktype == SOCK_TCP) {
-    if (tcp_close(scb) == -1) {
-
+    if (tcp_close(scb) == 0) {
+      free_sock_cb(f->scb);
     }
   } else {
     free_sock_cb(f->scb);
