@@ -134,10 +134,16 @@ main(int argc, char **argv)
 
   // Test
   } else if (op == 2) {
-    if (strcmp(argv[2], "file") == 0) {
-      int sock = sock_connect(&argv[3]);
-      send_file(sock);
+    char buf[8];
+    if (strcmp(argv[2], "recv") == 0) {
+      int sock = sock_listen(&argv[3]);
+      read(0, buf, sizeof(buf));
       recv_file(sock);
+      close(sock);
+    } else if (strcmp(argv[2], "send") == 0) {
+      int sock = sock_listen(&argv[3]);
+      read(0, buf, sizeof(buf));
+      send_file(sock);
       close(sock);
     } else {
       print_help(argv[0]);
