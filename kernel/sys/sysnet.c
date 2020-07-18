@@ -209,12 +209,11 @@ uint64 sys_sockconnect() {
 int
 socksend(struct file *f, uint64 addr, int n)
 {
-  // TODO split data
   struct sock_cb *scb = f->scb;
   struct proc *pr = myproc();
 
   int bufsize = 0;
-
+  int res = 0;
   while (n > 0) {
     struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
     if (m == 0) {
@@ -244,8 +243,9 @@ socksend(struct file *f, uint64 addr, int n)
     }
     n -= bufsize;
     addr += bufsize;
+    res += bufsize;
   }
-  return n;
+  return res;
 }
 
 int
@@ -255,16 +255,59 @@ sockrecv(struct file *f, uint64 addr, int n)
   struct proc *pr = myproc();
 
   struct mbuf *m = 0;
+  int res = 0;
   // TODO fix busy wait
   // TODO tcp push check
-  while (m == 0x0) {
-    m = pop_from_scb_rxq(scb);
+  
+  if (scb->socktype == SOCK_TCP) {
+    while (1) {
+      m = pop_from_scb_rxq(scb);
+      if (m == 0)
+        continue;
+      
+      int acceptable_size = n-1 > m->len ? m->len : n-1;
+      
+      copyout(pr->pagetable, addr, m->head, acceptable_size);
+      addr += acceptable_size;
+      scb->rcv.wnd += acceptable_size;
+      res += acceptable_size;
+
+      if (n-1 > m->len) { // n-1 for null-terminated
+        mbuffree(m);
+        if (TCP_FLG_ISSET(m->tcphdr->flg, TCP_FLG_PSH)) {
+          break;
+        }
+      } else {
+        mbufpull(m, acceptable_size);
+        mbufq_pushhead(&scb->rxq, m);
+        break;
+      }
+      n -= acceptable_size;
+    }
+    scb->rcv.wnd -= 1; // for null-terminated
+  } else {
+    // busy-wait
+    while (m == 0x0) {
+      m = pop_from_scb_rxq(scb);
+    }
+    int acceptable_size = n-1 > m->len ? m->len : n-1;
+
+    copyout(pr->pagetable, addr, m->head, acceptable_size);
+    addr += acceptable_size;
+
+    if (m->len > n-1) {
+      mbufpull(m, n-1);
+      mbufq_pushhead(&scb->rxq, m);
+    } else {
+      mbuffree(m);
+    }
+    res = acceptable_size;
   }
-  int datasize = n > (m->len+1) ? (m->len+1) : n;
-  m->head[datasize] = 0;
-  copyout(pr->pagetable, addr, m->head, datasize);
-  mbuffree(m);
-  return n;
+
+  // null-terminated
+  char null[] = {0};
+  copyout(pr->pagetable, addr, null, 1);
+  return res;
 }
 
 void sockclose(struct file *f)

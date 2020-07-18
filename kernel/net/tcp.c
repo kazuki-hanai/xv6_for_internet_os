@@ -464,7 +464,9 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
     case SOCK_CB_FIN_WAIT_2:
       if (datalen > 0 && scb->rcv.nxt_seq == seq) {
         scb->rcv.nxt_seq += datalen;
-        scb->rcv.wnd -= m->len;
+        scb->rcv.wnd -= datalen;
+        // TODO paket length 0x3c
+        m->len = datalen;
         m->params.tcp.flg = tcphdr->flg;
         push_to_scb_rxq(scb, m);
         struct mbuf *ack_m = mbufalloc(ETH_MAX_SIZE);
