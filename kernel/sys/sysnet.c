@@ -265,14 +265,14 @@ sockrecv(struct file *f, uint64 addr, int n)
       if (m == 0)
         continue;
       
-      int acceptable_size = n-1 > m->len ? m->len : n-1;
+      int acceptable_size = n > m->len ? m->len : n;
       
       copyout(pr->pagetable, addr, m->head, acceptable_size);
       addr += acceptable_size;
       scb->rcv.wnd += acceptable_size;
       res += acceptable_size;
 
-      if (n-1 > m->len) { // n-1 for null-terminated
+      if (n > m->len) {
         mbuffree(m);
         if (TCP_FLG_ISSET(m->tcphdr->flg, TCP_FLG_PSH)) {
           break;
@@ -284,13 +284,12 @@ sockrecv(struct file *f, uint64 addr, int n)
       }
       n -= acceptable_size;
     }
-    scb->rcv.wnd -= 1; // for null-terminated
   } else {
     // busy-wait
     while (m == 0x0) {
       m = pop_from_scb_rxq(scb);
     }
-    int acceptable_size = n-1 > m->len ? m->len : n-1;
+    int acceptable_size = n > m->len ? m->len : n;
 
     copyout(pr->pagetable, addr, m->head, acceptable_size);
     addr += acceptable_size;
@@ -304,9 +303,6 @@ sockrecv(struct file *f, uint64 addr, int n)
     res = acceptable_size;
   }
 
-  // null-terminated
-  char null[] = {0};
-  copyout(pr->pagetable, addr, null, 1);
   return res;
 }
 
