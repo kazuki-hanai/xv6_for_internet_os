@@ -74,17 +74,19 @@ void chat(int sock) {
     wbuf[0] = 0;
 
     printf("you: ");
-    if ((rsize = read(sock, rbuf, sizeof(rbuf))) == -1) {
+    if ((rsize = read(sock, rbuf, sizeof(rbuf)-1)) == -1) {
       printf("read failed! connection closed.\n");
       break;
     }
+    rbuf[rsize] = 0;
     printf("%s", rbuf);
     printf("recv: %d\n", rsize);
 
     printf("me: ");
-    int wsize = read(1, wbuf, sizeof(wbuf));
+    int wsize = read(1, wbuf, sizeof(wbuf)-1);
     if (wbuf[0] == 0)
       break;
+    wbuf[wsize] = 0;
     if ((ssize = write(sock, wbuf, wsize)) == -1) {
       printf("write failed! connection closed.\n");
       break;
