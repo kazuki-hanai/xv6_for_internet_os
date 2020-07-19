@@ -162,7 +162,7 @@ int tcp_close(struct sock_cb *scb) {
       tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN, m->len);
       scb->state = SOCK_CB_FIN_WAIT_1;
     } else {
-      push_to_scb_txq(scb, m, scb->snd.nxt_seq, TCP_FLG_FIN, m->len);
+      push_to_scb_txq(scb, m, scb->snd.nxt_seq, TCP_FLG_FIN | TCP_FLG_ACK, m->len);
     }
     break;
   case SOCK_CB_ESTAB:
@@ -177,7 +177,6 @@ int tcp_close(struct sock_cb *scb) {
     break;
   case SOCK_CB_CLOSE_WAIT:
     m = mbufalloc(ETH_MAX_SIZE);
-    scb->snd.nxt_seq += 1;
     tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN, m->len);
     scb->state = SOCK_CB_LAST_ACK;
     break;
@@ -423,6 +422,51 @@ static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uin
   return 0;
 }
 
+static int check_fin(struct sock_cb *scb, uint8 flg) {
+  if (TCP_FLG_ISSET(flg, TCP_FLG_FIN)) {
+    struct mbuf *ack_m = 0;
+    switch(scb->state) {
+      case SOCK_CB_CLOSED:
+      case SOCK_CB_LISTEN:
+      case SOCK_CB_SYN_SENT:
+        break;
+      // signal the user "connection closing"
+      // return any pending RECEIVEs with above message
+      // advance RCV.NXT over the FIN
+      // send ack for the FIN
+      // Note that FIN implies PUSH for any segment text not yet delivered to the user.
+      case SOCK_CB_SYN_RCVD:
+      case SOCK_CB_ESTAB:
+        ack_m = mbufalloc(ETH_MAX_SIZE);
+        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
+        scb->state = SOCK_CB_CLOSE_WAIT;
+        break;
+      case SOCK_CB_FIN_WAIT_1:
+        // TODO
+        // If our FIN has been ACKed, then enter TIME_WAIT, start the time-wait timer
+        // otherwise enter the CLOSING state;
+        ack_m = mbufalloc(ETH_MAX_SIZE);
+        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
+        free_sock_cb(scb);
+        break;
+      case SOCK_CB_FIN_WAIT_2:
+        ack_m = mbufalloc(ETH_MAX_SIZE);
+        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
+        free_sock_cb(scb);
+        break;
+      case SOCK_CB_CLOSE_WAIT:
+      case SOCK_CB_CLOSING:
+      case SOCK_CB_LAST_ACK:
+      case SOCK_CB_TIME_WAIT:
+        // remain in the CLOSE_WAIT
+        // If state is TIME_WAIT, restart the 2 MSL time_wait timeout.
+        break;
+    }
+    return -1;
+  }
+  return 0;
+}
+
 static int tcp_recv_core(struct rx_tcp_context *ctxt) {
   struct tcp *tcphdr = ctxt->m->tcphdr;
   struct sock_cb *scb = ctxt->scb;
@@ -501,42 +545,8 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
   }
 
   // eighth, check the FIN bit
-  if (TCP_FLG_ISSET(flg, TCP_FLG_FIN)) {
-    struct mbuf *ack_m = 0;
-    switch(scb->state) {
-      case SOCK_CB_CLOSED:
-      case SOCK_CB_LISTEN:
-      case SOCK_CB_SYN_SENT:
-        return -1;
-        break;
-      // signal the user "connection closing"
-      // return any pending RECEIVEs with above message
-      // advance RCV.NXT over the FIN
-      // send ack for the FIN
-      // Note that FIN implies PUSH for any segment text not yet delivered to the user.
-      case SOCK_CB_SYN_RCVD:
-      case SOCK_CB_ESTAB:
-        scb->state = SOCK_CB_CLOSE_WAIT;
-        break;
-      case SOCK_CB_FIN_WAIT_1:
-        // TODO
-        // If our FIN has been ACKed, then enter TIME_WAIT, start the time-wait timer
-        // otherwise enter the CLOSING state;
-        ack_m = mbufalloc(ETH_MAX_SIZE);
-        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
-        free_sock_cb(scb);
-        break;
-      case SOCK_CB_FIN_WAIT_2:
-        free_sock_cb(scb);
-        break;
-      case SOCK_CB_CLOSE_WAIT:
-      case SOCK_CB_CLOSING:
-      case SOCK_CB_LAST_ACK:
-      case SOCK_CB_TIME_WAIT:
-        // remain in the CLOSE_WAIT
-        // If state is TIME_WAIT, restart the 2 MSL time_wait timeout.
-        break;
-    }
+  if (check_fin(scb, flg) == -1) {
+    return -1;
   }
   return 0;
 }
