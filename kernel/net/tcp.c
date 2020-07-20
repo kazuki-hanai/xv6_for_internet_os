@@ -590,8 +590,6 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
     return TCP_OP_OK;
     break;
   default:
-    mbuffree(m);
-    m = 0;
     break;
   }
   
