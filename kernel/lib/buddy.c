@@ -200,9 +200,9 @@ lst_empty(struct bd_list *lst) {
 void
 lst_remove(struct bd_list *e) {
   if (e == 0) {
-    panic("a list has no member");
+    panic("[lst_remove] a list has no member");
   } else if (e->prev == 0) {
-    panic("a list prev has no member");
+    panic("[lst_remove] a list prev has no member");
   } else if (e->next == 0) {
     panic("a list next has no member");
   }
