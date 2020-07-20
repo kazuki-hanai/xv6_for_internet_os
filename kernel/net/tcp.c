@@ -29,7 +29,6 @@ struct rx_tcp_context {
 };
 
 void tcpinit() {
-  
 }
 
 static uint16 tcp_checksum(uint32 ip_src, uint32 ip_dst, uint8 ip_p, struct tcp *tcphdr, uint16 len) {
@@ -63,9 +62,9 @@ int tcp_connect(struct sock_cb *scb) {
     printf("not tcp socket!\n");
     return -1;
   }
-  struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
+  struct mbuf *syn_m = mbufalloc(ETH_MAX_SIZE);
   scb->rcv.wnd = SOCK_CB_DEFAULT_WND_SIZE;
-  tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_SYN, 0);
+  tcp_send_core(syn_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_SYN, 0);
   scb->state = SOCK_CB_SYN_SENT;
   scb->snd.nxt_seq = scb->snd.init_seq + 1;
 
@@ -298,12 +297,12 @@ static int tcp_recv_syn_sent(struct rx_tcp_context *ctxt) {
       struct mbuf *rst_ack_m = mbufalloc(ETH_MAX_SIZE);
       tcp_send_core(rst_ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_RST | TCP_FLG_ACK, 0);
       scb->snd.nxt_seq = scb->snd.init_seq + 1;
-      return -1;
+      return TCP_OP_ERR;
     }
   }
   if (TCP_FLG_ISSET(flg, TCP_FLG_RST)) {
     // TODO free sock
-    return -1;
+    return TCP_OP_ERR;
   }
   // TODO check the security and precedence
 
@@ -322,9 +321,9 @@ static int tcp_recv_syn_sent(struct rx_tcp_context *ctxt) {
       tcp_send_core(syn_ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.init_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_SYN | TCP_FLG_ACK, 0);
     }
   } else {
-    return -1;
+    return TCP_OP_ERR;
   }
-  return 0;
+  return TCP_OP_OK;
 }
 
 static int check_rst(struct sock_cb *scb, uint8 flg) {
@@ -588,8 +587,11 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
     push_to_scb_rxq(scb, m);
     snd_m = mbufalloc(ETH_MAX_SIZE);
     tcp_send_core(snd_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
+    return TCP_OP_OK;
     break;
   default:
+    mbuffree(m);
+    m = 0;
     break;
   }
   
@@ -608,7 +610,7 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
   default:
     break;
   }
-  return 0;
+  return TCP_OP_FREE_MBUF;
 }
 
 // segment arrives
@@ -656,7 +658,7 @@ void tcp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
     goto fail;
     break;
   case SOCK_CB_LISTEN:
-    if (tcp_recv_listen(&ctxt) == -1)
+    if (tcp_recv_listen(&ctxt) == TCP_OP_ERR)
       goto fail;
     mbuffree(m);
     break;
@@ -678,6 +680,7 @@ void tcp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
       free_sock_cb(scb);
       goto fail;
     case TCP_OP_ERR:
+    case TCP_OP_FREE_MBUF:
       goto fail;
     default:
       break;
@@ -688,7 +691,7 @@ void tcp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   // TODO URG process
   return;
 fail:
-
-  mbuffree(m);
+  if (m != 0)
+    mbuffree(m);
   return;
 }
