@@ -159,16 +159,21 @@ int tcp_close(struct sock_cb *scb) {
   case SOCK_CB_SYN_RCVD:
     m = mbufalloc(ETH_MAX_SIZE);
     if (!mbufq_empty(&scb->txq)) {
-      tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN, m->len);
+      tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN | TCP_FLG_ACK, m->len);
+      scb->snd.nxt_seq += 1;
       scb->state = SOCK_CB_FIN_WAIT_1;
     } else {
+      // TODO ... sequence number process
       push_to_scb_txq(scb, m, scb->snd.nxt_seq, TCP_FLG_FIN | TCP_FLG_ACK, m->len);
     }
+    return -1;
     break;
   case SOCK_CB_ESTAB:
     m = mbufalloc(ETH_MAX_SIZE);
-    tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN, m->len);
+    tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN | TCP_FLG_ACK, m->len);
+    scb->snd.nxt_seq += 1;
     scb->state = SOCK_CB_FIN_WAIT_1;
+    return -1;
     break;
   case SOCK_CB_FIN_WAIT_1:
   case SOCK_CB_FIN_WAIT_2:
@@ -177,8 +182,10 @@ int tcp_close(struct sock_cb *scb) {
     break;
   case SOCK_CB_CLOSE_WAIT:
     m = mbufalloc(ETH_MAX_SIZE);
-    tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN, m->len);
+    tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN | TCP_FLG_ACK, m->len);
+    scb->snd.nxt_seq += 1;
     scb->state = SOCK_CB_LAST_ACK;
+    return -1;
     break;
   default:
     return 0;
@@ -438,6 +445,7 @@ static int check_fin(struct sock_cb *scb, uint8 flg) {
       case SOCK_CB_SYN_RCVD:
       case SOCK_CB_ESTAB:
         ack_m = mbufalloc(ETH_MAX_SIZE);
+        scb->rcv.nxt_seq += 1;
         tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
         scb->state = SOCK_CB_CLOSE_WAIT;
         break;
@@ -446,12 +454,14 @@ static int check_fin(struct sock_cb *scb, uint8 flg) {
         // If our FIN has been ACKed, then enter TIME_WAIT, start the time-wait timer
         // otherwise enter the CLOSING state;
         ack_m = mbufalloc(ETH_MAX_SIZE);
+        scb->rcv.nxt_seq += 1;
         tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
         free_sock_cb(scb);
         break;
       case SOCK_CB_FIN_WAIT_2:
         ack_m = mbufalloc(ETH_MAX_SIZE);
-        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
+        scb->rcv.nxt_seq += 1;
+        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq+1, scb->rcv.wnd, TCP_FLG_ACK, 0);
         free_sock_cb(scb);
         break;
       case SOCK_CB_CLOSE_WAIT:
@@ -589,6 +599,7 @@ void tcp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   ctxt.dport = dport;
   ctxt.len = len;
 
+  printf("state: %d\n", scb->state);
   // state processing
   switch(scb->state) {
     case SOCK_CB_CLOSED:
@@ -622,6 +633,7 @@ void tcp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   // TODO URG process
   return;
 fail:
+
   mbuffree(m);
   return;
 }
