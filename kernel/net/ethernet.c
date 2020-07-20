@@ -38,7 +38,7 @@ eth_send(struct mbuf *m, uint16 ethtype, uint32 dip)
   memmove(ethhdr->shost, local_mac, ETH_ADDR_LEN);
   memmove(ethhdr->dhost, dhost, ETH_ADDR_LEN);
 
-  if (e1000_transmit(m)) {
+  if (e1000_transmit(m) == -1) {
     mbuffree(m);
   };
 }

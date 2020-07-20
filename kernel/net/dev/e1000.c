@@ -108,6 +108,8 @@ e1000_transmit(struct mbuf *m)
   tx_ring[index].cmd = E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP;
   tx_ring[index].status = 0;
 
+  tx_mbuf[index] = m;
+
   regs[E1000_TDT] = (index + 1) % TX_RING_SIZE;
 
   return 0;

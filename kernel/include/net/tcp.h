@@ -21,6 +21,7 @@
 #define TCP_OP_OK 0
 #define TCP_OP_SND_ACK 1
 #define TCP_OP_TXT_OK 2
+#define TCP_OP_FREE_MBUF 3
 
 #define TCP_MIN_PORT 25000
 #define TCP_MAX_DATA (ETH_MAX_SIZE - sizeof(struct eth) - sizeof(struct ipv4) - sizeof(struct tcp))

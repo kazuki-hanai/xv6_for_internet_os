@@ -59,8 +59,10 @@ mbufalloc(unsigned int headroom)
   if (headroom > MBUF_SIZE)
     return 0;
   m = bd_alloc(sizeof(struct mbuf));
-  if (m == 0)
-    return 0;
+  if (m == 0) {
+    panic("[mbufalloc] cannot allocate memory");
+  }
+
   m->raddr = 0;
   m->next = 0;
   m->head = (char *)m->buf + headroom;

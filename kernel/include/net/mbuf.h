@@ -1,5 +1,6 @@
 #pragma once
-#define MBUF_SIZE               2048
+
+#define MBUF_SIZE               1600
 #define MBUF_DEFAULT_HEADROOM   128
 
 struct mbuf {
