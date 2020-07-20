@@ -17,7 +17,6 @@ extern struct sock_cb_entry tcp_scb_table[SOCK_CB_LEN];
 static uint16 tcp_checksum(uint32, uint32, uint8, struct tcp *, uint16);
 static void tcp_send_core(struct mbuf *, uint32, uint16, uint16, uint32, uint32, uint32, uint8, uint16);
 static int is_seq_valid(uint32, uint32, uint32, uint16);
-static int check_rst_flg(struct sock_cb *, uint8);
 static int check_ack(struct sock_cb *, uint8, uint32, uint32, uint32);
 
 struct rx_tcp_context {
@@ -77,6 +76,37 @@ int tcp_connect(struct sock_cb *scb) {
   return 0;
 }
 
+static void tcp_send_core(
+  struct mbuf *m,
+  uint32 raddr,
+  uint16 sport,
+  uint16 dport,
+  uint32 sndnxt,
+  uint32 rcvnxt,
+  uint32 rcvwnd,
+  uint8 flg,
+  uint16 payload_len
+) {
+  extern uint32 local_ip;
+  struct tcp *tcphdr;
+
+  tcphdr = mbufpushhdr(m, *tcphdr);
+  tcphdr->sport = htons(sport);
+  tcphdr->dport = htons(dport);
+  tcphdr->seq = htonl(sndnxt);
+  if (TCP_FLG_ISSET(flg, TCP_FLG_ACK))
+    tcphdr->ack = htonl(rcvnxt);
+  else
+    tcphdr->ack = 0;
+  tcphdr->off = (sizeof(struct tcp) >> 2) << 4;
+  tcphdr->flg = flg;
+  tcphdr->wnd = htons(rcvwnd);
+  tcphdr->urg = 0;
+  tcphdr->sum = 0;
+  tcphdr->sum = htons(tcp_checksum(htonl(local_ip), htonl(raddr), IPPROTO_TCP, tcphdr, payload_len + sizeof(struct tcp)));
+  ip_send(m, IPPROTO_TCP, raddr);
+}
+
 // https://tools.ietf.org/html/rfc793#page-56
 int tcp_send(struct sock_cb *scb, struct mbuf *m, uint8 flg) {
   if (scb == 0)
@@ -92,13 +122,13 @@ int tcp_send(struct sock_cb *scb, struct mbuf *m, uint8 flg) {
   switch(scb->state) {
   case SOCK_CB_LISTEN:
     if (scb->raddr) {
-      uint32 seq = 0; // initial send sequence number;
+      scb->snd.init_seq = 0;
       // TODO The urgent bit if requested in the command must be sent with the data segments sent
       // as a result of this command.
-      tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_SYN, 0);
+      tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.init_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_SYN, 0);
       scb->state = SOCK_CB_SYN_SENT;
-      scb->snd.unack = seq;
-      scb->snd.nxt_seq = seq+1;
+      scb->snd.unack = scb->snd.init_seq;
+      scb->snd.nxt_seq = scb->snd.init_seq+1;
       return 0;
     } else {
       // "error: foreign socket unspecified";
@@ -158,8 +188,11 @@ int tcp_close(struct sock_cb *scb) {
     break;
   case SOCK_CB_SYN_RCVD:
     m = mbufalloc(ETH_MAX_SIZE);
+    if (m == 0) {
+      panic("[tcp close] m is zero");
+    }
     if (!mbufq_empty(&scb->txq)) {
-      tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN | TCP_FLG_ACK, m->len);
+      tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN | TCP_FLG_ACK, 0);
       scb->snd.nxt_seq += 1;
       scb->state = SOCK_CB_FIN_WAIT_1;
     } else {
@@ -195,37 +228,6 @@ int tcp_close(struct sock_cb *scb) {
 
 int tcp_abort() {
   return -1;
-}
-
-static void tcp_send_core(
-  struct mbuf *m,
-  uint32 raddr,
-  uint16 sport,
-  uint16 dport,
-  uint32 sndnxt,
-  uint32 rcvnxt,
-  uint32 rcvwnd,
-  uint8 flg,
-  uint16 payload_len
-) {
-  extern uint32 local_ip;
-  struct tcp *tcphdr;
-
-  tcphdr = mbufpushhdr(m, *tcphdr);
-  tcphdr->sport = htons(sport);
-  tcphdr->dport = htons(dport);
-  tcphdr->seq = htonl(sndnxt);
-  if (TCP_FLG_ISSET(flg, TCP_FLG_ACK))
-    tcphdr->ack = htonl(rcvnxt);
-  else
-    tcphdr->ack = 0;
-  tcphdr->off = (sizeof(struct tcp) >> 2) << 4;
-  tcphdr->flg = flg;
-  tcphdr->wnd = htons(rcvwnd);
-  tcphdr->urg = 0;
-  tcphdr->sum = 0;
-  tcphdr->sum = htons(tcp_checksum(htonl(local_ip), htonl(raddr), IPPROTO_TCP, tcphdr, payload_len + sizeof(struct tcp)));
-  ip_send(m, IPPROTO_TCP, raddr);
 }
 
 static int is_seq_valid(uint32 rcvwnd, uint32 rcvnxt, uint32 segseq, uint16 seglen) {
@@ -325,12 +327,12 @@ static int tcp_recv_syn_sent(struct rx_tcp_context *ctxt) {
   return 0;
 }
 
-static int check_rst_flg(struct sock_cb *scb, uint8 flg) {
+static int check_rst(struct sock_cb *scb, uint8 flg) {
   if (TCP_FLG_ISSET(flg, TCP_FLG_RST)) {
     switch(scb->state) {
       case SOCK_CB_SYN_RCVD:
         scb->state = SOCK_CB_LISTEN;
-        return -1;
+        return TCP_OP_CLOSE_SCB;
         break;
       case SOCK_CB_ESTAB:
       case SOCK_CB_FIN_WAIT_1:
@@ -340,14 +342,14 @@ static int check_rst_flg(struct sock_cb *scb, uint8 flg) {
         // segment queues should be flushed
         // close scb
         scb->state = SOCK_CB_CLOSED;
-        return -1;
+        return TCP_OP_CLOSE_SCB;
         break;
       case SOCK_CB_CLOSING:
       case SOCK_CB_LAST_ACK:
       case SOCK_CB_TIME_WAIT:
         // close scb
         scb->state = SOCK_CB_CLOSED;
-        return -1;
+        return TCP_OP_CLOSE_SCB;
         break;
       default:
         break;
@@ -358,7 +360,7 @@ static int check_rst_flg(struct sock_cb *scb, uint8 flg) {
 
 static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uint32 sndwnd) {
   if (!TCP_FLG_ISSET(flg, TCP_FLG_ACK)) {
-    return -1;
+    return TCP_OP_ERR;
   }
 
   int is_valid_nxtack  = scb->snd.unack < ack && ack <= scb->snd.nxt_seq;
@@ -370,9 +372,7 @@ static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uin
       if (is_valid_nxtack) {
         scb->state = SOCK_CB_ESTAB;
       } else {
-        struct mbuf *rst_m = mbufalloc(ETH_MAX_SIZE);
-        tcp_send_core(rst_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_RST, 0);
-        return -1;
+        return TCP_OP_SND_RST;
       }
       break;
     case SOCK_CB_ESTAB:
@@ -392,12 +392,9 @@ static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uin
         }
       } else if (is_old_ack) {
         // ignore
-        return -1;
+        return TCP_OP_ERR;
       } else if (is_future_ack) {
-        // send ack
-        struct mbuf *ack_m = mbufalloc(ETH_MAX_SIZE);
-        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
-        return -1;
+        return TCP_OP_SND_ACK;
       }
 
       // state transition
@@ -406,16 +403,15 @@ static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uin
       }
       if (scb->state == SOCK_CB_FIN_WAIT_2) {
         // TODO check whether retransmission queue is empty
-        // if state really equal FIN_WAIT_2, something is wrong.
       }
       if (scb->state == SOCK_CB_CLOSING) {
         scb->state = SOCK_CB_CLOSED;
-        return -1;
+        return TCP_OP_CLOSE_SCB;
       }
       break;
     case SOCK_CB_LAST_ACK:
       scb->state = SOCK_CB_CLOSED;
-      return -1;
+      return TCP_OP_CLOSE_SCB;
       break;
     case SOCK_CB_TIME_WAIT:
       // TODO
@@ -426,84 +422,10 @@ static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uin
     default:
       break;
   }
-  return 0;
+  return TCP_OP_OK;
 }
 
-static int check_fin(struct sock_cb *scb, uint8 flg) {
-  if (TCP_FLG_ISSET(flg, TCP_FLG_FIN)) {
-    struct mbuf *ack_m = 0;
-    switch(scb->state) {
-      case SOCK_CB_CLOSED:
-      case SOCK_CB_LISTEN:
-      case SOCK_CB_SYN_SENT:
-        break;
-      // signal the user "connection closing"
-      // return any pending RECEIVEs with above message
-      // advance RCV.NXT over the FIN
-      // send ack for the FIN
-      // Note that FIN implies PUSH for any segment text not yet delivered to the user.
-      case SOCK_CB_SYN_RCVD:
-      case SOCK_CB_ESTAB:
-        ack_m = mbufalloc(ETH_MAX_SIZE);
-        scb->rcv.nxt_seq += 1;
-        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
-        scb->state = SOCK_CB_CLOSE_WAIT;
-        break;
-      case SOCK_CB_FIN_WAIT_1:
-        // TODO
-        // If our FIN has been ACKed, then enter TIME_WAIT, start the time-wait timer
-        // otherwise enter the CLOSING state;
-        ack_m = mbufalloc(ETH_MAX_SIZE);
-        scb->rcv.nxt_seq += 1;
-        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
-        free_sock_cb(scb);
-        break;
-      case SOCK_CB_FIN_WAIT_2:
-        ack_m = mbufalloc(ETH_MAX_SIZE);
-        scb->rcv.nxt_seq += 1;
-        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq+1, scb->rcv.wnd, TCP_FLG_ACK, 0);
-        free_sock_cb(scb);
-        break;
-      case SOCK_CB_CLOSE_WAIT:
-      case SOCK_CB_CLOSING:
-      case SOCK_CB_LAST_ACK:
-      case SOCK_CB_TIME_WAIT:
-        // remain in the CLOSE_WAIT
-        // If state is TIME_WAIT, restart the 2 MSL time_wait timeout.
-        break;
-    }
-    return -1;
-  }
-  return 0;
-}
-
-static int tcp_recv_core(struct rx_tcp_context *ctxt) {
-  struct tcp *tcphdr = ctxt->m->tcphdr;
-  struct sock_cb *scb = ctxt->scb;
-  struct mbuf *m = ctxt->m;
-  uint32 ack = ntohl(tcphdr->ack);
-  uint32 seq = ntohl(tcphdr->seq);
-  uint8 flg = tcphdr->flg;
-  uint16 datalen = TCP_DATA_LEN(tcphdr, ctxt->len);
-
-  // first check sequence number
-  if (!is_seq_valid(scb->rcv.wnd, scb->rcv.nxt_seq, seq, datalen)) {
-    // send ack(unless the RST bit is set, if so drop the segment and return)
-    if (!TCP_FLG_ISSET(flg, TCP_FLG_RST)) {
-      struct mbuf *rst_m = mbufalloc(ETH_MAX_SIZE);
-      tcp_send_core(rst_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
-    }
-    return -1;
-  }
-
-  // second check the RST bit
-  if (check_rst_flg(scb, flg) == -1) {
-    return -1;
-  }
-  
-  // TODO third check security and precednece
-  
-  // fource, check the SYN bit
+static int check_syn(struct sock_cb *scb, uint8 flg) {
   if (
     scb->state == SOCK_CB_SYN_RCVD ||
     scb->state == SOCK_CB_ESTAB ||
@@ -516,47 +438,175 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
   ) {
     // TODO
     // If the SYN is in the window it is an error, send reset, close scb
+    if (TCP_FLG_ISSET(flg, TCP_FLG_SYN)) {
+      return TCP_OP_SND_RST;
+    }
+  }
+  return TCP_OP_OK;
+}
+
+static int check_text(struct sock_cb *scb, uint32 seq, uint16 datalen) {
+  switch(scb->state) {
+  case SOCK_CB_ESTAB:
+  case SOCK_CB_FIN_WAIT_1:
+  case SOCK_CB_FIN_WAIT_2:
+    if (datalen > 0 && scb->rcv.nxt_seq == seq) {
+      scb->rcv.nxt_seq += datalen;
+      scb->rcv.wnd -= datalen;
+      return TCP_OP_TXT_OK;
+    }
+    break;
+  case SOCK_CB_CLOSE_WAIT:
+  case SOCK_CB_CLOSING:
+  case SOCK_CB_LAST_ACK:
+  case SOCK_CB_TIME_WAIT:
+    // This should not occur, since a FIN has been received from the
+    // remote side. Ignore the segment text.
+    return TCP_OP_ERR;
+    break;
+  default:
+    return TCP_OP_ERR;
+    break;
+  }
+  return TCP_OP_OK;
+}
+
+static int check_fin(struct sock_cb *scb, uint8 flg) {
+  if (TCP_FLG_ISSET(flg, TCP_FLG_FIN)) {
+    switch(scb->state) {
+      case SOCK_CB_CLOSED:
+      case SOCK_CB_LISTEN:
+      case SOCK_CB_SYN_SENT:
+        break;
+      // signal the user "connection closing"
+      // return any pending RECEIVEs with above message
+      // advance RCV.NXT over the FIN
+      // send ack for the FIN
+      // Note that FIN implies PUSH for any segment text not yet delivered to the user.
+      case SOCK_CB_SYN_RCVD:
+      case SOCK_CB_ESTAB:
+        scb->rcv.nxt_seq += 1;
+        scb->state = SOCK_CB_CLOSE_WAIT;
+        return TCP_OP_SND_ACK;
+        break;
+      case SOCK_CB_FIN_WAIT_1:
+        // TODO
+        // If our FIN has been ACKed, then enter TIME_WAIT, start the time-wait timer
+        // otherwise enter the CLOSING state;
+        scb->rcv.nxt_seq += 1;
+        return TCP_OP_CLOSE_SCB;
+        break;
+      case SOCK_CB_FIN_WAIT_2:
+        scb->rcv.nxt_seq += 1;
+        return TCP_OP_CLOSE_SCB;
+        break;
+      case SOCK_CB_CLOSE_WAIT:
+      case SOCK_CB_CLOSING:
+      case SOCK_CB_LAST_ACK:
+      case SOCK_CB_TIME_WAIT:
+        // remain in the CLOSE_WAIT
+        // If state is TIME_WAIT, restart the 2 MSL time_wait timeout.
+        break;
+    }
+    return TCP_OP_ERR;
+  }
+  return TCP_OP_OK;
+}
+
+static int tcp_recv_core(struct rx_tcp_context *ctxt) {
+  struct tcp *tcphdr = ctxt->m->tcphdr;
+  struct sock_cb *scb = ctxt->scb;
+  struct mbuf *m = ctxt->m;
+  uint32 ack = ntohl(tcphdr->ack);
+  uint32 seq = ntohl(tcphdr->seq);
+  uint8 flg = tcphdr->flg;
+  uint16 datalen = TCP_DATA_LEN(tcphdr, ctxt->len);
+  
+  struct mbuf *snd_m = 0;
+
+  // first check sequence number
+  if (!is_seq_valid(scb->rcv.wnd, scb->rcv.nxt_seq, seq, datalen)) {
+    // send ack(unless the RST bit is set, if so drop the segment and return)
+    if (!TCP_FLG_ISSET(flg, TCP_FLG_RST)) {
+      snd_m = mbufalloc(ETH_MAX_SIZE);
+      tcp_send_core(snd_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
+    }
+    return TCP_OP_ERR;
   }
 
+  // second check the RST bit
+  switch (check_rst(scb, flg)) {
+  case TCP_OP_CLOSE_SCB:
+    return TCP_OP_CLOSE_SCB;
+    break;
+  case TCP_OP_ERR:
+    return TCP_OP_ERR;
+    break;
+  default:
+    break;
+  }
+  
+  // TODO third check security and precednece
+  
+  // fource, check the SYN bit
+  if (check_syn(scb, flg) == TCP_OP_SND_RST) {
+    snd_m = mbufalloc(ETH_MAX_SIZE);
+    tcp_send_core(snd_m, scb->raddr, scb->sport, scb->dport, ack, seq, scb->rcv.wnd, TCP_FLG_RST, 0);
+    return TCP_OP_CLOSE_SCB;
+  }
+  
   // fifth check the ACK field
-  if (check_ack(scb, flg, ack, seq, ntohl(tcphdr->wnd)) == -1) {
-    return -1;
+  switch (check_ack(scb, flg, ack, seq, ntohl(tcphdr->wnd))) {
+  case TCP_OP_CLOSE_SCB:
+    return TCP_OP_CLOSE_SCB;
+  case TCP_OP_SND_RST:
+    snd_m = mbufalloc(ETH_MAX_SIZE);
+    tcp_send_core(snd_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_RST, 0);
+    return TCP_OP_ERR;
+  case TCP_OP_ERR:
+    return TCP_OP_ERR;
+  case TCP_OP_OK:
+    break;
+  case TCP_OP_SND_ACK:
+    snd_m = mbufalloc(ETH_MAX_SIZE);
+    tcp_send_core(snd_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
+    return TCP_OP_ERR;
+  default:
+    break;
   }
   
   // TODO sixth, check the URG bit
 
   // seventh, process the segment text
   // deliver segment text to user RECEIVE buffers
-  switch(scb->state) {
-    case SOCK_CB_ESTAB:
-    case SOCK_CB_FIN_WAIT_1:
-    case SOCK_CB_FIN_WAIT_2:
-      if (datalen > 0 && scb->rcv.nxt_seq == seq) {
-        scb->rcv.nxt_seq += datalen;
-        scb->rcv.wnd -= datalen;
-        // TODO paket length 0x3c
-        m->len = datalen;
-        m->params.tcp.flg = tcphdr->flg;
-        push_to_scb_rxq(scb, m);
-        struct mbuf *ack_m = mbufalloc(ETH_MAX_SIZE);
-        tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
-      }
-      break;
-    case SOCK_CB_CLOSE_WAIT:
-    case SOCK_CB_CLOSING:
-    case SOCK_CB_LAST_ACK:
-    case SOCK_CB_TIME_WAIT:
-      // This should not occur, since a FIN has been received from the
-      // remote side. Ignore the segment text.
-      return -1;
-      break;
-    default:
-      break;
+  switch (check_text(scb, seq, datalen)) {
+  case TCP_OP_ERR:
+    return TCP_OP_ERR;
+  case TCP_OP_TXT_OK:
+    m->len = datalen;
+    m->params.tcp.flg = tcphdr->flg;
+    push_to_scb_rxq(scb, m);
+    snd_m = mbufalloc(ETH_MAX_SIZE);
+    tcp_send_core(snd_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
+    break;
+  default:
+    break;
   }
+  
 
   // eighth, check the FIN bit
-  if (check_fin(scb, flg) == -1) {
-    return -1;
+  switch (check_fin(scb, flg)) {
+  case TCP_OP_CLOSE_SCB:
+    snd_m = mbufalloc(ETH_MAX_SIZE);
+    tcp_send_core(snd_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
+    return TCP_OP_CLOSE_SCB;
+  case TCP_OP_SND_ACK: 
+    snd_m = mbufalloc(ETH_MAX_SIZE);
+    tcp_send_core(snd_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
+    return TCP_OP_ERR;
+    break;
+  default:
+    break;
   }
   return 0;
 }
@@ -599,35 +649,40 @@ void tcp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   ctxt.dport = dport;
   ctxt.len = len;
 
-  printf("state: %d\n", scb->state);
   // state processing
   switch(scb->state) {
-    case SOCK_CB_CLOSED:
-      // TODO if a incoming packet does not contain a RST, send a RST packet.
+  case SOCK_CB_CLOSED:
+    // TODO if a incoming packet does not contain a RST, send a RST packet.
+    goto fail;
+    break;
+  case SOCK_CB_LISTEN:
+    if (tcp_recv_listen(&ctxt) == -1)
       goto fail;
+    mbuffree(m);
+    break;
+  case SOCK_CB_SYN_SENT:
+    if (tcp_recv_syn_sent(&ctxt) == -1)
+      goto fail;
+    mbuffree(m);
+    break;
+  case SOCK_CB_SYN_RCVD:
+  case SOCK_CB_ESTAB:
+  case SOCK_CB_FIN_WAIT_1:
+  case SOCK_CB_FIN_WAIT_2:
+  case SOCK_CB_CLOSE_WAIT:
+  case SOCK_CB_CLOSING:
+  case SOCK_CB_LAST_ACK:
+  case SOCK_CB_TIME_WAIT:
+    switch (tcp_recv_core(&ctxt)) {
+    case TCP_OP_CLOSE_SCB:
+      free_sock_cb(scb);
+      goto fail;
+    case TCP_OP_ERR:
+      goto fail;
+    default:
       break;
-    case SOCK_CB_LISTEN:
-      if (tcp_recv_listen(&ctxt) == -1)
-        goto fail;
-      mbuffree(m);
-      break;
-    case SOCK_CB_SYN_SENT:
-      if (tcp_recv_syn_sent(&ctxt) == -1)
-        goto fail;
-      mbuffree(m);
-      break;
-    case SOCK_CB_SYN_RCVD:
-    case SOCK_CB_ESTAB:
-    case SOCK_CB_FIN_WAIT_1:
-    case SOCK_CB_FIN_WAIT_2:
-    case SOCK_CB_CLOSE_WAIT:
-    case SOCK_CB_CLOSING:
-    case SOCK_CB_LAST_ACK:
-    case SOCK_CB_TIME_WAIT:
-      if (tcp_recv_core(&ctxt) == -1) {
-        goto fail;
-      }
-      break;
+    }
+    break;
   }
 
   // TODO URG process

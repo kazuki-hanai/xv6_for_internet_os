@@ -15,6 +15,13 @@
 #define TCP_FLG_ACK 0x10
 #define TCP_FLG_URG 0x20
 
+#define TCP_OP_CLOSE_SCB -3
+#define TCP_OP_SND_RST -2
+#define TCP_OP_ERR -1
+#define TCP_OP_OK 0
+#define TCP_OP_SND_ACK 1
+#define TCP_OP_TXT_OK 2
+
 #define TCP_MIN_PORT 25000
 #define TCP_MAX_DATA (ETH_MAX_SIZE - sizeof(struct eth) - sizeof(struct ipv4) - sizeof(struct tcp))
 
