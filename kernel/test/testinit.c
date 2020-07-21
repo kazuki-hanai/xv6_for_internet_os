@@ -3,7 +3,8 @@
 #include "memlayout.h"
 #include "arch/riscv.h"
 #include "defs.h"
-#include "test/test.h"
+
+void test_start();
 
 void timerinit();
 

@@ -6,9 +6,12 @@
 BR="br0"
 TAPHOST="taphost"
 TAPIP="192.168.22.3/24"
+MAC="5e:02:03:04:05:06"
 
 echo "Executing qemu-ifup"
 echo "Bringing up $1 for bridged mode..."
 sudo ip tuntap add $1 mode tap
+sudo ip link set address $MAC dev $1
 sudo ip link set $1 up promisc on
 sudo ip route add 192.168.22.0/24 dev $1
+sudo ip addr add $TAPIP dev $1

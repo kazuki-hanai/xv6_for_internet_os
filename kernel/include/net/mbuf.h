@@ -1,12 +1,22 @@
 #pragma once
-#define MBUF_SIZE               2048
+
+#define MBUF_SIZE               1600
 #define MBUF_DEFAULT_HEADROOM   128
 
 struct mbuf {
-    struct mbuf *next;
-    char *head;
-    unsigned int len;
-    char buf[MBUF_SIZE];
+  uint32 raddr;
+  struct mbuf *next;
+  char *head;
+  unsigned int len;
+  char buf[MBUF_SIZE];
+  union {
+    struct {
+      uint32 sndnxt;
+      uint8 flg;
+      uint16 datalen;
+    } tcp;
+  } params;
+  struct tcp *tcphdr;
 };
 
 char *mbufpull(struct mbuf *m, unsigned int len);
@@ -30,6 +40,7 @@ char *mbuftrim(struct mbuf *m, unsigned int len);
 
 struct mbuf *mbufalloc(unsigned int headroom);
 void mbuffree(struct mbuf *m);
+struct mbuf *mbuf_copy(struct mbuf *m);
 
 struct mbufq {
   struct mbuf *head;  // the first element in the queue
@@ -37,6 +48,7 @@ struct mbufq {
 };
 
 void mbufq_pushtail(struct mbufq *q, struct mbuf *m);
+void mbufq_pushhead(struct mbufq *q, struct mbuf *m);
 struct mbuf *mbufq_pophead(struct mbufq *q);
 int mbufq_empty(struct mbufq *q);
 void mbufq_init(struct mbufq *q);

@@ -58,12 +58,17 @@ mbufalloc(unsigned int headroom)
  
   if (headroom > MBUF_SIZE)
     return 0;
-  m = kalloc();
-  if (m == 0)
-    return 0;
+  m = bd_alloc(sizeof(struct mbuf));
+  if (m == 0) {
+    panic("[mbufalloc] cannot allocate memory");
+  }
+
+  m->raddr = 0;
   m->next = 0;
   m->head = (char *)m->buf + headroom;
   m->len = 0;
+  m->tcphdr = 0;
+  memset((void *)&m->params, 0, sizeof(m->params));
   memset(m->buf, 0, sizeof(m->buf));
   return m;
 }
@@ -72,7 +77,16 @@ mbufalloc(unsigned int headroom)
 void
 mbuffree(struct mbuf *m)
 {
-  kfree(m);
+  bd_free(m);
+}
+
+struct mbuf *
+mbuf_copy(struct mbuf *m) {
+  struct mbuf *dst = mbufalloc(0);
+  memmove((void *)dst, (void *)m, sizeof(struct mbuf));
+  dst->next = 0;
+  dst->head = (dst->buf) + (m->head - m->buf);
+  return dst;
 }
 
 // Pushes an mbuf to the end of the queue.
@@ -86,6 +100,14 @@ mbufq_pushtail(struct mbufq *q, struct mbuf *m)
   }
   q->tail->next = m;
   q->tail = m;
+}
+
+void
+mbufq_pushhead(struct mbufq *q, struct mbuf *m)
+{
+  m->next = q->head;
+  q->head = m;
+  return;
 }
 
 // Pops an mbuf from the start of the queue.

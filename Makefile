@@ -47,14 +47,16 @@ BUILD_DIR=build
 KSRCS = \
 	$K/entry.S \
 	$K/start.c \
-	$K/console.c \
 	$K/main.c \
 	$K/swtch.c \
 	$K/trampoline.S \
 	$K/trap.c \
-	$K/bio.c \
-	$K/log.c \
 	$K/kernelvec.S \
+
+# Specific Architecture
+# KSRCS += \
+# 	$K/arch/entry.S \
+# 	$K/arch/start.c \
 
 # Memory System
 KSRCS += \
@@ -76,6 +78,8 @@ KSRCS += \
 KSRCS += \
 	$K/fs/file.c \
 	$K/fs/fs.c \
+	$K/fs/bio.c \
+	$K/fs/log.c \
 
 # Kernel Useful Library
 KSRCS += \
@@ -90,6 +94,7 @@ KSRCS += \
 	$K/dev/uart.c \
 	$K/dev/virtio_disk.c \
 	$K/dev/pci.c \
+	$K/dev/console.c \
 
 # Network System
 KSRCS += \
@@ -146,7 +151,6 @@ UPROGS=\
   	_udp\
   	_udplisten\
   	_tcp\
-  	_tcplisten\
 
 all: qemu
 

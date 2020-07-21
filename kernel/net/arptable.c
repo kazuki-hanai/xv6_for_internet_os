@@ -51,7 +51,7 @@ struct arp_cache* get_arp_cache(uint32 ip) {
       prev->next = arpcache;
     arpcache->prev = prev;
     arpcache->next = 0;
-    memset(arpcache->mac, 0, ETHADDR_LEN);
+    memset(arpcache->mac, 0, ETH_ADDR_LEN);
   // already exists
   } else if (
     arpcache != 0 &&
@@ -77,16 +77,17 @@ void arptable_add(uint32 ip, uint8 *mac) {
 
   arpcache = get_arp_cache(ip);
   arpcache->resolved = 1;
-  memmove(arpcache->mac, mac, ETHADDR_LEN);
+  memmove(arpcache->mac, mac, ETH_ADDR_LEN);
 }
 
-void arptable_get_mac(uint32 ip, uint8 *mac) {
+int arptable_get_mac(uint32 ip, uint8 *mac) {
   struct arp_cache *arpcache = get_arp_cache(ip);
-  uint8 broadcast_mac[ETHADDR_LEN] = { 0xFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF };
-  if (arpcache->resolved)
-    memmove(mac, arpcache->mac, ETHADDR_LEN);
-  else
-    memmove(mac, broadcast_mac, ETHADDR_LEN);
+  if (arpcache->resolved) {
+    memmove(mac, arpcache->mac, ETH_ADDR_LEN);
+    return 0;
+  } else {
+    return -1;
+  }
 }
 
 void arptable_del(uint32 ip) {

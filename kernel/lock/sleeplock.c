@@ -50,15 +50,3 @@ holdingsleep(struct sleeplock *lk)
   release(&lk->lk);
   return r;
 }
-
-void ticksleep(int n) {
-  uint ticks0;
-  printf("1\n");
-  acquire(&tickslock);
-  printf("2\n");
-  ticks0 = ticks;
-  while(ticks - ticks0 < n){
-    sleep(&ticks, &tickslock);
-  }
-  release(&tickslock);
-}

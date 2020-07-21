@@ -11,5 +11,13 @@
         "*.tcc": "c",
         "cstdint": "c",
         "typeinfo": "c"
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "/usr/include": true
     }
 }

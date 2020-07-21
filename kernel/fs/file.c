@@ -67,12 +67,8 @@ filedup(struct file *f)
   return f;
 }
 
-// Close file f.  (Decrement ref count, close when reaches 0.)
-void
-fileclose(struct file *f)
+void filefree(struct file *f)
 {
-  struct file ff;
-
   acquire(&ftable.lock);
   if(f->ref < 1)
     panic("fileclose");
@@ -80,9 +76,8 @@ fileclose(struct file *f)
     release(&ftable.lock);
     return;
   }
-  ff = *f;
   f->ref = 0;
-  f->type = FD_NONE;
+  // f->type = FD_NONE;
 
   if (f->prev == 0) {
     ftable.file = f->next;
@@ -93,8 +88,17 @@ fileclose(struct file *f)
     f->next->prev = f->prev;
   }
   bd_free(f);
-
   release(&ftable.lock);
+}
+
+// Close file f.  (Decrement ref count, close when reaches 0.)
+void
+fileclose(struct file *f)
+{
+  struct file ff;
+  ff = *f;
+
+  filefree(f);
 
   if(ff.type == FD_PIPE){
     pipeclose(ff.pipe, ff.writable);
@@ -103,7 +107,8 @@ fileclose(struct file *f)
     iput(ff.ip);
     end_op();
   } else if (ff.type == FD_SOCK) {
-    sock_cb_free(ff.scb);
+    ff.scb->f = 0;
+    sockclose(&ff);
   }
 }
 

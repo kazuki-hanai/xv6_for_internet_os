@@ -10,9 +10,9 @@
 
 #define SPORT_IS_USED(x) (sport_table[x/8] >> (x % 8) & 0x01)
 
-void sock_cb_free();
 int socksend(struct file *, uint64, int);
 int sockrecv(struct file *, uint64, int);
+void sockclose(struct file *);
 
 uint16 get_new_sport();
 uint16 get_specified_sport(uint16);

@@ -5,7 +5,7 @@
 struct arp_cache {
   int resolved;
   uint32 ip;
-  uint8 mac[ETHADDR_LEN];
+  uint8 mac[ETH_ADDR_LEN];
   struct arp_cache *prev;
   struct arp_cache *next;
 };
@@ -17,5 +17,5 @@ struct arp_cache_entry {
 
 void arptable_init();
 void arptable_add(uint32, uint8*);
-void arptable_get_mac(uint32, uint8*);
+int arptable_get_mac(uint32, uint8*);
 void arptable_del(uint32);

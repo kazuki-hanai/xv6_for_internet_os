@@ -19,3 +19,6 @@ user/usys.S
 .editorconfig
 packets.pcap
 .localconst
+
+test_linux/**
+!test_linux/*.c

@@ -5,11 +5,13 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-#include "e1000_dev.h"
+#include "net/dev/e1000_dev.h"
 #include "net/mbuf.h"
+#include "net/ethernet.h"
 
 #define TX_RING_SIZE 16
 static struct tx_desc tx_ring[TX_RING_SIZE] __attribute__((aligned(16)));
+static struct mbuf *tx_mbuf[TX_RING_SIZE];
 
 #define RX_RING_SIZE 16
 static struct rx_desc rx_ring[RX_RING_SIZE] __attribute__((aligned(16)));
@@ -38,6 +40,7 @@ e1000_init(uint32 *xregs)
   memset(tx_ring, 0, sizeof(tx_ring));
   for (i = 0; i < TX_RING_SIZE; i++) {
     tx_ring[i].status = E1000_TXD_STAT_DD;
+    tx_mbuf[i] = 0;
   }
   regs[E1000_TDBAL] = (uint64) tx_ring;
   if(sizeof(tx_ring) % 128 != 0)
@@ -88,14 +91,24 @@ e1000_transmit(struct mbuf *m)
 {
   int index = regs[E1000_TDT];
   
-  if(!tx_ring[index].status & E1000_TXD_STAT_DD)
+  if(!tx_ring[index].status & E1000_TXD_STAT_DD) {
+    printf("[e1000_transmit] still in progress\n");
     return -1;
+  }
+  
+  // free mbuf
+  struct mbuf *prev_mbuf = tx_mbuf[index == 0 ? TX_RING_SIZE-1: index-1];
+  if (prev_mbuf != 0) {
+    mbuffree(prev_mbuf);
+    tx_mbuf[index == 0 ? TX_RING_SIZE-1: index-1] = 0;
+  }
 
   tx_ring[index].addr = (uint64) m->head;
   tx_ring[index].length = (uint16) m->len;
   tx_ring[index].cmd = E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP;
   tx_ring[index].status = 0;
 
+  tx_mbuf[index] = m;
 
   regs[E1000_TDT] = (index + 1) % TX_RING_SIZE;
 
@@ -108,18 +121,17 @@ e1000_recv(void)
 
   // init
   int index = (regs[E1000_RDT]+1) % RX_RING_SIZE;
+  while(rx_ring[index].status & E1000_RXD_STAT_DD) {
+    struct mbuf *m = mbufalloc(0);
+    uint16 len = rx_ring[index].length;
+    rx_ring[index].status ^= E1000_RXD_STAT_DD;
+    memmove((void *)m->buf, (void *)rx_ring[index].addr, len);
+    mbufput(m, len);
 
-  if(!rx_ring[index].status & E1000_RXD_STAT_DD)
-    return;
-
-  struct mbuf *m = mbufalloc(0);
-  int len = rx_ring[index].length;
-  memmove((void *)m->buf, (void *)rx_ring[index].addr, len);
-  mbufput(m, len);
-
-  regs[E1000_RDT] = index;
-
-  net_rx(m);
+    regs[E1000_RDT] = index;
+    index = (index+1) % RX_RING_SIZE;
+    eth_recv(m);
+  }
 }
 
 void 

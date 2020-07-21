@@ -2,34 +2,73 @@
 #include "net/mbuf.h"
 #include "net/netutil.h"
 #include "net/sock_cb.h"
+#include "sys/sysnet.h"
+#include "file.h"
+#include "lib/buddy.h"
 
 struct sock_cb_entry tcp_scb_table[SOCK_CB_LEN];
 struct sock_cb_entry udp_scb_table[SOCK_CB_LEN];
 
-struct sock_cb* init_sock_cb(uint32 raddr, uint16 sport, uint16 dport, int socktype) {
+struct sock_cb* alloc_sock_cb(struct file *f, uint32 raddr, uint16 sport, uint16 dport, int socktype) {
   struct sock_cb *scb;
   scb = bd_alloc(sizeof(struct sock_cb));
   if (scb == 0)
-    panic("[init_sock_cb] could not allocate\n");
+    panic("[alloc_sock_cb] could not allocate\n");
   memset(scb, 0, sizeof(*scb));
-  scb->state = CLOSED;
+  scb->f = f;
+  scb->state = SOCK_CB_CLOSED;
   initlock(&scb->lock, "scb lock");
+  initsleeplock(&scb->slock, "scb sleep lock");
   scb->socktype = socktype;
   scb->raddr = raddr;
   scb->sport = sport;
   scb->dport = dport;
   scb->prev = 0;
   scb->next = 0;
+  scb->wnd = kalloc();
+  scb->wnd_idx = 0;
+  
+  scb->snd.init_seq = 0;
+  scb->snd.nxt_seq = 0;
+  scb->snd.unack = 0;
+  scb->snd.wl1 = 0;
+  scb->snd.wl2 = 0;
+  scb->snd.wnd = 0;
+
+  scb->rcv.init_seq = 0;
+  scb->rcv.nxt_seq = 0;
+  scb->rcv.wnd = PGSIZE;
+
   mbufq_init(&scb->txq);
   mbufq_init(&scb->rxq);
   return scb;
 }
 
-void free_sock_cb(struct sock_cb_entry table[], struct sock_cb *scb) {
+void free_sock_cb(struct sock_cb *scb) {
   if (scb != 0) {
     struct sock_cb_entry *entry;
-    entry = &table[scb->sport % SOCK_CB_LEN];
 
+    if (scb->socktype == SOCK_TCP) {
+      entry = &tcp_scb_table[scb->sport % SOCK_CB_LEN];
+    } else {
+      entry = &udp_scb_table[scb->sport % SOCK_CB_LEN];
+    }
+
+    if (scb->f) {
+      filefree(scb->f);
+    }
+
+    kfree(scb->wnd);
+
+    struct mbuf *m;
+    while((m = pop_from_scb_rxq(scb)) != 0) {
+      mbuffree(m);
+    }
+    while((m = pop_from_scb_txq(scb)) != 0) {
+      mbuffree(m);
+    }
+
+    release_sport(scb->sport);
     acquire(&entry->lock);
     if (scb->next != 0)
       scb->next->prev = scb->prev;
@@ -42,12 +81,18 @@ void free_sock_cb(struct sock_cb_entry table[], struct sock_cb *scb) {
   }
 }
 
-void add_sock_cb(struct sock_cb_entry table[], struct sock_cb *scb) {
+void add_sock_cb(struct sock_cb *scb) {
   if (scb == 0) {
     return;
   }
 
-  struct sock_cb_entry *entry = &table[scb->sport % SOCK_CB_LEN];
+  struct sock_cb_entry *entry;
+  
+  if (scb->socktype == SOCK_TCP) {
+    entry = &tcp_scb_table[scb->sport % SOCK_CB_LEN];
+  } else {
+    entry = &udp_scb_table[scb->sport % SOCK_CB_LEN];
+  }
 
   acquire(&entry->lock);
   struct sock_cb *tail = entry->head;
@@ -84,9 +129,8 @@ struct sock_cb* get_sock_cb(struct sock_cb_entry table[], uint16 sport) {
 }
 
 int
-push_to_scb_rxq(struct sock_cb_entry table[], struct mbuf *m, uint32 raddr, uint16 sport, uint16 dport)
+push_to_scb_rxq(struct sock_cb *scb, struct mbuf *m)
 {
-  struct sock_cb *scb = get_sock_cb(table, sport);
   if (scb == 0) {
     printf("scb: %d\n", scb);
     return -1;
@@ -97,15 +141,41 @@ push_to_scb_rxq(struct sock_cb_entry table[], struct mbuf *m, uint32 raddr, uint
   return 0;
 }
 
+struct mbuf *pop_from_scb_rxq(struct sock_cb *scb) {
+  if (scb == 0) {
+    printf("scb: %d\n", scb);
+    return 0;
+  }
+  acquire(&scb->lock);
+  struct mbuf *m = mbufq_pophead(&scb->rxq);
+  release(&scb->lock);
+  return m;
+}
+
 int
-push_to_scb_txq(struct sock_cb_entry table[], struct mbuf *m, uint32 raddr, uint16 sport, uint16 dport)
+push_to_scb_txq(struct sock_cb *scb, struct mbuf *m, uint32 sndnxt, uint8 flg, uint16 datalen)
 {
-  struct sock_cb *scb = get_sock_cb(table, sport);
   if (scb == 0) {
     return -1;
   }
+
+  m->params.tcp.sndnxt = sndnxt;
+  m->params.tcp.flg = flg;
+  m->params.tcp.datalen = datalen;
+
   acquire(&scb->lock);
   mbufq_pushtail(&scb->txq, m);
   release(&scb->lock);
   return 0;
+}
+
+struct mbuf *pop_from_scb_txq(struct sock_cb *scb) {
+  if (scb == 0) {
+    printf("scb: %d\n", scb);
+    return 0;
+  }
+  acquire(&scb->lock);
+  struct mbuf *m = mbufq_pophead(&scb->txq);
+  release(&scb->lock);
+  return m;
 }

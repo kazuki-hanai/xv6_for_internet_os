@@ -1,6 +1,5 @@
 #include "sys/sysnet.h"
 #include "defs.h"
-#include "test/test.h"
 
 void sport_test();
 
