@@ -98,7 +98,7 @@ socket_alloc(struct file **f, int socktype)
     goto bad;
 
   // initialize objects
-  scb = init_sock_cb(*f, 0, 0, 0, socktype);
+  scb = alloc_sock_cb(*f, 0, 0, 0, socktype);
   (*f)->type = FD_SOCK;
   (*f)->readable = 1;
   (*f)->writable = 1;

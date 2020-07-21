@@ -35,7 +35,7 @@ void listen_handshake_test() {
   printf("\t\t[listen_handshake test] start...\n");
 
   uint16 sport = 2000;
-  struct sock_cb *scb = init_sock_cb(0, 0, 0, SOCK_TCP);
+  struct sock_cb *scb = alloc_sock_cb(0, 0, 0, SOCK_TCP);
   if (sys_socklisten_core(scb, sport) < 0) {
     panic("sys_socklisten_core failed!");
   }
@@ -108,7 +108,7 @@ void connect_handshake_test() {
 
   uint32 raddr = MAKE_IP_ADDR(192, 168, 22, 3);
   uint16 dport = 2003;
-  struct sock_cb *scb = init_sock_cb(0, 0, 0, SOCK_TCP);
+  struct sock_cb *scb = alloc_sock_cb(0, 0, 0, SOCK_TCP);
   if (sys_sockconnect_core(scb, raddr, dport) < 0) {
     panic("sys_socklisten_core failed!");
   }
