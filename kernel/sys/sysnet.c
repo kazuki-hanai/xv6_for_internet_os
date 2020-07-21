@@ -65,6 +65,8 @@ uint16 get_specified_sport(uint16 sport) {
 }
 
 void release_sport(uint16 sport) {
+  if (sport > MAX_SPORT)
+    return;
   acquire(&sport_lock);
   if (((sport_table[(sport - START_OF_SPORT)/8]) & (1 << ((sport - START_OF_SPORT) % 8))) >= 1)
     sport_table[(sport - START_OF_SPORT)/8] ^= 1 << ((sport - START_OF_SPORT) % 8);
