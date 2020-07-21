@@ -80,7 +80,6 @@ void chat(int sock) {
     }
     rbuf[rsize] = 0;
     printf("%s", rbuf);
-    printf("recv: %d\n", rsize);
 
     printf("me: ");
     int wsize = read(1, wbuf, sizeof(wbuf)-1);
@@ -91,7 +90,6 @@ void chat(int sock) {
       printf("write failed! connection closed.\n");
       break;
     }
-    printf("send: %d\n", ssize);
   }
 }
 
@@ -101,15 +99,24 @@ void send_file(int sock) {
   int fd = open("ls", O_RDONLY);
   struct stat st;
   fstat(fd, &st);
-  read(fd, filebuf, st.size > 2000 ? 2000 : 2000);
-  write(sock, filebuf, sizeof(filebuf));
+  int size = st.size;
+  while (size > 0) {
+    int rsize = read(fd, filebuf, sizeof(filebuf));
+    write(sock, filebuf, rsize);
+    size -= rsize;
+  }
 }
 
 void recv_file(int sock) {
   int fd = open("ls_send", O_WRONLY|O_CREATE);
-  char filebuf[25000];
-  read(sock, filebuf, sizeof(filebuf));
-  write(fd, filebuf, sizeof(filebuf));
+  char filebuf[2000];
+  int wsize = 0;
+  wsize = read(sock, filebuf, sizeof(filebuf));
+  while (wsize >= 1) {
+    write(fd, filebuf, wsize);
+    wsize = read(sock, filebuf, sizeof(filebuf));
+  }
+  printf("wsize: %d\n", wsize);
 }
 
 int
@@ -136,15 +143,12 @@ main(int argc, char **argv)
 
   // Test
   } else if (op == 2) {
-    char buf[8];
     if (strcmp(argv[2], "recv") == 0) {
       int sock = sock_listen(&argv[3]);
-      read(0, buf, sizeof(buf));
       recv_file(sock);
       close(sock);
     } else if (strcmp(argv[2], "send") == 0) {
       int sock = sock_listen(&argv[3]);
-      read(0, buf, sizeof(buf));
       send_file(sock);
       close(sock);
     } else {
