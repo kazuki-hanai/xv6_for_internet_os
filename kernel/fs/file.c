@@ -98,6 +98,8 @@ fileclose(struct file *f)
   struct file ff;
   ff = *f;
 
+  filefree(f);
+
   if(ff.type == FD_PIPE){
     pipeclose(ff.pipe, ff.writable);
   } else if(ff.type == FD_INODE || ff.type == FD_DEVICE){
