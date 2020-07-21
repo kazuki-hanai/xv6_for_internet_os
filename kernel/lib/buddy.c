@@ -32,12 +32,11 @@ struct {
 
 void *bd_base;
 
-void lst_init(struct bd_list*);
-void lst_remove(struct bd_list*);
-void lst_push(struct bd_list*, void *);
-void *lst_pop(struct bd_list*);
-void lst_print(struct bd_list*);
-int lst_empty(struct bd_list*);
+static void lst_init(struct bd_list*);
+static void lst_remove(struct bd_list*);
+static void lst_push(struct bd_list*, void *);
+static void *lst_pop(struct bd_list*);
+static int lst_empty(struct bd_list*);
  
 int bit_isset(char *map, int index) {
   char b = map[index/8];
@@ -130,9 +129,9 @@ bd_free(void *p)
   int k;
   int pindex = get_page_index(p);
   void *pbase = bd_table.plist[pindex].pageaddr;
+  acquire(&bd_table.lock);
   k = blk_size(p, pindex, pbase);
   bd_allocated -= LEAF_SIZE << k;
-  acquire(&bd_table.lock);
   for (k = blk_size(p, pindex, pbase); k < MAX_SIZE; k++) {
     int bi = blk_index(k, p, pbase);
     bit_clear(bd_table.plist[pindex].alloc[k], bi);
@@ -157,6 +156,7 @@ bd_alloc(int nbytes)
 {
   int fk, k;
 
+  acquire(&bd_table.lock);
   fk = firstk(nbytes);
   for (k = fk; k < NSIZES; k++) {
     if(!lst_empty(&bd_table.bd_sizes[k].free))
@@ -165,7 +165,6 @@ bd_alloc(int nbytes)
   if (k >= NSIZES)
     return 0;
 
-  acquire(&bd_table.lock);
   char *p = lst_pop(&bd_table.bd_sizes[k].free);
   if (p == 0) {
     panic("[bd_alloc] there are no rest memory");
@@ -185,19 +184,19 @@ bd_alloc(int nbytes)
   return p;
 }
 
-void
+static void
 lst_init(struct bd_list *lst)
 {
   lst->next = lst;
   lst->prev = lst;
 }
 
-int
+static int
 lst_empty(struct bd_list *lst) {
   return lst->next == lst;
 }
 
-void
+static void
 lst_remove(struct bd_list *e) {
   if (e == 0) {
     panic("[lst_remove] a list has no member");
@@ -210,7 +209,7 @@ lst_remove(struct bd_list *e) {
   e->next->prev = e->prev;
 }
 
-void*
+static void*
 lst_pop(struct bd_list *lst) {
   struct bd_list *p = lst->next;
   if (p == 0) {
@@ -220,7 +219,7 @@ lst_pop(struct bd_list *lst) {
   return (void *)p;
 }
 
-void
+static void
 lst_push(struct bd_list *lst, void *p)
 {
   struct bd_list *e = (struct bd_list *) p;
@@ -232,4 +231,30 @@ lst_push(struct bd_list *lst, void *p)
   e->prev = lst;
   lst->next->prev = p;
   lst->next = e;
+}
+
+void buddy_show_map() {
+  for (int i = 0; i < MAX_PAGES; i++) {
+    printf("\npage: %d\n", i);
+    printf("\nalloc\n");
+    for (int j = 0; j < NSIZES; j++) {
+      printf("\tsize: %d\n\t", LEAF_SIZE << j);
+      int th = (16 >> j) > 0 ? (16 >> j) : 1;
+      for (int p = 0; p < th; p++) {
+        printf("%x ", (bd_table.plist[i].alloc[j][p]) & 0xf);
+        printf("%d ", (bd_table.plist[i].alloc[j][p] >> 4) & 0xf);
+      }
+      printf("\n");
+    }
+    printf("\nsplit\n");
+    for (int j = 0; j < NSIZES; j++) {
+      printf("\tsize: %d\n\t", LEAF_SIZE << j);
+      int th = (16 >> j) > 0 ? (16 >> j) : 1;
+      for (int p = 0; p < th; p++) {
+        printf("%x ", (bd_table.plist[i].split[j][p]) & 0xf);
+        printf("%d ", (bd_table.plist[i].split[j][p] >> 4) & 0xf);
+      }
+      printf("\n");
+    }
+  }
 }

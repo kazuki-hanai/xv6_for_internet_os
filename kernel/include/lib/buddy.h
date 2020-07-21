@@ -6,3 +6,5 @@
 #define HEAP_SIZE     BLK_SIZE(MAX_SIZE) // 4096
 #define ROUNDUP(n,sz) (((((n)-1)/(sz))+1)*(sz))
 #define MAX_PAGES     4
+
+void buddy_show_map();
