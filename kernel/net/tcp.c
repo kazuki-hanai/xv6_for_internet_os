@@ -161,10 +161,8 @@ int tcp_send(struct sock_cb *scb, struct mbuf *m, uint8 flg) {
   case SOCK_CB_TIME_WAIT:
     // "error:  connection closing" and do not service request.
     return -1;
-    break;
   default:
     return -1;
-    break;
   }
 
   return 0;
@@ -176,15 +174,12 @@ int tcp_close(struct sock_cb *scb) {
   case SOCK_CB_CLOSED:
     // "error:  connection illegal for this process".
     return 0;
-    break;
   case SOCK_CB_LISTEN:
     // "error:  closing"
     return 0;
-    break;
   case SOCK_CB_SYN_SENT:
     // "error closing"
     return 0;
-    break;
   case SOCK_CB_SYN_RCVD:
     m = mbufalloc(ETH_MAX_SIZE);
     if (m == 0) {
@@ -199,26 +194,22 @@ int tcp_close(struct sock_cb *scb) {
       push_to_scb_txq(scb, m, scb->snd.nxt_seq, TCP_FLG_FIN | TCP_FLG_ACK, m->len);
     }
     return -1;
-    break;
   case SOCK_CB_ESTAB:
     m = mbufalloc(ETH_MAX_SIZE);
     tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN | TCP_FLG_ACK, m->len);
     scb->snd.nxt_seq += 1;
     scb->state = SOCK_CB_FIN_WAIT_1;
     return -1;
-    break;
   case SOCK_CB_FIN_WAIT_1:
   case SOCK_CB_FIN_WAIT_2:
     // "error: connection closing"
     return 0;
-    break;
   case SOCK_CB_CLOSE_WAIT:
     m = mbufalloc(ETH_MAX_SIZE);
     tcp_send_core(m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_FIN | TCP_FLG_ACK, m->len);
     scb->snd.nxt_seq += 1;
     scb->state = SOCK_CB_LAST_ACK;
     return -1;
-    break;
   default:
     return 0;
   }
@@ -332,7 +323,6 @@ static int check_rst(struct sock_cb *scb, uint8 flg) {
       case SOCK_CB_SYN_RCVD:
         scb->state = SOCK_CB_LISTEN;
         return TCP_OP_CLOSE_SCB;
-        break;
       case SOCK_CB_ESTAB:
       case SOCK_CB_FIN_WAIT_1:
       case SOCK_CB_FIN_WAIT_2:
@@ -342,14 +332,12 @@ static int check_rst(struct sock_cb *scb, uint8 flg) {
         // close scb
         scb->state = SOCK_CB_CLOSED;
         return TCP_OP_CLOSE_SCB;
-        break;
       case SOCK_CB_CLOSING:
       case SOCK_CB_LAST_ACK:
       case SOCK_CB_TIME_WAIT:
         // close scb
         scb->state = SOCK_CB_CLOSED;
         return TCP_OP_CLOSE_SCB;
-        break;
       default:
         break;
     }
@@ -411,7 +399,6 @@ static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uin
     case SOCK_CB_LAST_ACK:
       scb->state = SOCK_CB_CLOSED;
       return TCP_OP_CLOSE_SCB;
-      break;
     case SOCK_CB_TIME_WAIT:
       // TODO
       // The only thing that can arrive in this state is a 
@@ -462,10 +449,8 @@ static int check_text(struct sock_cb *scb, uint32 seq, uint16 datalen) {
     // This should not occur, since a FIN has been received from the
     // remote side. Ignore the segment text.
     return TCP_OP_ERR;
-    break;
   default:
     return TCP_OP_ERR;
-    break;
   }
   return TCP_OP_OK;
 }
@@ -487,18 +472,15 @@ static int check_fin(struct sock_cb *scb, uint8 flg) {
         scb->rcv.nxt_seq += 1;
         scb->state = SOCK_CB_CLOSE_WAIT;
         return TCP_OP_SND_ACK;
-        break;
       case SOCK_CB_FIN_WAIT_1:
         // TODO
         // If our FIN has been ACKed, then enter TIME_WAIT, start the time-wait timer
         // otherwise enter the CLOSING state;
         scb->rcv.nxt_seq += 1;
         return TCP_OP_CLOSE_SCB;
-        break;
       case SOCK_CB_FIN_WAIT_2:
         scb->rcv.nxt_seq += 1;
         return TCP_OP_CLOSE_SCB;
-        break;
       case SOCK_CB_CLOSE_WAIT:
       case SOCK_CB_CLOSING:
       case SOCK_CB_LAST_ACK:
@@ -537,10 +519,8 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
   switch (check_rst(scb, flg)) {
   case TCP_OP_CLOSE_SCB:
     return TCP_OP_CLOSE_SCB;
-    break;
   case TCP_OP_ERR:
     return TCP_OP_ERR;
-    break;
   default:
     break;
   }
@@ -588,7 +568,6 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
     snd_m = mbufalloc(ETH_MAX_SIZE);
     tcp_send_core(snd_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
     return TCP_OP_OK;
-    break;
   default:
     break;
   }
@@ -604,7 +583,6 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
     snd_m = mbufalloc(ETH_MAX_SIZE);
     tcp_send_core(snd_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
     return TCP_OP_ERR;
-    break;
   default:
     break;
   }
