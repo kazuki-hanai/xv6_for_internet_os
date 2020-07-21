@@ -44,6 +44,20 @@ static uint16 tcp_checksum(uint32 ip_src, uint32 ip_dst, uint8 ip_p, struct tcp 
   return res;
 }
 
+static int tcp_acquiresleep(struct sock_cb *scb) {
+  acquiresleep(&scb->slock);
+  while (1) {
+    if (myproc()->killed){
+      releasesleep(&scb->slock);
+      return -1;
+    }
+    if (!holdingsleep(&scb->slock)) {
+      break;
+    }
+  }
+  return 0;
+}
+
 int tcp_listen(struct sock_cb *scb) {
   if (scb->socktype != SOCK_TCP) {
     printf("not tcp socket!\n");
@@ -54,6 +68,10 @@ int tcp_listen(struct sock_cb *scb) {
   // -> chenge the connection from passive to active
   // "error: connection already exists"
 
+  if (tcp_acquiresleep(scb) == -1) {
+    return -1;
+  }
+  
   return 0;
 }
 
@@ -71,6 +89,10 @@ int tcp_connect(struct sock_cb *scb) {
   // TODO SOCK_CB_LISTEN STATE
   // -> chenge the connection from passive to active
   // "error: connection already exists"
+  
+  if (tcp_acquiresleep(scb) == -1) {
+    return -1;
+  }
 
   return 0;
 }
@@ -233,12 +255,9 @@ static int is_seq_valid(uint32 rcvwnd, uint32 rcvnxt, uint32 segseq, uint16 segl
   }
 }
 
-static int tcp_recv_listen(struct rx_tcp_context *ctxt) {
-  struct tcp *tcphdr = ctxt->m->tcphdr;
-  struct sock_cb *scb = ctxt->scb;
-  uint32 raddr = ctxt->raddr;
-  uint16 sport = ctxt->sport;
-  uint16 dport = ctxt->dport;
+static int tcp_recv_listen(struct sock_cb *scb, struct mbuf *m, uint32 raddr, uint16 dport, uint16 len) {
+  struct tcp *tcphdr = m->tcphdr;
+  uint16 sport = scb->sport;
   uint32 ack = ntohl(tcphdr->ack);
   uint32 seq = ntohl(tcphdr->seq);
   uint8 flg = tcphdr->flg;
@@ -275,9 +294,8 @@ static int tcp_recv_listen(struct rx_tcp_context *ctxt) {
   return 0;
 }
 
-static int tcp_recv_syn_sent(struct rx_tcp_context *ctxt) {
-  struct tcp *tcphdr = ctxt->m->tcphdr;
-  struct sock_cb *scb = ctxt->scb;
+static int tcp_recv_syn_sent(struct sock_cb *scb, struct mbuf *m, uint16 len) {
+  struct tcp *tcphdr = m->tcphdr;
   uint32 ack = ntohl(tcphdr->ack);
   uint32 seq = ntohl(tcphdr->seq);
   uint8 flg = tcphdr->flg;
@@ -304,6 +322,7 @@ static int tcp_recv_syn_sent(struct rx_tcp_context *ctxt) {
 
     if (scb->snd.unack > scb->snd.init_seq) {
       scb->state = SOCK_CB_ESTAB;
+      releasesleep(&scb->slock);
       struct mbuf *ack_m = mbufalloc(ETH_MAX_SIZE);
       tcp_send_core(ack_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
     } else {
@@ -358,6 +377,7 @@ static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uin
     case SOCK_CB_SYN_RCVD:
       if (is_valid_nxtack) {
         scb->state = SOCK_CB_ESTAB;
+        releasesleep(&scb->slock);
       } else {
         return TCP_OP_SND_RST;
       }
@@ -437,9 +457,13 @@ static int check_text(struct sock_cb *scb, uint32 seq, uint16 datalen) {
   case SOCK_CB_FIN_WAIT_1:
   case SOCK_CB_FIN_WAIT_2:
     if (datalen > 0 && scb->rcv.nxt_seq == seq) {
-      scb->rcv.nxt_seq += datalen;
-      scb->rcv.wnd -= datalen;
-      return TCP_OP_TXT_OK;
+      if (scb->rcv.wnd > datalen) {
+        scb->rcv.nxt_seq += datalen;
+        scb->rcv.wnd -= datalen;
+        return TCP_OP_TXT_OK;
+      } else {
+        return TCP_OP_RETRANS;
+      }
     }
     break;
   case SOCK_CB_CLOSE_WAIT:
@@ -494,14 +518,12 @@ static int check_fin(struct sock_cb *scb, uint8 flg) {
   return TCP_OP_OK;
 }
 
-static int tcp_recv_core(struct rx_tcp_context *ctxt) {
-  struct tcp *tcphdr = ctxt->m->tcphdr;
-  struct sock_cb *scb = ctxt->scb;
-  struct mbuf *m = ctxt->m;
+static int tcp_recv_core(struct sock_cb *scb, struct mbuf *m, uint16 len) {
+  struct tcp *tcphdr = m->tcphdr;
   uint32 ack = ntohl(tcphdr->ack);
   uint32 seq = ntohl(tcphdr->seq);
   uint8 flg = tcphdr->flg;
-  uint16 datalen = TCP_DATA_LEN(tcphdr, ctxt->len);
+  uint16 datalen = TCP_DATA_LEN(tcphdr, len);
   
   struct mbuf *snd_m = 0;
 
@@ -575,6 +597,9 @@ static int tcp_recv_core(struct rx_tcp_context *ctxt) {
 
   // eighth, check the FIN bit
   switch (check_fin(scb, flg)) {
+  case TCP_OP_RETRANS:
+    snd_m = mbufalloc(ETH_MAX_SIZE);
+    tcp_send_core(snd_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
   case TCP_OP_CLOSE_SCB:
     snd_m = mbufalloc(ETH_MAX_SIZE);
     tcp_send_core(snd_m, scb->raddr, scb->sport, scb->dport, scb->snd.nxt_seq, scb->rcv.nxt_seq, scb->rcv.wnd, TCP_FLG_ACK, 0);
@@ -618,15 +643,6 @@ void tcp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
     goto fail;
   }
 
-  // create context
-  struct rx_tcp_context ctxt;
-  ctxt.scb = scb;
-  ctxt.m = m;
-  ctxt.raddr = raddr;
-  ctxt.sport = sport;
-  ctxt.dport = dport;
-  ctxt.len = len;
-
   // state processing
   switch(scb->state) {
   case SOCK_CB_CLOSED:
@@ -634,12 +650,12 @@ void tcp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
     goto fail;
     break;
   case SOCK_CB_LISTEN:
-    if (tcp_recv_listen(&ctxt) == TCP_OP_ERR)
+    if (tcp_recv_listen(scb, m, raddr, dport, len) == TCP_OP_ERR)
       goto fail;
     mbuffree(m);
     break;
   case SOCK_CB_SYN_SENT:
-    if (tcp_recv_syn_sent(&ctxt) == -1)
+    if (tcp_recv_syn_sent(scb, m, len) == -1)
       goto fail;
     mbuffree(m);
     break;
@@ -651,7 +667,7 @@ void tcp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
   case SOCK_CB_CLOSING:
   case SOCK_CB_LAST_ACK:
   case SOCK_CB_TIME_WAIT:
-    switch (tcp_recv_core(&ctxt)) {
+    switch (tcp_recv_core(scb, m, len)) {
     case TCP_OP_CLOSE_SCB:
       free_sock_cb(scb);
       goto fail;

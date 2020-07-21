@@ -4,6 +4,7 @@
 #include "net/sock_cb.h"
 #include "sys/sysnet.h"
 #include "file.h"
+#include "lib/buddy.h"
 
 struct sock_cb_entry tcp_scb_table[SOCK_CB_LEN];
 struct sock_cb_entry udp_scb_table[SOCK_CB_LEN];
@@ -17,6 +18,7 @@ struct sock_cb* alloc_sock_cb(struct file *f, uint32 raddr, uint16 sport, uint16
   scb->f = f;
   scb->state = SOCK_CB_CLOSED;
   initlock(&scb->lock, "scb lock");
+  initsleeplock(&scb->slock, "scb sleep lock");
   scb->socktype = socktype;
   scb->raddr = raddr;
   scb->sport = sport;

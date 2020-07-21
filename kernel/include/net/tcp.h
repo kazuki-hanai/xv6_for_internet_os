@@ -15,6 +15,7 @@
 #define TCP_FLG_ACK 0x10
 #define TCP_FLG_URG 0x20
 
+#define TCP_OP_RETRANS -4
 #define TCP_OP_CLOSE_SCB -3
 #define TCP_OP_SND_RST -2
 #define TCP_OP_ERR -1

@@ -2,6 +2,7 @@
 
 #include "arch/riscv.h"
 #include "spinlock.h"
+#include "sleeplock.h"
 #include "net/mbuf.h"
 
 #define SOCK_CB_LEN 128
@@ -31,6 +32,7 @@ enum sock_cb_state {
  **/
 struct sock_cb {
   struct file *f;
+  struct sleeplock slock;
   struct spinlock lock;
   int socktype;
   enum sock_cb_state state;

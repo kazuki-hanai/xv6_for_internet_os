@@ -262,7 +262,11 @@ sockrecv(struct file *f, uint64 addr, int n)
   // TODO tcp push check
   
   if (scb->socktype == SOCK_TCP) {
+    uint16 sport = scb->sport;
     while (1) {
+      scb = get_sock_cb(tcp_scb_table, sport);
+      if (scb == 0 || scb->state == SOCK_CB_CLOSE_WAIT)
+        return -1;
       m = pop_from_scb_rxq(scb);
       if (m == 0)
         continue;
