@@ -6,6 +6,7 @@
 #include "proc.h"
 #include "defs.h"
 #include "net/mbuf.h"
+#include "net/ethernet.h"
 
 struct mbufq tx_queue;
 struct spinlock tx_lock;
@@ -36,7 +37,7 @@ e1000_recv(void)
 
 void 
 nic_mock_recv(struct mbuf *m) {
-  net_rx(m);
+  eth_recv(m);
 }
 
 void 

@@ -1,4 +1,4 @@
-#include "sys/sysnet.h"
+#include "net/socket.h"
 #include "defs.h"
 
 void sport_test();

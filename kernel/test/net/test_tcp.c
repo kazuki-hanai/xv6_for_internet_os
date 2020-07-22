@@ -11,8 +11,8 @@
 
 extern struct mbufq tx_queue;
 void nic_mock_recv(struct mbuf *m);
-uint64 sys_sockconnect_core(struct sock_cb *scb, uint32 raddr, uint16 dport);
-uint64 sys_socklisten_core(struct sock_cb *scb, uint16 sport);
+uint64 sockconnect(struct sock_cb *scb, uint32 raddr, uint16 dport);
+uint64 socklisten(struct sock_cb *scb, uint16 sport);
 
 struct mbuf* create_packet(char *bytes, int len) {
   struct mbuf *buf = mbufalloc(ETH_MAX_SIZE);
@@ -35,8 +35,8 @@ void listen_handshake_test() {
   printf("\t\t[listen_handshake test] start...\n");
 
   uint16 sport = 2000;
-  struct sock_cb *scb = alloc_sock_cb(0, 0, 0, SOCK_TCP);
-  if (sys_socklisten_core(scb, sport) < 0) {
+  struct sock_cb *scb = alloc_sock_cb(0, 0, 0, 0, SOCK_TCP);
+  if (socklisten(scb, sport) < 0) {
     panic("sys_socklisten_core failed!");
   }
   
@@ -108,8 +108,8 @@ void connect_handshake_test() {
 
   uint32 raddr = MAKE_IP_ADDR(192, 168, 22, 3);
   uint16 dport = 2003;
-  struct sock_cb *scb = alloc_sock_cb(0, 0, 0, SOCK_TCP);
-  if (sys_sockconnect_core(scb, raddr, dport) < 0) {
+  struct sock_cb *scb = alloc_sock_cb(0, 0, 0, 0, SOCK_TCP);
+  if (sockconnect(scb, raddr, dport) < 0) {
     panic("sys_socklisten_core failed!");
   }
 

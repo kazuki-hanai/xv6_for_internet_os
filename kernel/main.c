@@ -4,6 +4,7 @@
 #include "arch/riscv.h"
 #include "defs.h"
 #include "file.h"
+#include "net/socket.h"
 
 volatile static int started = 0;
 
@@ -33,7 +34,7 @@ main()
     pci_init();
     arpinit();
     tcpinit();
-    sysnet_init();
+    socket_init();
     userinit();      // first user process
     __sync_synchronize();
     started = 1;

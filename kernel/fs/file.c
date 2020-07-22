@@ -12,7 +12,7 @@
 #include "file.h"
 #include "stat.h"
 #include "proc.h"
-#include "sys/sysnet.h"
+#include "net/socket.h"
 
 struct devsw devsw[NDEV];
 
@@ -153,7 +153,7 @@ fileread(struct file *f, uint64 addr, int n)
       f->off += r;
     iunlock(f->ip);
   } else if(f->type == FD_SOCK) {
-    r = sockrecv(f, addr, n);
+    r = sockrecv(f, addr, n, 1);
   } else {
     panic("fileread");
   }
@@ -206,7 +206,7 @@ filewrite(struct file *f, uint64 addr, int n)
     }
     ret = (i == n ? n : -1);
   } else if (f->type == FD_SOCK) {
-    ret = socksend(f, addr, n);
+    ret = socksend(f, addr, n, 1);
   } else {
     panic("filewrite");
   }

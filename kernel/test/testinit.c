@@ -3,6 +3,7 @@
 #include "memlayout.h"
 #include "arch/riscv.h"
 #include "defs.h"
+#include "net/socket.h"
 
 void test_start();
 
@@ -45,7 +46,7 @@ test()
     pci_init();
     arpinit();
     tcpinit();
-    sysnet_init();
+    socket_init();
     userinit();      // first user process
     __sync_synchronize();
     started = 1;

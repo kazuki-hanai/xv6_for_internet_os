@@ -2,7 +2,7 @@
 #include "net/mbuf.h"
 #include "net/netutil.h"
 #include "net/sock_cb.h"
-#include "sys/sysnet.h"
+#include "net/socket.h"
 #include "file.h"
 #include "lib/buddy.h"
 
