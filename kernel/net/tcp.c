@@ -47,7 +47,8 @@ static uint16 tcp_checksum(uint32 ip_src, uint32 ip_dst, uint8 ip_p, struct tcp 
 static int tcp_acquiresleep(struct sock_cb *scb) {
   acquiresleep(&scb->slock);
   while (1) {
-    if (myproc()->killed){
+    struct proc *proc = myproc();
+    if (proc != 0 && proc->killed){
       releasesleep(&scb->slock);
       return -1;
     }
