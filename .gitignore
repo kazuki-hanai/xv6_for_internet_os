@@ -16,7 +16,6 @@ mkfs
 user/usys.S
 .gdbinit
 .tags
-.editorconfig
 packets.pcap
 .localconst
 
