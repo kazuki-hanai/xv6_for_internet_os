@@ -3,6 +3,6 @@
 #include "file.h"
 #include "net/styx2000.h"
 
-void sys_styx2000_deamon() {
-  styx2000_serve();
+uint64 sys_styx2000_deamon() {
+  return styx2000_serve();
 }

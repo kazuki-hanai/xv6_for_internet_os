@@ -6,7 +6,11 @@ int
 main(int argc, char **argv)
 {
   if (fork() == 0) {
-    styx2000_deamon();
+    if (styx2000_deamon() == -1) {
+      printf("styx2000_deamon error occured!\n");
+      exit(1);
+    }
+    printf("shutdown server!\n");
   } else {
   }
   exit(0);
