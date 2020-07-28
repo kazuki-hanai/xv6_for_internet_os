@@ -110,6 +110,12 @@ KSRCS += \
 	$K/net/sock_cb.c \
 	$K/net/socket.c \
 
+# 9P
+KSRCS += \
+	$K/net/styx2000/styx2000.c \
+	$K/net/styx2000/version.c \
+#	$K/net/styx2000/auth.c \
+
 # System call and OS Interface for user
 KSRCS += \
 	$K/sys/sysproc.c \
@@ -121,8 +127,10 @@ ULIBSRCS = $U/ulib.c $U/usys.S $U/printf.c $U/umalloc.c
 
 
 KOBJS=$(patsubst %.S,%.o, $(addprefix $(BUILD_DIR)/, $(KSRCS:.c=.o)))
+KDEPS=$(KOBJS:.o=.d)
 
 ULIBOBJS = $(patsubst %.S,%.o, $(addprefix $(BUILD_DIR)/, $(ULIBSRCS:.c=.o)))
+ULIBDEPS=$(ULIBOBJS:.o=.d)
 
 UPROGS=\
   	_cat\
@@ -152,6 +160,7 @@ UPROGS=\
   	_udp\
   	_udplisten\
   	_tcp\
+	_deamon\
 
 all: qemu
 
@@ -179,6 +188,8 @@ _%: $(BUILD_DIR)/$U/%.o $(ULIBOBJS)
 $U/usys.S : $U/usys.pl
 	perl $U/usys.pl > $U/usys.S
 
+-include $(KDEPS) $(ULIBDEPS) $(BUILD_DIR)/user/*.d
+
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) -o $@ $<
@@ -199,14 +210,7 @@ mkfs/mkfs: mkfs/mkfs.c $K/include/fs.h
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(addprefix $(BUILD_DIR)/$U/, $(UPROGS))
 
--include $(BUILD_DIR)/kernel/*.d $(BUILD_DIR)/user/*.d
-
 clean: 
-	# -rm -r 	$U/initcode $U/initcode.out $K/kernel fs.img \
-	# 		$U/*.d $U/*.o $U/*.asm $U/*.sym $U/_*\
-	# 		.gdbinit \
-	# 		$U/usys.S \
-	# 		$(UPROGS)
 	-rm -rf build
 
 ###################################
