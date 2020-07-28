@@ -45,10 +45,10 @@ struct styx2000_header {
   uint16 tag;
 };
 
-struct styx2000_fcall {
-  (char*)   (*get_message)(uint8*, int);
-  (uint8*)  (*compose)(uint8*, int);
-  (uint8*)  (*parse)(uint8*, int);
+struct styx2000_qid {
+  uint8 qtype;
+  uint32 vers;
+  uint64 uid;
 };
 
 struct styx2000_fid {
@@ -56,15 +56,9 @@ struct styx2000_fid {
   uint32 omode;
   struct file* file;
   uint8* uid;
-  struct qid qid;
+  struct styx2000_qid qid;
   void* aux;
 };
-
-struct styx2000_qid {
-  uint8 qtype;
-  uint32 vers;
-  uint64 uid;
-}
 
 struct styx2000_trversion {
   uint32 msize;
@@ -200,5 +194,60 @@ struct styx2000_twstat {
 
 struct styx2000_rwstat {};
 
+struct styx2000_server {
+
+};
+
+struct styx2000_client {
+
+};
+
+struct styx2000_fcall;
+
+struct styx2000_message {
+  int size;
+	uint16 type;
+	uint8* buf;
+	struct styx2000_fcall *fcall;
+  union {
+    struct styx2000_trversion trversion;
+		struct styx2000_tauth tauth;
+		struct styx2000_rauth rauth;
+		struct styx2000_trerror trerror;
+		struct styx2000_tflush tflush;
+		struct styx2000_rflush rflush;
+		struct styx2000_tattach tattach;
+		struct styx2000_rattach rattach;
+		struct styx2000_twalk twalk;
+		struct styx2000_rwalk rwalk;
+		struct styx2000_topen topen;
+		struct styx2000_ropen ropen;
+		struct styx2000_tcreate tcreate;
+		struct styx2000_rcreate rcreate;
+		struct styx2000_tread tread;
+		struct styx2000_rread rread;
+		struct styx2000_twrite twrite;
+		struct styx2000_rwrite rwrite;
+		struct styx2000_tclunk tclunk;
+		struct styx2000_rclunk rclunk;
+		struct styx2000_tremove tremove;
+		struct styx2000_rremove rremove;
+		struct styx2000_tstat tstat;
+		struct styx2000_rstat rstat;
+		struct styx2000_twstat twstat;
+		struct styx2000_rwstat rwstat;
+  };
+};
+
+struct styx2000_fcall {
+  uint16 type;
+  char*   (*get_message)(struct styx2000_message*);
+  uint8*  (*compose)(struct styx2000_message*);
+  int  (*parse)(struct styx2000_message*);
+};
+
 // parse styx2000 packet and return specific call
-struct styx2000_fcall* styx2000_parsecall(uint8*, int);
+struct styx2000_message* styx2000_parsecall(uint8*, int);
+
+// server
+void styx2000_serve();

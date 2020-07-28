@@ -113,8 +113,12 @@ KSRCS += \
 # 9P
 KSRCS += \
 	$K/net/styx2000/styx2000.c \
+	$K/net/styx2000/server.c \
 	$K/net/styx2000/version.c \
-#	$K/net/styx2000/auth.c \
+	$K/net/styx2000/auth.c \
+	$K/net/styx2000/error.c \
+	$K/net/styx2000/flush.c \
+	$K/net/styx2000/attach.c \
 
 # System call and OS Interface for user
 KSRCS += \
@@ -122,6 +126,7 @@ KSRCS += \
 	$K/sys/sysfile.c \
 	$K/sys/sysnet.c \
 	$K/sys/syscall.c \
+	$K/sys/sysdeamon.c \
 
 ULIBSRCS = $U/ulib.c $U/usys.S $U/printf.c $U/umalloc.c
 

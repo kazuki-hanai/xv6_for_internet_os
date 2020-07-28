@@ -5,36 +5,45 @@
 #include "net/styx2000.h"
 #include "net/byteorder.h"
 
-struct styx2000_fcall styx2000_vesion_fcall = {
-  .get_message = ,
-  .compose = ,
-  .parse = 
-};
+extern struct styx2000_fcall styx2000_tversion_fcall;
+extern struct styx2000_fcall styx2000_rversion_fcall;
 
-struct styx2000_fcall* styx2000_parsecall(uint8* raw_buf, int raw_size) {
-  if (raw_buf == 0) {
+struct styx2000_message* styx2000_parsecall(uint8* buf, int size) {
+  if (buf == 0) {
     return 0;
   }
-  if (raw_size < sizeof(struct styx2000_header)) {
+  if (size < sizeof(struct styx2000_header)) {
     return 0;
   }
 
-  struct styx2000_header *hdr = (struct styx2000_header *)raw_buf;
-  uint32 size = ntohl(hdr->size);
-  uint32 msg_size = size - sizeof(*hdr);
+  struct styx2000_header *hdr = (struct styx2000_header *)buf;
   uint8 type = hdr->type;
   uint16 tag = ntohs(hdr->tag);
-  uint8 *buf = raw_buf + sizeof(*hdr);
 
-  if (raw_size != size) {
-    return 0;
-  }
+  size = ntohl(hdr->size) - sizeof(*hdr);
+  buf += sizeof(*hdr);
 
-  void *message = 0;
+  struct styx2000_message *message = bd_alloc(sizeof(struct styx2000_message));
   switch (type) {
     case STYX2000_TVERSION:
+      if (tag != NOTAG) {
+        // Error
+      }
+      message->type = type;
+      message->size = size;
+      message->buf = buf;
+      message->fcall = &styx2000_tversion_fcall;
+      message->fcall->parse(message);
       break;
     case STYX2000_RVERSION:
+      if (tag != NOTAG) {
+        // Error
+      }
+      message->type = type;
+      message->size = size;
+      message->buf = buf;
+      message->fcall = &styx2000_rversion_fcall;
+      message->fcall->parse(message);
       break;
     case STYX2000_TAUTH:
       return 0;
@@ -89,8 +98,6 @@ struct styx2000_fcall* styx2000_parsecall(uint8* raw_buf, int raw_size) {
     case STYX2000_RWSTAT:
       break;
   }
-
-  message.parse(buf, msg_size);
 
   return message;
 }
