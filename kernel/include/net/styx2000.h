@@ -3,6 +3,8 @@
 #include "types.h"
 #include "file.h"
 
+#define STYX2000_PORT 5640
+
 #define STYX2000_TVERSION 100
 #define STYX2000_RVERSION 101
 #define STYX2000_TAUTH    102
@@ -39,13 +41,13 @@
 
 #define MAXMSGLEN 65535
 
-struct styx2000_header {
+struct __attribute__((__packed__)) styx2000_header {
   uint32 size;
   uint8 type;
   uint16 tag;
 };
 
-struct styx2000_qid {
+struct __attribute__((__packed__)) styx2000_qid {
   uint8 qtype;
   uint32 vers;
   uint64 uid;
@@ -60,9 +62,9 @@ struct styx2000_fid {
   void* aux;
 };
 
-struct styx2000_trversion {
+struct __attribute__((__packed__)) styx2000_trversion {
   uint32 msize;
-  char* version;
+  char *version;
 };
 
 struct styx2000_tauth {
@@ -250,4 +252,5 @@ struct styx2000_fcall {
 struct styx2000_message* styx2000_parsecall(uint8*, int);
 
 // server
-void styx2000_serve();
+void styx2000_initserver();
+int styx2000_serve();

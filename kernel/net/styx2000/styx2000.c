@@ -20,7 +20,7 @@ struct styx2000_message* styx2000_parsecall(uint8* buf, int size) {
   uint8 type = hdr->type;
   uint16 tag = ntohs(hdr->tag);
 
-  size = ntohl(hdr->size) - sizeof(*hdr);
+  size = hdr->size - sizeof(*hdr);
   buf += sizeof(*hdr);
 
   struct styx2000_message *message = bd_alloc(sizeof(struct styx2000_message));

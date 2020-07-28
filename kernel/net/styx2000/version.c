@@ -16,12 +16,17 @@ static uint8* version_compose(struct styx2000_message* message) {
 static int version_parse(struct styx2000_message* message) {
   struct styx2000_trversion *version = 0;
 
-  if (message->size < sizeof(*version)) {
+  printf("%d, %d\n", message->size, sizeof(*version));
+  if (message->size < sizeof(struct styx2000_trversion)) {
     return 0;
   }
 
   version = (struct styx2000_trversion *)message->buf;
+  version->version = (char *)message->buf+4;
 
+  for (int i = 0; i < message->size-4; i++) {
+    printf("%x ", version->version[i]);
+  }
   if (memcmp(version->version, "9P2000", 6) == 0) {
 
   } else if (memcmp(version->version, "9P", 2) == 0) {
