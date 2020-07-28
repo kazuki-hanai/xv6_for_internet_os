@@ -27,10 +27,10 @@ uint16 get_new_sport() {
   int islooped = 0;
   acquire(&sport_lock);
   while (islooped < 2) {
-    if ((sport_table[(current_sport - START_OF_SPORT)/8] & 0xff) < 0xff) {
+    if ((sport_table[current_sport/8] & 0xff) < 0xff) {
       for (int i = 0; i < 8; i++) {
-        if ((sport_table[(current_sport - START_OF_SPORT)/8] & (1 << i)) == 0) {
-          sport_table[(current_sport - START_OF_SPORT)/8] |= (1 << i);
+        if ((sport_table[current_sport/8] & (1 << i)) == 0) {
+          sport_table[current_sport/8] |= (1 << i);
           release(&sport_lock);
           return current_sport + i;
         }
@@ -51,8 +51,8 @@ uint16 get_new_sport() {
 uint16 get_specified_sport(uint16 sport) {
   uint16 res = -1;
   acquire(&sport_lock);
-  if ((sport_table[(sport - START_OF_SPORT)/8] & (1 << ((sport - START_OF_SPORT) % 8))) == 0) {
-    sport_table[(sport - START_OF_SPORT)/8] |= (1 << ((sport - START_OF_SPORT) % 8));
+  if ((sport_table[sport/8] & (1 << (sport % 8))) == 0) {
+    sport_table[sport/8] |= (1 << (sport % 8));
     res = sport;
   }
   release(&sport_lock);
@@ -84,6 +84,10 @@ void socket_init() {
 
 struct sock_cb* sockalloc(int socktype) {
   return alloc_sock_cb(0, 0, 0, 0, socktype);
+}
+
+void sockfree(struct sock_cb *scb) {
+  free_sock_cb(scb);
 }
 
 uint64 socklisten(struct sock_cb *scb, uint16 sport) {
@@ -122,7 +126,7 @@ uint64 sockconnect(struct sock_cb *scb, uint32 raddr, uint16 dport) {
   return 0;
 }
 
-int socksend_core(struct sock_cb *scb, uint64 addr, int n, int is_copyin) {
+int socksend(struct sock_cb *scb, uint64 addr, int n, int is_copyin) {
   struct proc *pr = myproc();
 
   int bufsize = 0;
@@ -165,14 +169,7 @@ int socksend_core(struct sock_cb *scb, uint64 addr, int n, int is_copyin) {
   return res;
 }
 
-int
-socksend(struct file *f, uint64 addr, int n, int is_copyin)
-{
-  struct sock_cb *scb = f->scb;
-  return socksend_core(scb, addr, n, is_copyin);
-}
-
-int sockrecv_core(struct sock_cb *scb, uint64 addr, int n, int is_copyout) {
+int sockrecv(struct sock_cb *scb, uint64 addr, int n, int is_copyout) {
   struct proc *pr = myproc();
 
   struct mbuf *m = 0;
@@ -194,7 +191,10 @@ int sockrecv_core(struct sock_cb *scb, uint64 addr, int n, int is_copyout) {
       
       int acceptable_size = n > m->len ? m->len : n;
       
-      copyout(pr->pagetable, addr, m->head, acceptable_size);
+      if (is_copyout)
+        copyout(pr->pagetable, addr, m->head, acceptable_size);
+      else
+        memmove((void *)addr, m->head, acceptable_size);
       addr += acceptable_size;
       scb->rcv.wnd += acceptable_size;
       res += acceptable_size;
@@ -218,7 +218,10 @@ int sockrecv_core(struct sock_cb *scb, uint64 addr, int n, int is_copyout) {
     }
     int acceptable_size = n > m->len ? m->len : n;
 
-    copyout(pr->pagetable, addr, m->head, acceptable_size);
+    if (is_copyout)
+      copyout(pr->pagetable, addr, m->head, acceptable_size);
+    else
+      memmove((void *)addr, m->head, acceptable_size);
     addr += acceptable_size;
 
     if (m->len > n-1) {
@@ -233,25 +236,16 @@ int sockrecv_core(struct sock_cb *scb, uint64 addr, int n, int is_copyout) {
   return res;
 }
 
-int
-sockrecv(struct file *f, uint64 addr, int n, int is_copyout)
+void sockclose(struct sock_cb *scb)
 {
-  struct sock_cb *scb = f->scb;
-  return sockrecv_core(scb, addr, n, is_copyout);
-}
-
-void sockclose(struct file *f)
-{
-  struct sock_cb *scb = f->scb;
-
   if (!scb) {
     panic("[sockclose] scb is already freed");
   }
   if (scb->socktype == SOCK_TCP) {
     if (tcp_close(scb) == 0) {
-      free_sock_cb(f->scb);
+      free_sock_cb(scb);
     }
   } else {
-    free_sock_cb(f->scb);
+    free_sock_cb(scb);
   }
 }
