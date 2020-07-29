@@ -29,27 +29,11 @@ static uint8* rauth_compose(struct styx2000_message* message) {
   return 0;
 }
 
-static int tauth_parse(struct styx2000_message* message) {
-  struct styx2000_tauth *tauth = 0;
-
-  if (message->size < sizeof(*tauth)) {
-    return -1;
-  }
-
-  tauth = (struct styx2000_tauth *)message->buf;
-
+static int tauth_parse(struct styx2000_message* message, uint8* buf, int size) {
   return 0;
 }
 
-static int rauth_parse(struct styx2000_message* message) {
-  struct styx2000_rauth *rauth = 0;
-
-  if (message->size < sizeof(*rauth)) {
-    return -1;
-  }
-
-  rauth = (struct styx2000_rauth *)message->buf;
-
+static int rauth_parse(struct styx2000_message* message, uint8* buf, int size) {
   return 0;
 }
 

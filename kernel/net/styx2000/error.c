@@ -13,16 +13,7 @@ static uint8* error_compose(struct styx2000_message* message) {
   return 0;
 }
 
-static int error_parse(struct styx2000_message* message) {
-  struct styx2000_trerror *error = 0;
-
-  if (message->size < sizeof(*error)) {
-    return 0;
-  }
-
-  error = (struct styx2000_trerror *)message->buf;
-
-  message->trerror.ename = error->ename;
+static int error_parse(struct styx2000_message* message, uint8* buf, int size) {
   return 0;
 }
 

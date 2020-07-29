@@ -29,27 +29,11 @@ static uint8* rflush_compose(struct styx2000_message* message) {
   return 0;
 }
 
-static int tflush_parse(struct styx2000_message* message) {
-  struct styx2000_tflush *tflush = 0;
-
-  if (message->size < sizeof(*tflush)) {
-    return -1;
-  }
-
-  tflush = (struct styx2000_tflush *)message->buf;
-
+static int tflush_parse(struct styx2000_message* message, uint8* buf, int size) {
   return 0;
 }
 
-static int rflush_parse(struct styx2000_message* message) {
-  struct styx2000_rflush *rflush = 0;
-
-  if (message->size < sizeof(*rflush)) {
-    return -1;
-  }
-
-  rflush = (struct styx2000_rflush *)message->buf;
-
+static int rflush_parse(struct styx2000_message* message, uint8* buf, int size) {
   return 0;
 }
 

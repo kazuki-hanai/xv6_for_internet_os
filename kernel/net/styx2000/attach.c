@@ -29,27 +29,11 @@ static uint8* rattach_compose(struct styx2000_message* message) {
   return 0;
 }
 
-static int tattach_parse(struct styx2000_message* message) {
-  struct styx2000_tattach *tattach = 0;
-
-  if (message->size < sizeof(*tattach)) {
-    return -1;
-  }
-
-  tattach = (struct styx2000_tattach *)message->buf;
-
+static int tattach_parse(struct styx2000_message* message, uint8* buf, int size) {
   return 0;
 }
 
-static int rattach_parse(struct styx2000_message* message) {
-  struct styx2000_rattach *rattach = 0;
-
-  if (message->size < sizeof(*rattach)) {
-    return -1;
-  }
-
-  rattach = (struct styx2000_rattach *)message->buf;
-
+static int rattach_parse(struct styx2000_message* message, uint8* buf, int size) {
   return 0;
 }
 
