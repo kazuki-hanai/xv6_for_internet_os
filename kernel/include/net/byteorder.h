@@ -24,3 +24,7 @@ static inline uint32 bswapl(uint32 val)
 #define htons bswaps
 #define htonl bswapl
 
+#define nbuftohs(buf) bswaps((uint16)*buf)
+#define nbuftohl(buf) bswapl((uint32)*buf)
+#define hbuftons(buf) bswaps((uint16)*buf)
+#define hbuftonl(buf) bswapl((uint32)*buf)

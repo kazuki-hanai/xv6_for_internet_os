@@ -16,34 +16,33 @@ struct styx2000_message* styx2000_parsecall(uint8* buf, int size) {
     return 0;
   }
 
+  struct styx2000_message *message = styx2000_messagealloc();
   struct styx2000_header *hdr = (struct styx2000_header *)buf;
-  uint8 type = hdr->type;
-  uint16 tag = ntohs(hdr->tag);
+  message->hdr.size = hdr->size;
+  message->hdr.type = hdr->type;
+  message->hdr.tag = hdr->tag;
 
-  size = hdr->size - sizeof(*hdr);
+  int messize = hdr->size - sizeof(*hdr);
   buf += sizeof(*hdr);
 
-  struct styx2000_message *message = bd_alloc(sizeof(struct styx2000_message));
-  switch (type) {
+  switch (hdr->type) {
     case STYX2000_TVERSION:
-      if (tag != NOTAG) {
+      if (hdr->tag != NOTAG) {
         // Error
       }
-      message->type = type;
-      message->size = size;
-      message->buf = buf;
       message->fcall = &styx2000_tversion_fcall;
-      message->fcall->parse(message);
+      if (message->fcall->parse(message, buf, messize) == -1) {
+        goto fail;
+      }
       break;
     case STYX2000_RVERSION:
-      if (tag != NOTAG) {
+      if (hdr->tag != NOTAG) {
         // Error
       }
-      message->type = type;
-      message->size = size;
-      message->buf = buf;
       message->fcall = &styx2000_rversion_fcall;
-      message->fcall->parse(message);
+      if (message->fcall->parse(message, buf, messize) == -1) {
+        goto fail;
+      }
       break;
     case STYX2000_TAUTH:
       return 0;
@@ -100,4 +99,26 @@ struct styx2000_message* styx2000_parsecall(uint8* buf, int size) {
   }
 
   return message;
+
+fail:
+  if (message)
+    styx2000_messagefree(message);
+  return 0;
+}
+
+int styx2000_create_rversion(uint8** buf, uint16 tag, uint16 vsize, uint8* version) {
+  struct styx2000_message *message = styx2000_messagealloc();
+  message->m.trversion.msize = MAXMSGLEN;
+  message->m.trversion.vsize = vsize;
+  message->m.trversion.version = bd_alloc(vsize);
+  memmove(message->m.trversion.version, version, vsize);
+
+  message->hdr.size = STYX2000_HDR_SIZE + STYX2000_TRVERSION_SIZE + vsize;
+  message->hdr.tag = tag;
+  message->hdr.type = STYX2000_RVERSION;
+  message->fcall = &styx2000_tversion_fcall;
+
+  int res = message->fcall->compose(message, buf);
+  styx2000_messagefree(message);
+  return res;
 }

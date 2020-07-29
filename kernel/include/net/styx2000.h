@@ -39,7 +39,7 @@
 #define NOUID     (-1)
 #define IOHDRSZ   24
 
-#define MAXMSGLEN 65535
+#define MAXMSGLEN 8192
 
 struct __attribute__((__packed__)) styx2000_header {
   uint32 size;
@@ -47,7 +47,10 @@ struct __attribute__((__packed__)) styx2000_header {
   uint16 tag;
 };
 
-struct __attribute__((__packed__)) styx2000_qid {
+#define STYX2000_HDR_SIZE sizeof(struct styx2000_header)
+#define STYX2000_TRVERSION_SIZE 6
+
+struct styx2000_qid {
   uint8 qtype;
   uint32 vers;
   uint64 uid;
@@ -62,15 +65,16 @@ struct styx2000_fid {
   void* aux;
 };
 
-struct __attribute__((__packed__)) styx2000_trversion {
+struct styx2000_trversion {
   uint32 msize;
-  char *version;
+	uint16 vsize;
+  uint8 *version;
 };
 
 struct styx2000_tauth {
   uint32 afid;
-  char* uname;
-  char* aname;
+  uint8* uname;
+  uint8* aname;
 };
 
 struct styx2000_rauth {
@@ -78,7 +82,7 @@ struct styx2000_rauth {
 };
 
 struct styx2000_trerror {
-  char* ename;
+  uint8* ename;
 };
 
 struct styx2000_tflush {
@@ -90,8 +94,8 @@ struct styx2000_rflush {};
 struct styx2000_tattach {
   uint32 fid;
   uint32 afid;
-  char *uname;
-  char *aname;
+  uint8 *uname;
+  uint8 *aname;
 };
 
 struct styx2000_rattach {
@@ -102,12 +106,12 @@ struct styx2000_twalk {
   uint32 fid;
   uint32 newfid;
   uint16 nwname;
-  char* wname;
+  uint8* wname;
 };
 
 struct styx2000_rwalk {
   uint16 nwqid;
-  struct styx2000_qid **wqid;
+  struct styx2000_qid wqid;
 };
 
 #define STYX2000_OREAD    0
@@ -131,7 +135,7 @@ struct styx2000_ropen {
 
 struct styx2000_tcreate {
   uint32 fid;
-  char* name;
+  uint8* name;
   uint32 perm;
   uint8 mode;
 };
@@ -196,60 +200,61 @@ struct styx2000_twstat {
 
 struct styx2000_rwstat {};
 
-struct styx2000_server {
+struct styx2000_server {};
 
-};
+struct styx2000_client {};
 
-struct styx2000_client {
 
+union styx2000_messages {
+  struct styx2000_trversion trversion;
+  struct styx2000_tauth tauth;
+  struct styx2000_rauth rauth;
+  struct styx2000_trerror trerror;
+  struct styx2000_tflush tflush;
+  struct styx2000_rflush rflush;
+  struct styx2000_tattach tattach;
+  struct styx2000_rattach rattach;
+  struct styx2000_twalk twalk;
+  struct styx2000_rwalk rwalk;
+  struct styx2000_topen topen;
+  struct styx2000_ropen ropen;
+  struct styx2000_tcreate tcreate;
+  struct styx2000_rcreate rcreate;
+  struct styx2000_tread tread;
+  struct styx2000_rread rread;
+  struct styx2000_twrite twrite;
+  struct styx2000_rwrite rwrite;
+  struct styx2000_tclunk tclunk;
+  struct styx2000_rclunk rclunk;
+  struct styx2000_tremove tremove;
+  struct styx2000_rremove rremove;
+  struct styx2000_tstat tstat;
+  struct styx2000_rstat rstat;
+  struct styx2000_twstat twstat;
+  struct styx2000_rwstat rwstat;
 };
 
 struct styx2000_fcall;
-
 struct styx2000_message {
-  int size;
-	uint16 type;
-	uint8* buf;
 	struct styx2000_fcall *fcall;
-  union {
-    struct styx2000_trversion trversion;
-		struct styx2000_tauth tauth;
-		struct styx2000_rauth rauth;
-		struct styx2000_trerror trerror;
-		struct styx2000_tflush tflush;
-		struct styx2000_rflush rflush;
-		struct styx2000_tattach tattach;
-		struct styx2000_rattach rattach;
-		struct styx2000_twalk twalk;
-		struct styx2000_rwalk rwalk;
-		struct styx2000_topen topen;
-		struct styx2000_ropen ropen;
-		struct styx2000_tcreate tcreate;
-		struct styx2000_rcreate rcreate;
-		struct styx2000_tread tread;
-		struct styx2000_rread rread;
-		struct styx2000_twrite twrite;
-		struct styx2000_rwrite rwrite;
-		struct styx2000_tclunk tclunk;
-		struct styx2000_rclunk rclunk;
-		struct styx2000_tremove tremove;
-		struct styx2000_rremove rremove;
-		struct styx2000_tstat tstat;
-		struct styx2000_rstat rstat;
-		struct styx2000_twstat twstat;
-		struct styx2000_rwstat rwstat;
-  };
+  struct styx2000_header hdr;
+  union styx2000_messages m;
 };
 
 struct styx2000_fcall {
   uint16 type;
   char*   (*get_message)(struct styx2000_message*);
-  uint8*  (*compose)(struct styx2000_message*);
-  int  (*parse)(struct styx2000_message*);
+  int  (*compose)(struct styx2000_message*, uint8**);
+  int  (*parse)(struct styx2000_message*, uint8*, int);
 };
 
 // parse styx2000 packet and return specific call
 struct styx2000_message* styx2000_parsecall(uint8*, int);
+int styx2000_create_rversion(uint8**, uint16, uint16, uint8*);
+
+// message
+struct styx2000_message* styx2000_messagealloc();
+void styx2000_messagefree(struct styx2000_message*);
 
 // server
 void styx2000_initserver();

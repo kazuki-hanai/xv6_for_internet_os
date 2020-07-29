@@ -21,15 +21,24 @@ int styx2000_serve() {
   styx2000_initserver(&server);
 
   uint8 rbuf[2048];
-  // uint8 wbuf[2048];
   int rsize;
-  // int wsize;
   while ((rsize = sockrecv(scb, (uint64)rbuf, sizeof(rbuf), 0)) != -1) {
     struct styx2000_message *message;
-    message = styx2000_parsecall(rbuf, rsize);
-    switch (message->type) {
+    if ((message = styx2000_parsecall(rbuf, rsize)) == 0) {
+      continue;
+    }
+    switch (message->hdr.type) {
       case STYX2000_TVERSION:
-        printf("type: %s\n", message->fcall->get_message(message));
+        printf("\ntype: %s %s\n", message->fcall->get_message(message), message->m.trversion.version);
+        if (memcmp(message->m.trversion.version, "9P2000", 6) == 0) {
+          uint8* buf = 0;
+          int wsize = styx2000_create_rversion(&buf, message->hdr.tag, message->m.trversion.vsize, message->m.trversion.version);
+          if (socksend(scb, (uint64)buf, wsize, 0) <= 0) {
+            printf("SEND ERROR!\n");
+            return -1;
+          }
+          bd_free(buf);
+        }
         break;
       case STYX2000_RVERSION:
         break;
@@ -86,7 +95,7 @@ int styx2000_serve() {
       case STYX2000_RWSTAT:
         break;
     }
-    bd_free(message);
+    styx2000_messagefree(message);
   }
   
   sockclose(scb);
