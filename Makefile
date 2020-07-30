@@ -113,8 +113,9 @@ KSRCS += \
 # 9P
 KSRCS += \
 	$K/net/styx2000/styx2000.c \
-	$K/net/styx2000/message.c \
+	$K/net/styx2000/req.c \
 	$K/net/styx2000/server.c \
+	$K/net/styx2000/util.c \
 	$K/net/styx2000/version.c \
 	# $K/net/styx2000/attach.c \
 	# $K/net/styx2000/auth.c \

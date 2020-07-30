@@ -3,66 +3,43 @@
 #include "defs.h"
 #include "param.h"
 #include "net/styx2000.h"
+#include "net/styx2000util.h"
 #include "net/byteorder.h"
+#include "fcall.h"
 
-static char* tversion_get_message(struct styx2000_message* message) {
-  return "TVERSION";
-}
-
-static char* rversion_get_message(struct styx2000_message* message) {
-  return "RVERSION";
-}
-
-static int version_compose(struct styx2000_message* message, uint8** buf) {
-  *buf = bd_alloc(message->hdr.size);
-  int off = 0;
-  memmove((*buf)+off, (void *)&message->hdr.size, 4);
-  off += 4;
-  memmove((*buf)+off, (void *)&message->hdr.type, 1);
-  off += 1;
-  memmove((*buf)+off, (void *)&message->hdr.tag, 2);
-  off += 2;
-  memmove((*buf)+off, (void *)&message->m.trversion.msize, 4);
-  off += 4;
-  memmove((*buf)+off, (void *)&message->m.trversion.vsize, 2);
-  off += 2;
-  memmove((*buf)+off, (void *)message->m.trversion.version, message->m.trversion.vsize);
-  off += message->m.trversion.vsize;
-
-  return off;
-}
-
-static int version_parse(struct styx2000_message* message, uint8* buf, int size) {
-  if (size < STYX2000_TRVERSION_SIZE) {
-    return -1;
+uint8* styx2000_parse_rversion(struct styx2000_fcall *fcall, uint8* buf, int len) {
+  if (fcall->tag != STYX2000_NOTAG) {
+    return 0;
   }
-
-  message->m.trversion.msize = (uint16)*buf;
+  uint8 *ep = buf + len;
+  fcall->msize = GBIT32(buf);
   buf += 4;
-  message->m.trversion.vsize = (uint16)*buf;
-  buf += 2;
-  
-  if (size < STYX2000_TRVERSION_SIZE + message->m.trversion.vsize) {
+  buf = gstring(buf, ep, &fcall->version);
+  if (buf == 0) {
+    return 0;
+  }
+  return buf;
+}
+
+int styx2000_rversion(struct styx2000_server *srv, struct styx2000_req *req) {
+  if (strncmp(req->ifcall.version, "9P2000", 6) != 0) {
+    req->ofcall.version = "unknown";
+    styx2000_respond(srv, req);
     return -1;
   }
-
-  message->m.trversion.version = bd_alloc(message->m.trversion.vsize+1); 
-  memmove(message->m.trversion.version, buf, message->m.trversion.vsize);
-  message->m.trversion.version[message->m.trversion.vsize] = 0;
-
+  req->ofcall.version = "9P2000";
+  req->ofcall.msize = req->ifcall.msize;
+  if (styx2000_respond(srv, req) == -1) {
+    return -1;
+  }
   return 0;
 }
 
-struct styx2000_fcall styx2000_tversion_fcall = {
-  .type = STYX2000_TVERSION,
-  .get_message = tversion_get_message,
-  .compose = version_compose,
-  .parse = version_parse
-};
-
-struct styx2000_fcall styx2000_rversion_fcall = {
-  .type = STYX2000_RVERSION,
-  .get_message = rversion_get_message,
-  .compose = version_compose,
-  .parse = version_parse
-};
+int styx2000_compose_rversion(struct styx2000_req *req, uint8* buf) {
+  struct styx2000_fcall *f = &req->ofcall;
+  PBIT32(buf, f->msize);
+  buf += BIT32SZ;
+  printf("version: %s\n", f->version);
+  buf = pstring(buf, f->version);
+  return 0;
+}

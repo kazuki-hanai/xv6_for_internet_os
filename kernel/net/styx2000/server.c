@@ -6,41 +6,67 @@
 #include "net/socket.h"
 #include "net/styx2000.h"
 
-void styx2000_initserver(struct styx2000_server *server) {
+static int start_server(struct styx2000_server *srv) {
+  srv->msize = STYX2000_MAXMSGLEN;
+  srv->wbuf = bd_alloc(srv->msize);
+  srv->scb = sockalloc(SOCK_TCP);
+  if (socklisten(srv->scb, STYX2000_PORT) == -1) {
+    return -1;
+  }
+  return 0;
+}
 
+static void stop_server(struct styx2000_server *srv) {
+  sockclose(srv->scb);
+  bd_free(srv->wbuf);
+  srv->scb = 0;
+}
+
+static int sendpacket(struct styx2000_server *srv, struct styx2000_req *req) {
+  if (socksend(srv->scb, (uint64)srv->wbuf, req->ofcall.size, 0) <= 0) {
+    return -1;
+  }
+  return 0;
+}
+
+static struct styx2000_req* getreq(struct styx2000_server *srv) {
+  uint8 rbuf[2048];
+  int rsize;
+  if ((rsize = sockrecv(srv->scb, (uint64)rbuf, sizeof(rbuf), 0)) == -1) {
+    return 0;
+  }
+  struct styx2000_req *req;
+  if ((req = styx2000_parsefcall(rbuf, rsize)) == 0) {
+    return 0;
+  }
+  return req;
+}
+
+static void initserver(struct styx2000_server *srv) {
+  srv->msize = STYX2000_MAXMSGLEN;
+  srv->start = start_server;
+  srv->stop = stop_server;
+  srv->send = sendpacket;
 }
 
 int styx2000_serve() {
-  struct sock_cb *scb = sockalloc(SOCK_TCP);
+  struct styx2000_server srv;
+  initserver(&srv);
 
-  if (socklisten(scb, STYX2000_PORT) == -1) {
-    return -1;
+  if (srv.start(&srv) == -1) {
+    goto fail;
   }
 
-  struct styx2000_server server;
-  styx2000_initserver(&server);
-
-  uint8 rbuf[2048];
-  int rsize;
-  while ((rsize = sockrecv(scb, (uint64)rbuf, sizeof(rbuf), 0)) != -1) {
-    struct styx2000_message *message;
-    if ((message = styx2000_parsecall(rbuf, rsize)) == 0) {
-      continue;
-    }
-    switch (message->hdr.type) {
+  struct styx2000_req *req;
+  while ((req = getreq(&srv)) != 0) {
+    switch (req->ifcall.type) {
       case STYX2000_TVERSION:
-        printf("\ntype: %s %s\n", message->fcall->get_message(message), message->m.trversion.version);
-        if (memcmp(message->m.trversion.version, "9P2000", 6) == 0) {
-          uint8* buf = 0;
-          int wsize = styx2000_create_rversion(&buf, message->hdr.tag, message->m.trversion.vsize, message->m.trversion.version);
-          if (socksend(scb, (uint64)buf, wsize, 0) <= 0) {
-            printf("SEND ERROR!\n");
-            return -1;
-          }
-          bd_free(buf);
+        if (styx2000_rversion(&srv, req) == -1) {
+          goto fail;
         }
         break;
       case STYX2000_RVERSION:
+        goto fail;
         break;
       case STYX2000_TAUTH:
         return 0;
@@ -95,9 +121,11 @@ int styx2000_serve() {
       case STYX2000_RWSTAT:
         break;
     }
-    styx2000_messagefree(message);
   }
-  
-  sockclose(scb);
+  srv.stop(&srv);
   return 0;
+
+fail:
+  srv.stop(&srv);
+  return -1;
 }
