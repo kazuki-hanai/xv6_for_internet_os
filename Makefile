@@ -116,10 +116,10 @@ KSRCS += \
 	$K/net/styx2000/message.c \
 	$K/net/styx2000/server.c \
 	$K/net/styx2000/version.c \
+	# $K/net/styx2000/attach.c \
 	# $K/net/styx2000/auth.c \
 	# $K/net/styx2000/error.c \
 	# $K/net/styx2000/flush.c \
-	# $K/net/styx2000/attach.c \
 
 # System call and OS Interface for user
 KSRCS += \
