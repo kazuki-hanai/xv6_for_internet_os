@@ -40,7 +40,6 @@
 #define STYX2000_NOUID     (-1)
 #define STYX2000_IOHDRSZ   24
 
-#define STYX2000_MAXMSGLEN 2048
 #define STYX2000_MAXWELEM 16
 
 struct styx2000_qid

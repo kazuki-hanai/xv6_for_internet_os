@@ -7,7 +7,7 @@
 #include "net/byteorder.h"
 #include "fcall.h"
 
-uint8* styx2000_parse_rversion(struct styx2000_fcall *fcall, uint8* buf, int len) {
+uint8* styx2000_parse_tversion(struct styx2000_fcall *fcall, uint8* buf, int len) {
   if (fcall->tag != STYX2000_NOTAG) {
     return 0;
   }
@@ -21,7 +21,7 @@ uint8* styx2000_parse_rversion(struct styx2000_fcall *fcall, uint8* buf, int len
   return buf;
 }
 
-int styx2000_rversion(struct styx2000_server *srv, struct styx2000_req *req) {
+int styx2000_tversion(struct styx2000_server *srv, struct styx2000_req *req) {
   if (strncmp(req->ifcall.version, "9P2000", 6) != 0) {
     req->ofcall.version = "unknown";
     styx2000_respond(srv, req);

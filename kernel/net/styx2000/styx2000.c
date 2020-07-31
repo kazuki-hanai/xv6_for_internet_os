@@ -34,7 +34,7 @@ struct styx2000_req* styx2000_parsefcall(uint8* buf, int size) {
 
   switch (ifcall->type) {
     case STYX2000_TVERSION:
-      buf = styx2000_parse_rversion(ifcall, buf, mlen);
+      buf = styx2000_parse_tversion(ifcall, buf, mlen);
       break;
     case STYX2000_RVERSION:
       break;
@@ -45,6 +45,7 @@ struct styx2000_req* styx2000_parsefcall(uint8* buf, int size) {
       return 0;
       break;
     case STYX2000_TATTACH:
+      buf = styx2000_parse_tattach(ifcall, buf, mlen);
       break;
     case STYX2000_RATTACH:
       break;
@@ -129,6 +130,9 @@ static int composefcall(struct styx2000_req *req, uint8* buf, int size) {
     case STYX2000_TATTACH:
       break;
     case STYX2000_RATTACH:
+      if (styx2000_compose_rattach(req, buf) == -1) {
+        return -1;
+      }
       break;
     case STYX2000_RERROR:
       break;

@@ -117,7 +117,7 @@ KSRCS += \
 	$K/net/styx2000/server.c \
 	$K/net/styx2000/util.c \
 	$K/net/styx2000/version.c \
-	# $K/net/styx2000/attach.c \
+	$K/net/styx2000/attach.c \
 	# $K/net/styx2000/auth.c \
 	# $K/net/styx2000/error.c \
 	# $K/net/styx2000/flush.c \

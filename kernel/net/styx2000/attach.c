@@ -3,50 +3,43 @@
 #include "defs.h"
 #include "param.h"
 #include "net/styx2000.h"
+#include "net/styx2000util.h"
 #include "net/byteorder.h"
+#include "fcall.h"
 
-static char* tattach_get_message(struct styx2000_message* message) {
-  if (message->type == STYX2000_TATTACH) {
-    return "TATTACH";
-  } else {
-    return "WRONG MESSAGE";
+uint8* styx2000_parse_tattach(struct styx2000_fcall *fcall, uint8* buf, int len) {
+  if (fcall->tag != STYX2000_NOTAG) {
+    return 0;
   }
-}
-
-static char* rattach_get_message(struct styx2000_message* message) {
-  if (message->type == STYX2000_RATTACH) {
-    return "RATTACH";
-  } else {
-    return "WRONG MESSAGE";
+  uint8 *ep = buf + len;
+  fcall->msize = GBIT32(buf);
+  buf += 4;
+  buf = gstring(buf, ep, &fcall->version);
+  if (buf == 0) {
+    return 0;
   }
+  return buf;
 }
 
-static uint8* tattach_compose(struct styx2000_message* message) {
+int styx2000_tattach(struct styx2000_server *srv, struct styx2000_req *req) {
+  if (strncmp(req->ifcall.version, "9P2000", 6) != 0) {
+    req->ofcall.version = "unknown";
+    styx2000_respond(srv, req);
+    return -1;
+  }
+  req->ofcall.version = "9P2000";
+  req->ofcall.msize = req->ifcall.msize;
+  if (styx2000_respond(srv, req) == -1) {
+    return -1;
+  }
   return 0;
 }
 
-static uint8* rattach_compose(struct styx2000_message* message) {
+int styx2000_compose_rattach(struct styx2000_req *req, uint8* buf) {
+  struct styx2000_fcall *f = &req->ofcall;
+  PBIT32(buf, f->msize);
+  buf += BIT32SZ;
+  printf("version: %s\n", f->version);
+  buf = pstring(buf, f->version);
   return 0;
 }
-
-static int tattach_parse(struct styx2000_message* message, uint8* buf, int size) {
-  return 0;
-}
-
-static int rattach_parse(struct styx2000_message* message, uint8* buf, int size) {
-  return 0;
-}
-
-struct styx2000_fcall styx2000_tattach_fcall = {
-  .type = STYX2000_TATTACH,
-  .get_message = tattach_get_message,
-  .compose = tattach_compose,
-  .parse = tattach_parse
-};
-
-struct styx2000_fcall styx2000_rattach_fcall = {
-  .type = STYX2000_RATTACH,
-  .get_message = rattach_get_message,
-  .compose = rattach_compose,
-  .parse = rattach_parse
-};

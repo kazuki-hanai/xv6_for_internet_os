@@ -9,6 +9,7 @@
 static int start_server(struct styx2000_server *srv) {
   srv->msize = STYX2000_MAXMSGLEN;
   srv->wbuf = bd_alloc(srv->msize);
+  srv->rbuf = bd_alloc(srv->msize);
   srv->scb = sockalloc(SOCK_TCP);
   if (socklisten(srv->scb, STYX2000_PORT) == -1) {
     return -1;
@@ -19,34 +20,16 @@ static int start_server(struct styx2000_server *srv) {
 static void stop_server(struct styx2000_server *srv) {
   sockclose(srv->scb);
   bd_free(srv->wbuf);
+  bd_free(srv->rbuf);
   srv->scb = 0;
-}
-
-static int sendpacket(struct styx2000_server *srv, struct styx2000_req *req) {
-  if (socksend(srv->scb, (uint64)srv->wbuf, req->ofcall.size, 0) <= 0) {
-    return -1;
-  }
-  return 0;
-}
-
-static struct styx2000_req* getreq(struct styx2000_server *srv) {
-  uint8 rbuf[2048];
-  int rsize;
-  if ((rsize = sockrecv(srv->scb, (uint64)rbuf, sizeof(rbuf), 0)) == -1) {
-    return 0;
-  }
-  struct styx2000_req *req;
-  if ((req = styx2000_parsefcall(rbuf, rsize)) == 0) {
-    return 0;
-  }
-  return req;
 }
 
 static void initserver(struct styx2000_server *srv) {
   srv->msize = STYX2000_MAXMSGLEN;
   srv->start = start_server;
   srv->stop = stop_server;
-  srv->send = sendpacket;
+  srv->send = styx2000_sendreq;
+  srv->recv = styx2000_recvreq;
 }
 
 int styx2000_serve() {
@@ -58,10 +41,10 @@ int styx2000_serve() {
   }
 
   struct styx2000_req *req;
-  while ((req = getreq(&srv)) != 0) {
+  while ((req = srv.recv(&srv)) != 0) {
     switch (req->ifcall.type) {
       case STYX2000_TVERSION:
-        if (styx2000_rversion(&srv, req) == -1) {
+        if (styx2000_tversion(&srv, req) == -1) {
           goto fail;
         }
         break;
@@ -69,12 +52,15 @@ int styx2000_serve() {
         goto fail;
         break;
       case STYX2000_TAUTH:
-        return 0;
+        goto fail;
         break;
       case STYX2000_RAUTH:
-        return 0;
+        goto fail;
         break;
       case STYX2000_TATTACH:
+        if (styx2000_tattach(&srv, req) == -1) {
+          goto fail;
+        }
         break;
       case STYX2000_RATTACH:
         break;
