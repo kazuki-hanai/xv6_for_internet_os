@@ -8,8 +8,6 @@
 
 static int start_server(struct styx2000_server *srv) {
   srv->msize = STYX2000_MAXMSGLEN;
-  srv->wbuf = bd_alloc(srv->msize);
-  srv->rbuf = bd_alloc(srv->msize);
   srv->scb = sockalloc(SOCK_TCP);
   if (socklisten(srv->scb, STYX2000_PORT) == -1) {
     return -1;
@@ -26,6 +24,8 @@ static void stop_server(struct styx2000_server *srv) {
 
 static void initserver(struct styx2000_server *srv) {
   srv->msize = STYX2000_MAXMSGLEN;
+  srv->wbuf = bd_alloc(srv->msize);
+  srv->rbuf = bd_alloc(srv->msize);
   srv->start = start_server;
   srv->stop = stop_server;
   srv->send = styx2000_sendreq;
