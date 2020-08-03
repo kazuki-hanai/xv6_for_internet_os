@@ -1,6 +1,6 @@
 #include "kernel/include/types.h"
 #include "kernel/include/stat.h"
-#include "user/user.h"
+#include "user.h"
 
 int
 main(int argc, char *argv[])

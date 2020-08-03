@@ -3,7 +3,7 @@
 
 #include "kernel/include/types.h"
 #include "kernel/include/stat.h"
-#include "user/user.h"
+#include "user.h"
 
 #define N  1000
 

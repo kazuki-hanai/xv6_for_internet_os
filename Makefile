@@ -168,6 +168,9 @@ UPROGS=\
   	_udplisten\
   	_tcp\
 	_deamon\
+	_9psv\
+
+USERMAK = $U/9psv/main.mk
 
 all: qemu
 
@@ -195,7 +198,7 @@ _%: $(BUILD_DIR)/$U/%.o $(ULIBOBJS)
 $U/usys.S : $U/usys.pl
 	perl $U/usys.pl > $U/usys.S
 
--include $(KDEPS) $(ULIBDEPS) $(BUILD_DIR)/user/*.d
+-include $(KDEPS) $(ULIBDEPS) $(BUILD_DIR)/user/*.d $(USERMAK)
 
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)

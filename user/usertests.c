@@ -1,7 +1,7 @@
 #include "kernel/include/param.h"
 #include "kernel/include/types.h"
 #include "kernel/include/stat.h"
-#include "user/user.h"
+#include "user.h"
 #include "kernel/include/fs.h"
 #include "kernel/include/fcntl.h"
 #include "kernel/include/sys/syscall.h"

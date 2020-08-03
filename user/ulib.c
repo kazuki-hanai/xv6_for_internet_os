@@ -1,7 +1,7 @@
 #include "kernel/include/types.h"
 #include "kernel/include/stat.h"
 #include "kernel/include/fcntl.h"
-#include "user/user.h"
+#include "user.h"
 
 char*
 strcpy(char *s, const char *t)
@@ -19,6 +19,16 @@ strcmp(const char *p, const char *q)
 {
   while(*p && *p == *q)
     p++, q++;
+  return (uchar)*p - (uchar)*q;
+}
+
+int
+strncmp(const char *p, const char *q, uint n)
+{
+  while(n > 0 && *p && *p == *q)
+    n--, p++, q++;
+  if(n == 0)
+    return 0;
   return (uchar)*p - (uchar)*q;
 }
 
