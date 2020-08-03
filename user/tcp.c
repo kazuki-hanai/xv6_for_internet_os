@@ -1,7 +1,7 @@
-#include "kernel/include/types.h"
-#include "kernel/include/stat.h"
-#include "kernel/include/fcntl.h"
-#include "kernel/include/net/sock_cb.h"
+#include "types.h"
+#include "stat.h"
+#include "fcntl.h"
+#include "net/sock_cb.h"
 #include "user.h"
 
 uint32 get_ip(char *ip) {

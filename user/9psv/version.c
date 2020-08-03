@@ -39,7 +39,6 @@ int styx2000_compose_rversion(struct styx2000_req *req, uint8* buf) {
   struct styx2000_fcall *f = &req->ofcall;
   PBIT32(buf, f->msize);
   buf += BIT32SZ;
-  printf("version: %s\n", f->version);
   buf = pstring(buf, f->version);
   return 0;
 }

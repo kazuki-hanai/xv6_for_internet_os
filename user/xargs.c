@@ -1,7 +1,7 @@
-#include "kernel/include/types.h"
-#include "kernel/include/stat.h"
+#include "types.h"
+#include "stat.h"
 #include "user.h"
-#include "kernel/include/param.h"
+#include "param.h"
 
 int main(int argc, char *argv[])
 {

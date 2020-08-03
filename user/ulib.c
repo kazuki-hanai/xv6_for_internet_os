@@ -1,6 +1,6 @@
-#include "kernel/include/types.h"
-#include "kernel/include/stat.h"
-#include "kernel/include/fcntl.h"
+#include "types.h"
+#include "stat.h"
+#include "fcntl.h"
 #include "user.h"
 
 char*

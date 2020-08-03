@@ -52,6 +52,7 @@ int main(int argc, char **argv) {
   while ((req = srv.recv(&srv)) != 0) {
     switch (req->ifcall.type) {
       case STYX2000_TVERSION:
+        printf("TVERSION: %s\n", req->ifcall.version);
         if (styx2000_tversion(&srv, req) == -1) {
           goto fail;
         }
@@ -66,6 +67,8 @@ int main(int argc, char **argv) {
         goto fail;
         break;
       case STYX2000_TATTACH:
+        printf("TATTACH: fid: %d, afid: %d, uname: %s, aname: %s\n",
+          req->ifcall.fid, req->ifcall.afid, req->ifcall.uname, req->ifcall.aname);
         if (styx2000_tattach(&srv, req) == -1) {
           goto fail;
         }
@@ -115,6 +118,8 @@ int main(int argc, char **argv) {
       case STYX2000_RWSTAT:
         break;
     }
+    styx2000_freereq(req);
+    req = 0;
   }
   if (req == 0) {
     goto fail;

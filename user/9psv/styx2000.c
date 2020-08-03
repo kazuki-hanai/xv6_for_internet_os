@@ -96,8 +96,9 @@ struct styx2000_req* styx2000_parsefcall(uint8* buf, int size) {
       break;
   }
 
-  if (buf == 0)
+  if (buf == 0) {
     goto fail;
+  }
 
   return req;
 

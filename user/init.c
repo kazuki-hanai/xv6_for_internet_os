@@ -1,9 +1,9 @@
 // init: The initial user-level program
 
-#include "kernel/include/types.h"
-#include "kernel/include/stat.h"
+#include "types.h"
+#include "stat.h"
 #include "user.h"
-#include "kernel/include/fcntl.h"
+#include "fcntl.h"
 
 char *argv[] = { "sh", 0 };
 

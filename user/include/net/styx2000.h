@@ -19,14 +19,15 @@ struct styx2000_req {
 };
 
 struct styx2000_server {
-  int sockfd;
-  uint8* wbuf;
-  uint8* rbuf;
-  int msize;
-  int (*start)(struct styx2000_server*);
-  void (*stop)(struct styx2000_server*);
-  int (*send)(struct styx2000_server*, struct styx2000_req*);
-  struct styx2000_req* (*recv)(struct styx2000_server*);
+  int                   sockfd;
+  uint8*                wbuf;
+  uint8*                rbuf;
+  int                   msize;
+  struct 
+  int                   (*start)(struct styx2000_server*);
+  void                  (*stop)(struct styx2000_server*);
+  int                   (*send)(struct styx2000_server*, struct styx2000_req*);
+  struct styx2000_req*  (*recv)(struct styx2000_server*);
 };
 
 struct styx2000_client {};

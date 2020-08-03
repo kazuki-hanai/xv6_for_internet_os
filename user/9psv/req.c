@@ -38,5 +38,4 @@ struct styx2000_req* styx2000_recvreq(struct styx2000_server *srv) {
     return 0;
   }
   return req;
-  return 0;
 }
