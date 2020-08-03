@@ -30,7 +30,6 @@ int uptime(void);
 int socket(int);
 int connect(int, uint32, uint16);
 int listen(int, uint16);
-int styx2000_deamon();
 
 // ulib.c
 int stat(const char*, struct stat*);

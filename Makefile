@@ -110,25 +110,12 @@ KSRCS += \
 	$K/net/sock_cb.c \
 	$K/net/socket.c \
 
-# 9P
-KSRCS += \
-	$K/net/styx2000/styx2000.c \
-	$K/net/styx2000/req.c \
-	$K/net/styx2000/server.c \
-	$K/net/styx2000/util.c \
-	$K/net/styx2000/version.c \
-	$K/net/styx2000/attach.c \
-	# $K/net/styx2000/auth.c \
-	# $K/net/styx2000/error.c \
-	# $K/net/styx2000/flush.c \
-
 # System call and OS Interface for user
 KSRCS += \
 	$K/sys/sysproc.c \
 	$K/sys/sysfile.c \
 	$K/sys/sysnet.c \
 	$K/sys/syscall.c \
-	$K/sys/sysdeamon.c \
 
 ULIBSRCS = $U/ulib.c $U/usys.S $U/printf.c $U/umalloc.c
 
@@ -167,7 +154,6 @@ UPROGS=\
   	_udp\
   	_udplisten\
   	_tcp\
-	_deamon\
 	_9psv\
 
 USERMAK = $U/9psv/main.mk

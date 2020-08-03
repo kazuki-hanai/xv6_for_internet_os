@@ -127,7 +127,6 @@ extern uint64 sys_uptime(void);
 extern uint64 sys_socket(void);
 extern uint64 sys_sockconnect(void);
 extern uint64 sys_socklisten(void);
-extern uint64 sys_styx2000_deamon(void);
 
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -154,7 +153,6 @@ static uint64 (*syscalls[])(void) = {
 [SYS_socket]  sys_socket,
 [SYS_connect]  sys_sockconnect,
 [SYS_listen]  sys_socklisten,
-[SYS_styx2000_deamon]  sys_styx2000_deamon,
 };
 
 void

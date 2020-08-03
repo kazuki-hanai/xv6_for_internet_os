@@ -39,4 +39,3 @@ entry("uptime");
 entry("socket");
 entry("listen");
 entry("connect");
-entry("styx2000_deamon");
