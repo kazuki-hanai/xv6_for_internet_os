@@ -23,7 +23,6 @@ struct styx2000_server {
   uint8*                wbuf;
   uint8*                rbuf;
   int                   msize;
-  struct 
   int                   (*start)(struct styx2000_server*);
   void                  (*stop)(struct styx2000_server*);
   int                   (*send)(struct styx2000_server*, struct styx2000_req*);

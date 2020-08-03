@@ -2,11 +2,7 @@
   "configurations": [
     {
       "name": "Linux",
-      "includePath": [
-        "${workspaceFolder}/kernel/include/**",
-        "${workspaceFolder}/user/include/**",
-        "${workspaceFolder}/**"
-      ],
+      "includePath": ["${workspaceFolder}/include/**", "${workspaceFolder}/**"],
       "defines": [],
       "compilerPath": "/usr/local/bin/riscv64-unknown-elf-gcc",
       "cStandard": "c11",

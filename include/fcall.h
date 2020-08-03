@@ -50,13 +50,9 @@ struct styx2000_qid {
 
 struct styx2000_fid {
   uint64                  fid;
-  int                     omode;
-  // file
-  char                    *uid;
-  struct styx20000_qid    qid;
-  void*                   aux
 /* below is implementation-specific */
-}
+  struct styx2000_fidpool fpool;
+};
 
 struct styx2000_fcall {
   uint32                size;
