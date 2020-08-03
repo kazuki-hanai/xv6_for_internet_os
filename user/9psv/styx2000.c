@@ -26,6 +26,9 @@ struct styx2000_req* styx2000_parsefcall(uint8* buf, int size) {
   }
 
   struct styx2000_req *req = styx2000_allocreq();
+  if (req == 0) {
+    return 0;
+  }
   memset(req, 0, sizeof *req);
   struct styx2000_fcall *ifcall = &req->ifcall;
 

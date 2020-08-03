@@ -8,24 +8,29 @@
 
 static int start_server(struct styx2000_server *srv) {
   srv->msize = STYX2000_MAXMSGLEN;
-  // srv->scb = sockalloc(SOCK_TCP);
-  // if (socklisten(srv->scb, STYX2000_PORT) == -1) {
-  //   return -1;
-  // }
+  srv->sockfd = socket(SOCK_TCP);
+  if (srv->sockfd == -1) {
+    printf("socket error!\n");
+    return -1;
+  }
+  if (listen(srv->sockfd, STYX2000_PORT) == -1) {
+    printf("socket error!\n");
+    return -1;
+  }
   return 0;
 }
 
 static void stop_server(struct styx2000_server *srv) {
-  // sockclose(srv->scb);
-  // bd_free(srv->wbuf);
-  // bd_free(srv->rbuf);
-  srv->scb = 0;
+  close(srv->sockfd);
+  free(srv->wbuf);
+  free(srv->rbuf);
+  srv->sockfd = 0;
 }
 
 static void initserver(struct styx2000_server *srv) {
   srv->msize = STYX2000_MAXMSGLEN;
-  // srv->wbuf = bd_alloc(srv->msize);
-  // srv->rbuf = bd_alloc(srv->msize);
+  srv->wbuf = malloc(srv->msize);
+  srv->rbuf = malloc(srv->msize);
   srv->start = start_server;
   srv->stop = stop_server;
   srv->send = styx2000_sendreq;
@@ -33,6 +38,8 @@ static void initserver(struct styx2000_server *srv) {
 }
 
 int main(int argc, char **argv) {
+  if (fork() != 0)
+    exit(0);
   printf("start 9p server!\n");
   struct styx2000_server srv;
   initserver(&srv);
@@ -108,6 +115,9 @@ int main(int argc, char **argv) {
       case STYX2000_RWSTAT:
         break;
     }
+  }
+  if (req == 0) {
+    goto fail;
   }
   srv.stop(&srv);
   exit(0);

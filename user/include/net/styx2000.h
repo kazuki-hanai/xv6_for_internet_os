@@ -19,7 +19,7 @@ struct styx2000_req {
 };
 
 struct styx2000_server {
-  struct sock_cb *scb;
+  int sockfd;
   uint8* wbuf;
   uint8* rbuf;
   int msize;
