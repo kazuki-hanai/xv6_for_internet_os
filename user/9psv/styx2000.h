@@ -49,23 +49,22 @@ struct styx2000_server {
 
 struct styx2000_client {};
 
-uint8* styx2000_gstring(uint8*, uint8*, char **);
-uint8* styx2000_pstring(uint8 *, char *);
-uint16 styx2000_stringsz(char *);
-uint32 styx2000_getfcallsize(struct styx2000_fcall*);
-
-// styx2000
-struct styx2000_req* styx2000_parsefcall(uint8*, int);
-int styx2000_composefcall(struct styx2000_req *, uint8*, int);
+// styx2000 utils
+uint8*                  styx2000_gstring(uint8*, uint8*, char **);
+uint8*                  styx2000_pstring(uint8 *, char *);
+uint16                  styx2000_stringsz(char *);
+uint32                  styx2000_getfcallsize(struct styx2000_fcall*);
+struct styx2000_req*    styx2000_parsefcall(uint8*, int);
+int                     styx2000_composefcall(struct styx2000_req *, uint8*, int);
 
 // server
-void styx2000_initserver();
-int styx2000_serve();
+void                    styx2000_initserver();
+int                     styx2000_serve();
 
 // version
-uint8* styx2000_parse_tversion(struct styx2000_fcall*, uint8*, int);
-int styx2000_compose_rversion(struct styx2000_req*, uint8*);
+uint8*                  styx2000_parse_tversion(struct styx2000_fcall*, uint8*, int);
+int                     styx2000_compose_rversion(struct styx2000_req*, uint8*);
 
 // attach
-uint8* styx2000_parse_tattach(struct styx2000_fcall*, uint8*, int);
-int styx2000_compose_rattach(struct styx2000_req*, uint8*);
+uint8*                  styx2000_parse_tattach(struct styx2000_fcall*, uint8*, int);
+int                     styx2000_compose_rattach(struct styx2000_req*, uint8*);
