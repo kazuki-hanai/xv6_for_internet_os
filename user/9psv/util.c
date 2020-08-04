@@ -1,9 +1,6 @@
 #include "user.h"
-#include "types.h"
-#include "arch/riscv.h"
-#include "param.h"
-#include "net/styx2000.h"
-#include "net/styx2000util.h"
+#include "styx2000.h"
+#include "styx2000util.h"
 #include "net/byteorder.h"
 #include "fcall.h"
 

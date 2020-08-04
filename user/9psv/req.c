@@ -4,7 +4,7 @@
 #include "param.h"
 #include "net/byteorder.h"
 #include "net/socket.h"
-#include "net/styx2000.h"
+#include "styx2000.h"
 #include "fcall.h"
 
 struct styx2000_req* styx2000_allocreq() {

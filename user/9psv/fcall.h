@@ -2,7 +2,7 @@
 
 #include "types.h"
 #include "file.h"
-#include "net/styx2000.h"
+#include "styx2000.h"
 
 #define VERSION9P "9P2000"
 
@@ -42,16 +42,25 @@
 
 #define STYX2000_MAXWELEM 16
 
+struct intmap;
+
 struct styx2000_qid {
-	uint64	path;
-	uint64	vers;
 	uint8 	type;
+	uint32	vers;
+	uint64	path;
 };
 
 struct styx2000_fid {
   uint64                  fid;
+  char*                   path;
 /* below is implementation-specific */
-  struct styx2000_fidpool fpool;
+  struct styx2000_fidpool *fpool;
+};
+
+struct styx2000_fidpool {
+  struct intmap           *map;
+  void                    (*destroy)(struct styx2000_fid*);
+  struct styx2000_server  *srv;
 };
 
 struct styx2000_fcall {
@@ -110,3 +119,21 @@ struct styx2000_fcall {
     };
   };
 };
+
+struct styx2000_req {
+  struct styx2000_fcall ifcall;
+  struct styx2000_fcall ofcall;
+  struct styx2000_fid   *fid;
+};
+
+// req
+struct styx2000_req* styx2000_allocreq();
+void styx2000_freereq(struct styx2000_req*);
+int styx2000_sendreq(struct styx2000_server *srv, struct styx2000_req *req);
+struct styx2000_req* styx2000_recvreq(struct styx2000_server *srv);
+
+// fid
+struct styx2000_fidpool* styx2000_allocfidpool();
+void styx2000_freefidpool(struct styx2000_fidpool*);
+struct styx2000_fid* styx2000_allocfid(struct styx2000_fidpool*, char*, uint64);
+struct styx2000_fid* styx2000_removefid(struct styx2000_fidpool*, uint64);
