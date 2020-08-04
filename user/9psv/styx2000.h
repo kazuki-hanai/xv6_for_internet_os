@@ -13,6 +13,23 @@
 #define	STYX2000_QIDSZ	(BIT8SZ+BIT32SZ+BIT64SZ)
 #define STYX2000_MAXMSGLEN 2048
 
+#define	GBIT8(p)	((p)[0])
+#define	GBIT16(p)	((p)[0]|((p)[1]<<8))
+#define	GBIT32(p)	((uint32)((p)[0]|((p)[1]<<8)|((p)[2]<<16)|((p)[3]<<24)))
+#define	GBIT64(p)	((uint32)((p)[0]|((p)[1]<<8)|((p)[2]<<16)|((p)[3]<<24)) |\
+				((uint64)((p)[4]|((p)[5]<<8)|((p)[6]<<16)|((p)[7]<<24)) << 32))
+
+#define	PBIT8(p,v)	(p)[0]=(v)
+#define	PBIT16(p,v)	(p)[0]=(v);(p)[1]=(v)>>8
+#define	PBIT32(p,v)	(p)[0]=(v);(p)[1]=(v)>>8;(p)[2]=(v)>>16;(p)[3]=(v)>>24
+#define	PBIT64(p,v)	(p)[0]=(v);(p)[1]=(v)>>8;(p)[2]=(v)>>16;(p)[3]=(v)>>24;\
+			(p)[4]=(v)>>32;(p)[5]=(v)>>40;(p)[6]=(v)>>48;(p)[7]=(v)>>56
+
+#define	BIT8SZ		1
+#define	BIT16SZ		2
+#define	BIT32SZ		4
+#define	BIT64SZ		8
+
 struct styx2000_filesystem {
   char* rootpath;
 };
@@ -32,10 +49,14 @@ struct styx2000_server {
 
 struct styx2000_client {};
 
+uint8* styx2000_gstring(uint8*, uint8*, char **);
+uint8* styx2000_pstring(uint8 *, char *);
+uint16 styx2000_stringsz(char *);
+uint32 styx2000_getfcallsize(struct styx2000_fcall*);
 
 // styx2000
 struct styx2000_req* styx2000_parsefcall(uint8*, int);
-int styx2000_respond(struct styx2000_server*, struct styx2000_req*);
+int styx2000_composefcall(struct styx2000_req *, uint8*, int);
 
 // server
 void styx2000_initserver();

@@ -3,7 +3,6 @@ PROGNAME = 9psv
 STYX2000_DIR = $U/$(PROGNAME)
 STYX2000_SRCS = \
 	$(STYX2000_DIR)/styx2000.c \
-	$(STYX2000_DIR)/util.c \
 	$(STYX2000_DIR)/fid.c \
 	$(STYX2000_DIR)/server.c \
 	$(STYX2000_DIR)/req.c \

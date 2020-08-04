@@ -1,7 +1,6 @@
 #include "user.h"
 #include "param.h"
 #include "styx2000.h"
-#include "styx2000util.h"
 #include "net/byteorder.h"
 #include "fcall.h"
 
@@ -11,11 +10,11 @@ uint8* styx2000_parse_tattach(struct styx2000_fcall *fcall, uint8* buf, int len)
   buf += 4;
   fcall->afid = GBIT32(buf);
   buf += 4;
-  buf = gstring(buf, ep, &fcall->uname);
+  buf = styx2000_gstring(buf, ep, &fcall->uname);
   if (buf == 0) {
     return 0;
   }
-  buf = gstring(buf, ep, &fcall->aname);
+  buf = styx2000_gstring(buf, ep, &fcall->aname);
   if (buf == 0) {
     return 0;
   }

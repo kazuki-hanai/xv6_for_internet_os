@@ -29,6 +29,23 @@ static int get_qid(char* path, struct styx2000_qid *qid) {
   return 0;
 }
 
+static int respond(struct styx2000_server *srv, struct styx2000_req *req) {
+  req->ofcall.type = req->ifcall.type+1;
+  req->ofcall.size = styx2000_getfcallsize(&req->ofcall);
+  req->ofcall.tag = req->ifcall.tag;
+
+  // TODO error processing
+
+  if (styx2000_composefcall(req, srv->wbuf, srv->msize) == -1 ) {
+    return -1;
+  }
+
+  if (srv->send(srv, req) == -1) {
+    return -1;
+  }
+  return 0;
+}
+
 static int rattach(struct styx2000_server *srv, struct styx2000_req *req) {
   if ((req->fid = styx2000_allocfid(srv->fpool, srv->fs.rootpath, req->ifcall.fid)) == 0) {
     // TODO: error respond
@@ -105,80 +122,50 @@ int main(int argc, char **argv) {
   while ((req = srv.recv(&srv)) != 0) {
     switch (req->ifcall.type) {
       case STYX2000_TVERSION:
-        printf("TVERSION: %s\n", req->ifcall.version);
+        printf("<= TVERSION: %s\n", req->ifcall.version);
         if (rversion(&srv, req) == -1) {
           goto fail;
         }
-        break;
-      case STYX2000_RVERSION:
-        goto fail;
+        printf("=> RVERSION: %s\n", VERSION9P);
         break;
       case STYX2000_TAUTH:
         goto fail;
         break;
-      case STYX2000_RAUTH:
-        goto fail;
-        break;
       case STYX2000_TATTACH:
-        printf("TATTACH: fid: %d, afid: %d, uname: %s, aname: %s\n",
+        printf("<= TATTACH: fid: %d, afid: %d, uname: %s, aname: %s\n",
           req->ifcall.fid, req->ifcall.afid, req->ifcall.uname, req->ifcall.aname);
         if (rattach(&srv, req) == -1) {
           goto fail;
         }
-        printf("RATTACH: qid { type: %d, vers: %d, path: %d }\n",
+        printf("=> RATTACH: qid { type: %d, vers: %d, path: %d }\n",
           req->ofcall.qid.type, req->ofcall.qid.vers, req->ofcall.qid.path);
-        break;
-      case STYX2000_RATTACH:
-        break;
-      case STYX2000_RERROR:
         break;
       case STYX2000_TFLUSH:
         break;
-      case STYX2000_RFLUSH:
-        break;
       case STYX2000_TWALK:
-        break;
-      case STYX2000_RWALK:
         break;
       case STYX2000_TOPEN:
         break;
-      case STYX2000_ROPEN:
-        break;
       case STYX2000_TCREATE:
-        break;
-      case STYX2000_RCREATE:
         break;
       case STYX2000_TREAD:
         break;
-      case STYX2000_RREAD:
-        break;
       case STYX2000_TWRITE:
-        break;
-      case STYX2000_RWRITE:
         break;
       case STYX2000_TCLUNK:
         break;
-      case STYX2000_RCLUNK:
-        break;
       case STYX2000_TREMOVE:
-        break;
-      case STYX2000_RREMOVE:
         break;
       case STYX2000_TSTAT:
         break;
-      case STYX2000_RSTAT:
-        break;
       case STYX2000_TWSTAT:
         break;
-      case STYX2000_RWSTAT:
-        break;
+      default:
+        goto fail;
     }
-    styx2000_respond(&srv, req);
+    respond(&srv, req);
     styx2000_freereq(req);
     req = 0;
-  }
-  if (req == 0) {
-    goto fail;
   }
   srv.stop(&srv);
   exit(0);

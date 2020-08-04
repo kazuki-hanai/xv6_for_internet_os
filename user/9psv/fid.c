@@ -2,7 +2,6 @@
 #include "types.h"
 #include "param.h"
 #include "styx2000.h"
-#include "styx2000util.h"
 #include "net/byteorder.h"
 #include "fcall.h"
 
