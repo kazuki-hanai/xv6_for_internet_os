@@ -117,7 +117,13 @@ KSRCS += \
 	$K/sys/sysnet.c \
 	$K/sys/syscall.c \
 
-ULIBSRCS = $U/ulib.c $U/usys.S $U/printf.c $U/umalloc.c
+ULIBDIR = $U/ulib
+ULIBSRCS = \
+	$(ULIBDIR)/ulib.c \
+	$(ULIBDIR)/usys.S \
+	$(ULIBDIR)/printf.c \
+	$(ULIBDIR)/umalloc.c \
+	$(ULIBDIR)/intmap.c \
 
 
 KOBJS=$(patsubst %.S,%.o, $(addprefix $(BUILD_DIR)/, $(KSRCS:.c=.o)))
@@ -181,8 +187,8 @@ _%: $(BUILD_DIR)/$U/%.o $(ULIBOBJS)
 	$(OBJDUMP) -S $(BUILD_DIR)/$U/$@ > $(BUILD_DIR)/$U/$*.asm
 	$(OBJDUMP) -t $(BUILD_DIR)/$U/$@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $(BUILD_DIR)/$U/$*.sym
 
-$U/usys.S : $U/usys.pl
-	perl $U/usys.pl > $U/usys.S
+$(ULIBDIR)/usys.S : $(ULIBDIR)/usys.pl
+	perl $(ULIBDIR)/usys.pl > $(ULIBDIR)/usys.S
 
 -include $(KDEPS) $(ULIBDEPS) $(BUILD_DIR)/user/*.d $(USERMAK)
 

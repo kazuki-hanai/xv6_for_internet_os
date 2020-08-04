@@ -46,3 +46,12 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+
+// intmap
+struct intmap;
+struct intmap* allocmap(void (*inc)(void*));
+void freemap(struct intmap*, void (*destroy)(void*));
+void* lookupkey(struct intmap*, uint64 id);
+void* insertkey(struct intmap*, uint64 id, void *v);
+int caninsertkey(struct intmap*, uint64 id, void *v);
+void* deletekey(struct intmap*, uint64 id);
