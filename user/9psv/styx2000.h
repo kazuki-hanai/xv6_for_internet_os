@@ -86,3 +86,14 @@ int                     styx2000_compose_rattach(struct styx2000_req*, uint8*);
 // walk
 uint8*                  styx2000_parse_twalk(struct styx2000_fcall*, uint8*, int);
 int                     styx2000_compose_rwalk(struct styx2000_req*, uint8*);
+
+// error
+int                     styx2000_compose_rerror(struct styx2000_req*, uint8*);
+
+// open
+uint8*                  styx2000_parse_topen(struct styx2000_fcall*, uint8*, int);
+int                     styx2000_compose_ropen(struct styx2000_req*, uint8*);
+
+// stat
+uint8*                  styx2000_parse_tstat(struct styx2000_fcall*, uint8*, int);
+int                     styx2000_compose_rstat(struct styx2000_req*, uint8*);

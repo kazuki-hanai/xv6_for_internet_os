@@ -53,6 +53,7 @@ struct styx2000_fid* styx2000_allocfid(
     return 0;
   }
   f->fid = fid;
+  f->fd = -1;
   f->fpool = fpool;
   f->path = malloc(strlen(path)+1);
   strcpy(f->path, path);

@@ -151,7 +151,7 @@ uint32 styx2000_getfcallsize(struct styx2000_fcall *f) {
 		break;
 	case STYX2000_RSTAT:
 		n += BIT16SZ;
-		// n += f->nstat;
+		n += f->nstat;
 		break;
 	case STYX2000_TWSTAT:
 		n += BIT32SZ;
@@ -204,9 +204,10 @@ struct styx2000_req* styx2000_parsefcall(uint8* buf, int size) {
     case STYX2000_TWALK:
       buf = styx2000_parse_twalk(ifcall, buf, mlen);
       break;
-    case STYX2000_TFLUSH:
-      break;
     case STYX2000_TOPEN:
+      buf = styx2000_parse_topen(ifcall, buf, mlen);
+      break;
+    case STYX2000_TFLUSH:
       break;
     case STYX2000_TCREATE:
       break;
@@ -219,6 +220,7 @@ struct styx2000_req* styx2000_parsefcall(uint8* buf, int size) {
     case STYX2000_TREMOVE:
       break;
     case STYX2000_TSTAT:
+      buf = styx2000_parse_tstat(ifcall, buf, mlen);
       break;
     case STYX2000_TWSTAT:
       break;
@@ -267,10 +269,16 @@ int styx2000_composefcall(struct styx2000_req *req, uint8* buf, int size) {
       }
       break;
     case STYX2000_RERROR:
-      break;
-    case STYX2000_RFLUSH:
+      if (styx2000_compose_rerror(req, buf) == -1) {
+        return -1;
+      }
       break;
     case STYX2000_ROPEN:
+      if (styx2000_compose_ropen(req, buf) == -1) {
+        return -1;
+      }
+      break;
+    case STYX2000_RFLUSH:
       break;
     case STYX2000_RCREATE:
       break;
@@ -283,6 +291,9 @@ int styx2000_composefcall(struct styx2000_req *req, uint8* buf, int size) {
     case STYX2000_RREMOVE:
       break;
     case STYX2000_RSTAT:
+      if (styx2000_compose_rstat(req, buf) == -1) {
+        return -1;
+      }
       break;
     case STYX2000_RWSTAT:
       break;
@@ -301,8 +312,10 @@ void styx2000_debugfcall(struct styx2000_fcall *f) {
     printf("=> RVERSION: %s\n", f->version);
     break;
   case STYX2000_TAUTH:
+    printf("<= TAUTH: \n");
     break;
   case STYX2000_RAUTH:
+    printf("=> RAUTH: \n");
     break;
   case STYX2000_TATTACH:
     printf("<= TATTACH: fid: %d, afid: %d, uname: %s, aname: %s\n",
@@ -327,42 +340,74 @@ void styx2000_debugfcall(struct styx2000_fcall *f) {
     }
     break;
   case STYX2000_RERROR:
+    printf("=> RERROR: ename: %s\n", f->ename);
     break;
   case STYX2000_TFLUSH:
+    printf("<= TFLUSH: \n");
     break;
   case STYX2000_RFLUSH:
+    printf("=> RFLUSH: \n");
     break;
   case STYX2000_TOPEN:
+    printf("<= TOPEN: fid: %d, mode: %d\n", f->fid, f->mode);
     break;
   case STYX2000_ROPEN:
+    printf("=> ROPEN: qid: { type: %d, vers: %d, path: %d }, iounit: %d\n", 
+      f->qid.type, f->qid.vers, f->qid.path, f->iounit);
     break;
   case STYX2000_TCREATE:
+    printf("<= TCREATE: \n");
     break;
   case STYX2000_RCREATE:
+    printf("=> RCREATE: \n");
     break;
   case STYX2000_TREAD:
+    printf("<= TREAD: \n");
     break;
   case STYX2000_RREAD:
+    printf("=> RREAD: \n");
     break;
   case STYX2000_TWRITE:
+    printf("<= TWRITE: \n");
     break;
   case STYX2000_RWRITE:
+    printf("=> RWRITE: \n");
     break;
   case STYX2000_TCLUNK:
+    printf("<= TCLUNK: \n");
     break;
   case STYX2000_RCLUNK:
+    printf("=> RCLUNK: \n");
     break;
   case STYX2000_TREMOVE:
+    printf("<= TREMOVE: \n");
     break;
   case STYX2000_RREMOVE:
+    printf("=> RREMOVE: \n");
     break;
   case STYX2000_TSTAT:
+    printf("<= TSTAT: fid: %d\n", f->fid);
     break;
   case STYX2000_RSTAT:
+    printf("=> RSTAT: nstat: %d, stat: {\n", f->nstat);
+    printf("\ttype: %d\n", f->stat.type);
+    printf("\tdev: %d\n", f->stat.dev);
+    printf("\tqid: { type: %d, vers: %d, path: %d }\n", 
+      f->stat.qid.type, f->stat.qid.vers, f->stat.qid.path);
+    printf("\tmode: %d\n", f->stat.mode);
+    printf("\tatime: %d\n", f->stat.atime);
+    printf("\tmtime: %d\n", f->stat.mtime);
+    printf("\tlength: %d\n", f->stat.length);
+    printf("\tname: %s\n", f->stat.name);
+    printf("\tuid: %s\n", f->stat.uid);
+    printf("\tgid: %s\n", f->stat.gid);
+    printf("\tmuid: %s\n", f->stat.muid);
     break;
   case STYX2000_TWSTAT:
+    printf("<= TWSTAT: \n");
     break;
   case STYX2000_RWSTAT:
+    printf("=> RWSTAT: \n");
     break;
   }
 }

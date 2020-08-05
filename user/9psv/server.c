@@ -3,9 +3,26 @@
 #include "stat.h"
 #include "arch/riscv.h"
 #include "param.h"
+#include "fcntl.h"
 #include "net/byteorder.h"
 #include "net/socket.h"
 #include "styx2000.h"
+
+static uint8 to_qid_type(uint16 t) {
+  uint8 res = 0;
+  if (t & T_DIR) {
+    res |= STYX2000_ODIR;
+  }
+  return res;
+}
+static uint8 to_xv6_mode(uint8 m) {
+  uint8 res = 0;
+  if (m & STYX2000_ORDWR)
+    res |= O_RDWR;
+  if (m & STYX2000_OWRITE) 
+    res |= O_WRONLY;
+  return res;
+}
 
 static char* get_qid(char* path, struct styx2000_qid *qid) {
   int fd;
@@ -13,17 +30,17 @@ static char* get_qid(char* path, struct styx2000_qid *qid) {
 
   if ((fd = open(path, 0)) < 0) {
     fprintf(2, "cannot open path: %s\n", path);
-    return "cannot open path\n";
+    return "cannot open path";
   }
   if (fstat(fd, &st) < 0) {
     fprintf(2, "cannot stat path: %s\n", path);
     close(fd);
-    return "cannot stat path\n";
+    return "cannot stat path";
   }
 
-  qid->type = st.type;
+  qid->type = to_qid_type(st.type);
   qid->vers = 0;
-  qid->path = st.ino;
+  qid->path = (uint64)st.ino;
 
   close(fd);
   return 0;
@@ -100,6 +117,25 @@ static int rwalk(struct styx2000_server *srv, struct styx2000_req *req) {
   return 0;
 }
 
+static int ropen(struct styx2000_server *srv, struct styx2000_req *req) {
+  struct styx2000_fid *fid;
+  if ((fid = styx2000_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
+    req->error = 1;
+    req->ofcall.ename = "specified fid was not allocated.";
+    return 0;
+  }
+  if ((fid->fd = open(fid->path, to_xv6_mode(req->ifcall.mode))) < 0) {
+    printf("[ropen] cannot open: %s\n", req->ifcall.mode);
+    return -1;
+  }
+  return 0;
+}
+
+static int rstat(struct styx2000_server *srv, struct styx2000_req *req) {
+  req->ofcall.nstat = sizeof(struct styx2000_stat);
+  return 0;
+}
+
 static int start_server(struct styx2000_server *srv) {
   srv->msize = STYX2000_MAXMSGLEN;
   srv->sockfd = socket(SOCK_TCP);
@@ -164,9 +200,12 @@ int main(int argc, char **argv) {
           goto fail;
         }
         break;
-      case STYX2000_TFLUSH:
-        break;
       case STYX2000_TOPEN:
+        if (ropen(&srv, req) == -1) {
+          goto fail;
+        }
+        break;
+      case STYX2000_TFLUSH:
         break;
       case STYX2000_TCREATE:
         break;
@@ -179,6 +218,9 @@ int main(int argc, char **argv) {
       case STYX2000_TREMOVE:
         break;
       case STYX2000_TSTAT:
+        if (rstat(&srv, req) == -1) {
+          goto fail;
+        }
         break;
       case STYX2000_TWSTAT:
         break;

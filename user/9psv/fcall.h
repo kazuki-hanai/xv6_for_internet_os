@@ -42,18 +42,37 @@
 
 #define STYX2000_MAXWELEM 16
 
+#define	STYX2000_OREAD	    0	/* open for read */
+#define	STYX2000_OWRITE	    1	/* write */
+#define	STYX2000_ORDWR	    2	/* read and write */
+#define	STYX2000_OEXEC	    3	/* execute, == read but check execute permission */
+#define STYX2000_OTMP       0x04
+#define STYX2000_OAUTH      0x08
+#define STYX2000_OMNTD      0x10
+#define STYX2000_OEXCL      0x20
+#define STYX2000_OAPPEND    0x40
+#define STYX2000_ODIR       0x80
+#define	STYX2000_OTRUNC	    16	/* or'ed in (except for exec), truncate file first */
+#define	STYX2000_OCEXEC	    32	/* or'ed in, close on exec */
+#define	STYX2000_ORCLOSE	  64	/* or'ed in, remove on close */
+#define	STYX2000_ODIRECT	  128	/* or'ed in, direct access */
+#define	STYX2000_ONONBLOCK  256	/* or'ed in, non-blocking call */
+// #define	STYX2000_OEXCL	    0x1000	/* or'ed in, exclusive use (create only) */
+// #define	STYX2000_OLOCK	    0x2000	/* or'ed in, lock after opening */
+// #define	STYX2000_OAPPEND	  0x4000	/* or'ed in, append only */
+
 struct intmap;
 
 struct styx2000_qid {
-	uint8 	type;
-	uint32	vers;
 	uint64	path;
+	uint32	vers;
+	uint8 	type;
 };
 
 struct styx2000_fid {
   uint64                  fid;
   char*                   path;
-/* below is implementation-specific */
+  int                     fd;
   struct styx2000_fidpool *fpool;
 };
 
@@ -61,6 +80,22 @@ struct styx2000_fidpool {
   struct intmap           *map;
   void                    (*destroy)(struct styx2000_fid*);
   struct styx2000_server  *srv;
+};
+
+struct styx2000_stat {
+    /* system-modified data */
+    uint16              type;   /* server type */
+    uint32              dev;    /* server subtype */
+    /* file data */
+    struct styx2000_qid qid;    /* unique id from server */
+    uint32              mode;   /* permissions */
+    uint32              atime;  /* last read time */
+    uint32              mtime;  /* last write time */
+    uint64              length; /* file length */
+    char                *name;  /* last element of path */
+    char                *uid;   /* owner name */
+    char                *gid;   /* group name */
+    char                *muid;  /* last modifier name */
 };
 
 struct styx2000_fcall {
@@ -115,7 +150,7 @@ struct styx2000_fcall {
     };
     struct {
       uint16                nstat;            /* Twstat, Rstat */
-      uint8                 *stat;            /* Twstat, Rstat */
+      struct styx2000_stat  stat;            /* Twstat, Rstat */
     };
   };
 };
@@ -124,4 +159,5 @@ struct styx2000_fcall {
 struct styx2000_fidpool* styx2000_allocfidpool();
 void styx2000_freefidpool(struct styx2000_fidpool*);
 struct styx2000_fid* styx2000_allocfid(struct styx2000_fidpool*, char*, uint64);
+struct styx2000_fid* styx2000_lookupfid(struct styx2000_fidpool *, uint64);
 struct styx2000_fid* styx2000_removefid(struct styx2000_fidpool*, uint64);
