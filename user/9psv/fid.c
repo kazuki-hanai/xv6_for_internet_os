@@ -54,7 +54,9 @@ struct styx2000_fid* styx2000_allocfid(
   }
   f->fid = fid;
   f->fpool = fpool;
-  f->path = path;
+  f->path = malloc(strlen(path)+1);
+  strcpy(f->path, path);
+  f->path[strlen(path)] = 0;
   if (caninsertkey(fpool->map, fid, f) == 0) {
     styx2000_freefid(f);
     return 0;
@@ -63,5 +65,6 @@ struct styx2000_fid* styx2000_allocfid(
 }
 
 static void styx2000_freefid(struct styx2000_fid* fid) {
+  free(fid->path);
   free(fid);
 }

@@ -34,6 +34,13 @@ struct styx2000_filesystem {
   char* rootpath;
 };
 
+struct styx2000_req {
+  struct styx2000_fcall ifcall;
+  struct styx2000_fcall ofcall;
+  struct styx2000_fid   *fid;
+  int                   error;
+};
+
 struct styx2000_server {
   int                         sockfd;
   uint8*                      wbuf;
@@ -56,10 +63,17 @@ uint16                  styx2000_stringsz(char *);
 uint32                  styx2000_getfcallsize(struct styx2000_fcall*);
 struct styx2000_req*    styx2000_parsefcall(uint8*, int);
 int                     styx2000_composefcall(struct styx2000_req *, uint8*, int);
+void                    styx2000_debugfcall(struct styx2000_fcall*);
 
 // server
 void                    styx2000_initserver();
 int                     styx2000_serve();
+
+// req
+struct styx2000_req* styx2000_allocreq();
+void styx2000_freereq(struct styx2000_req*);
+int styx2000_sendreq(struct styx2000_server *srv, struct styx2000_req *req);
+struct styx2000_req* styx2000_recvreq(struct styx2000_server *srv);
 
 // version
 uint8*                  styx2000_parse_tversion(struct styx2000_fcall*, uint8*, int);
@@ -68,3 +82,7 @@ int                     styx2000_compose_rversion(struct styx2000_req*, uint8*);
 // attach
 uint8*                  styx2000_parse_tattach(struct styx2000_fcall*, uint8*, int);
 int                     styx2000_compose_rattach(struct styx2000_req*, uint8*);
+
+// walk
+uint8*                  styx2000_parse_twalk(struct styx2000_fcall*, uint8*, int);
+int                     styx2000_compose_rwalk(struct styx2000_req*, uint8*);

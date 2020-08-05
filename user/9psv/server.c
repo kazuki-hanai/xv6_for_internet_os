@@ -7,18 +7,18 @@
 #include "net/socket.h"
 #include "styx2000.h"
 
-static int get_qid(char* path, struct styx2000_qid *qid) {
+static char* get_qid(char* path, struct styx2000_qid *qid) {
   int fd;
   struct stat st;
 
   if ((fd = open(path, 0)) < 0) {
     fprintf(2, "cannot open path: %s\n", path);
-    return -1;
+    return "cannot open path\n";
   }
   if (fstat(fd, &st) < 0) {
     fprintf(2, "cannot stat path: %s\n", path);
     close(fd);
-    return -1;
+    return "cannot stat path\n";
   }
 
   qid->type = st.type;
@@ -30,7 +30,11 @@ static int get_qid(char* path, struct styx2000_qid *qid) {
 }
 
 static int respond(struct styx2000_server *srv, struct styx2000_req *req) {
-  req->ofcall.type = req->ifcall.type+1;
+  if (!req->error) {
+    req->ofcall.type = req->ifcall.type+1;
+  } else {
+    req->ofcall.type = STYX2000_RERROR;
+  }
   req->ofcall.size = styx2000_getfcallsize(&req->ofcall);
   req->ofcall.tag = req->ifcall.tag;
 
@@ -43,6 +47,17 @@ static int respond(struct styx2000_server *srv, struct styx2000_req *req) {
   if (srv->send(srv, req) == -1) {
     return -1;
   }
+  return 0;
+}
+
+static int rversion(struct styx2000_server *srv, struct styx2000_req *req) {
+  if (strncmp(req->ifcall.version, "9P2000", 6) != 0) {
+    req->ofcall.version = "unknown";
+    req->ofcall.msize = req->ifcall.msize;
+    return -1;
+  }
+  req->ofcall.version = "9P2000";
+  req->ofcall.msize = req->ifcall.msize;
   return 0;
 }
 
@@ -59,18 +74,29 @@ static int rattach(struct styx2000_server *srv, struct styx2000_req *req) {
     return -1;
   }
 
-  get_qid(srv->fs.rootpath, &req->ofcall.qid);
+  if ((req->ofcall.ename = get_qid(srv->fs.rootpath, &req->ofcall.qid)) != 0) {
+      req->error = 1;
+  }
   return 0;
 }
 
-static int rversion(struct styx2000_server *srv, struct styx2000_req *req) {
-  if (strncmp(req->ifcall.version, "9P2000", 6) != 0) {
-    req->ofcall.version = "unknown";
-    req->ofcall.msize = req->ifcall.msize;
+static int rwalk(struct styx2000_server *srv, struct styx2000_req *req) {
+  char path[256];
+  char *p = path;
+  strcpy(p, srv->fs.rootpath);
+  p += strlen(srv->fs.rootpath);
+  for (int i = 0; i < req->ifcall.nwname; i++) {
+    strcpy(p, req->ifcall.wname[i]);
+    if ((req->ofcall.ename = get_qid(p, &req->ofcall.wqid[i])) != 0) {
+      req->error = 1;
+      return 0;
+    }
+    p += strlen(req->ifcall.wname[i]);
+  }
+  if ((req->fid = styx2000_allocfid(srv->fpool, path, req->ifcall.newfid)) == 0) {
+    printf("[rwalk] cannot allocate newfid\n");
     return -1;
   }
-  req->ofcall.version = "9P2000";
-  req->ofcall.msize = req->ifcall.msize;
   return 0;
 }
 
@@ -108,8 +134,6 @@ static void initserver(struct styx2000_server *srv) {
 }
 
 int main(int argc, char **argv) {
-  if (fork() != 0)
-    exit(0);
   printf("Launch 9p server!\n");
   struct styx2000_server srv;
   initserver(&srv);
@@ -120,29 +144,27 @@ int main(int argc, char **argv) {
 
   struct styx2000_req *req;
   while ((req = srv.recv(&srv)) != 0) {
+    styx2000_debugfcall(&req->ifcall);
     switch (req->ifcall.type) {
       case STYX2000_TVERSION:
-        printf("<= TVERSION: %s\n", req->ifcall.version);
         if (rversion(&srv, req) == -1) {
           goto fail;
         }
-        printf("=> RVERSION: %s\n", VERSION9P);
         break;
       case STYX2000_TAUTH:
         goto fail;
         break;
       case STYX2000_TATTACH:
-        printf("<= TATTACH: fid: %d, afid: %d, uname: %s, aname: %s\n",
-          req->ifcall.fid, req->ifcall.afid, req->ifcall.uname, req->ifcall.aname);
         if (rattach(&srv, req) == -1) {
           goto fail;
         }
-        printf("=> RATTACH: qid { type: %d, vers: %d, path: %d }\n",
-          req->ofcall.qid.type, req->ofcall.qid.vers, req->ofcall.qid.path);
-        break;
-      case STYX2000_TFLUSH:
         break;
       case STYX2000_TWALK:
+        if (rwalk(&srv, req) == -1) {
+          goto fail;
+        }
+        break;
+      case STYX2000_TFLUSH:
         break;
       case STYX2000_TOPEN:
         break;
@@ -164,6 +186,7 @@ int main(int argc, char **argv) {
         goto fail;
     }
     respond(&srv, req);
+    styx2000_debugfcall(&req->ofcall);
     styx2000_freereq(req);
     req = 0;
   }

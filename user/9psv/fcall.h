@@ -120,18 +120,6 @@ struct styx2000_fcall {
   };
 };
 
-struct styx2000_req {
-  struct styx2000_fcall ifcall;
-  struct styx2000_fcall ofcall;
-  struct styx2000_fid   *fid;
-};
-
-// req
-struct styx2000_req* styx2000_allocreq();
-void styx2000_freereq(struct styx2000_req*);
-int styx2000_sendreq(struct styx2000_server *srv, struct styx2000_req *req);
-struct styx2000_req* styx2000_recvreq(struct styx2000_server *srv);
-
 // fid
 struct styx2000_fidpool* styx2000_allocfidpool();
 void styx2000_freefidpool(struct styx2000_fidpool*);

@@ -14,6 +14,7 @@ struct styx2000_req* styx2000_allocreq() {
     printf("[styx2000_allocreq] could not allocate");
     return 0;
   }
+  memset(req, 0, sizeof *req);
   return req;
 }
 

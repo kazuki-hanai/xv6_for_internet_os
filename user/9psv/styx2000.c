@@ -201,9 +201,10 @@ struct styx2000_req* styx2000_parsefcall(uint8* buf, int size) {
     case STYX2000_TATTACH:
       buf = styx2000_parse_tattach(ifcall, buf, mlen);
       break;
-    case STYX2000_TFLUSH:
-      break;
     case STYX2000_TWALK:
+      buf = styx2000_parse_twalk(ifcall, buf, mlen);
+      break;
+    case STYX2000_TFLUSH:
       break;
     case STYX2000_TOPEN:
       break;
@@ -260,11 +261,14 @@ int styx2000_composefcall(struct styx2000_req *req, uint8* buf, int size) {
         return -1;
       }
       break;
+    case STYX2000_RWALK:
+      if (styx2000_compose_rwalk(req, buf) == -1) {
+        return -1;
+      }
+      break;
     case STYX2000_RERROR:
       break;
     case STYX2000_RFLUSH:
-      break;
-    case STYX2000_RWALK:
       break;
     case STYX2000_ROPEN:
       break;
@@ -286,4 +290,79 @@ int styx2000_composefcall(struct styx2000_req *req, uint8* buf, int size) {
       return -1;
   }
   return 0;
+}
+
+void styx2000_debugfcall(struct styx2000_fcall *f) {
+  switch (f->type) {
+  case STYX2000_TVERSION:
+    printf("<= TVERSION: %s\n", f->version);
+    break;
+  case STYX2000_RVERSION:
+    printf("=> RVERSION: %s\n", f->version);
+    break;
+  case STYX2000_TAUTH:
+    break;
+  case STYX2000_RAUTH:
+    break;
+  case STYX2000_TATTACH:
+    printf("<= TATTACH: fid: %d, afid: %d, uname: %s, aname: %s\n",
+      f->fid, f->afid, f->uname, f->aname);
+    break;
+  case STYX2000_RATTACH:
+    printf("=> RATTACH: qid { type: %d, vers: %d, path: %d }\n",
+      f->qid.type, f->qid.vers, f->qid.path);
+    break;
+  case STYX2000_TWALK:
+    printf("<= TWALK: fid: %d, newfid: %d, nwname: %d\n",
+      f->fid, f->newfid, f->nwname);
+    for (int i = 0; i < f->nwname; i++) {
+      printf("\twname: %s\n", f->wname[i]);
+    }
+    break;
+  case STYX2000_RWALK:
+    printf("=> RWALK: nwqid: %d\n", f->nwqid);
+    for (int i = 0; i < f->nwqid; i++) {
+      printf("wqid[%d] { type: %d, vers: %d, path: %d }\n",
+        i, f->wqid[i].type, f->wqid[i].vers, f->wqid[i].path);
+    }
+    break;
+  case STYX2000_RERROR:
+    break;
+  case STYX2000_TFLUSH:
+    break;
+  case STYX2000_RFLUSH:
+    break;
+  case STYX2000_TOPEN:
+    break;
+  case STYX2000_ROPEN:
+    break;
+  case STYX2000_TCREATE:
+    break;
+  case STYX2000_RCREATE:
+    break;
+  case STYX2000_TREAD:
+    break;
+  case STYX2000_RREAD:
+    break;
+  case STYX2000_TWRITE:
+    break;
+  case STYX2000_RWRITE:
+    break;
+  case STYX2000_TCLUNK:
+    break;
+  case STYX2000_RCLUNK:
+    break;
+  case STYX2000_TREMOVE:
+    break;
+  case STYX2000_RREMOVE:
+    break;
+  case STYX2000_TSTAT:
+    break;
+  case STYX2000_RSTAT:
+    break;
+  case STYX2000_TWSTAT:
+    break;
+  case STYX2000_RWSTAT:
+    break;
+  }
 }
