@@ -11,7 +11,7 @@ struct file {
   char writable;
   struct pipe *pipe; // FD_PIPE
   struct inode *ip;  // FD_INODE and FD_DEVICE
-  struct sock_cb *scb;
+  struct sock_cb *scb; // FD_SOCK
   uint off;          // FD_INODE
   short major;       // FD_DEVICE
   struct file *prev;

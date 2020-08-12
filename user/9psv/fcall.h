@@ -42,6 +42,8 @@
 
 #define STYX2000_MAXWELEM 16
 
+#define STYX2000_RSTAT_DEFLEN 43
+
 #define	STYX2000_OREAD	    0	/* open for read */
 #define	STYX2000_OWRITE	    1	/* write */
 #define	STYX2000_ORDWR	    2	/* read and write */
@@ -60,6 +62,8 @@
 // #define	STYX2000_OEXCL	    0x1000	/* or'ed in, exclusive use (create only) */
 // #define	STYX2000_OLOCK	    0x2000	/* or'ed in, lock after opening */
 // #define	STYX2000_OAPPEND	  0x4000	/* or'ed in, append only */
+
+#define STYX2000_DEFPERM    0x0777
 
 struct intmap;
 
@@ -149,15 +153,17 @@ struct styx2000_fcall {
       char                  *data;            /* Twrite, Rread */
     };
     struct {
+      uint16                parlen;           /* Rstat */
       uint16                nstat;            /* Twstat, Rstat */
-      struct styx2000_stat  stat;            /* Twstat, Rstat */
+      struct styx2000_stat  stat;             /* Twstat, Rstat */
     };
   };
 };
 
 // fid
-struct styx2000_fidpool* styx2000_allocfidpool();
-void styx2000_freefidpool(struct styx2000_fidpool*);
-struct styx2000_fid* styx2000_allocfid(struct styx2000_fidpool*, char*, uint64);
-struct styx2000_fid* styx2000_lookupfid(struct styx2000_fidpool *, uint64);
-struct styx2000_fid* styx2000_removefid(struct styx2000_fidpool*, uint64);
+struct styx2000_fidpool*  styx2000_allocfidpool();
+void                      styx2000_freefidpool(struct styx2000_fidpool*);
+struct styx2000_fid*      styx2000_allocfid(struct styx2000_fidpool*, char*, uint64);
+struct styx2000_fid*      styx2000_lookupfid(struct styx2000_fidpool *, uint64);
+struct styx2000_fid*      styx2000_removefid(struct styx2000_fidpool*, uint64);
+void                      styx2000_get_dir(struct styx2000_fid*);

@@ -69,3 +69,22 @@ static void styx2000_freefid(struct styx2000_fid* fid) {
   free(fid->path);
   free(fid);
 }
+
+void styx2000_get_dir(struct styx2000_fid* fid) {
+  struct dirent de;
+  char buf[512], *p;
+  strcpy(buf, fid->path);
+  p = buf + strlen(buf);
+  *p++ = '/';
+  while(read(fid->fd, &de, sizeof(de)) == sizeof(de)){
+    if(de.inum == 0)
+      continue;
+    memmove(p, de.name, DIRSIZ);
+    p[DIRSIZ] = 0;
+    if(stat(buf, &st) < 0){
+      printf("ls: cannot stat %s\n", buf);
+      continue;
+    }
+    printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
+  }
+}

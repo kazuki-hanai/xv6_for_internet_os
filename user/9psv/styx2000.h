@@ -56,7 +56,7 @@ struct styx2000_server {
 
 struct styx2000_client {};
 
-// styx2000 utils
+// styx2000
 uint8*                  styx2000_gstring(uint8*, uint8*, char **);
 uint8*                  styx2000_pstring(uint8 *, char *);
 uint16                  styx2000_stringsz(char *);
@@ -65,15 +65,22 @@ struct styx2000_req*    styx2000_parsefcall(uint8*, int);
 int                     styx2000_composefcall(struct styx2000_req *, uint8*, int);
 void                    styx2000_debugfcall(struct styx2000_fcall*);
 
+// util
+uint8                   styx2000_to_qid_type(uint16);
+uint8                   styx2000_to_xv6_mode(uint8);
+int                     styx2000_is_dir(struct styx2000_fid*);
+char*                   styx2000_get_qid(char*, struct styx2000_qid*);
+int                     styx2000_make_stat(struct styx2000_fid*, struct styx2000_stat*);
+
 // server
 void                    styx2000_initserver();
 int                     styx2000_serve();
 
 // req
-struct styx2000_req* styx2000_allocreq();
-void styx2000_freereq(struct styx2000_req*);
-int styx2000_sendreq(struct styx2000_server *srv, struct styx2000_req *req);
-struct styx2000_req* styx2000_recvreq(struct styx2000_server *srv);
+struct styx2000_req*    styx2000_allocreq();
+void                    styx2000_freereq(struct styx2000_req*);
+int                     styx2000_sendreq(struct styx2000_server *srv, struct styx2000_req *req);
+struct styx2000_req*    styx2000_recvreq(struct styx2000_server *srv);
 
 // version
 uint8*                  styx2000_parse_tversion(struct styx2000_fcall*, uint8*, int);
@@ -97,3 +104,11 @@ int                     styx2000_compose_ropen(struct styx2000_req*, uint8*);
 // stat
 uint8*                  styx2000_parse_tstat(struct styx2000_fcall*, uint8*, int);
 int                     styx2000_compose_rstat(struct styx2000_req*, uint8*);
+
+// read
+uint8*                  styx2000_parse_tread(struct styx2000_fcall*, uint8*, int);
+int                     styx2000_compose_rread(struct styx2000_req*, uint8*);
+
+// clunk
+uint8*                  styx2000_parse_tclunk(struct styx2000_fcall*, uint8*, int);
+int                     styx2000_compose_rclunk(struct styx2000_req*, uint8*);
