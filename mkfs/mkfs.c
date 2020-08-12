@@ -150,6 +150,8 @@ main(int argc, char *argv[])
     if(shortname[0] == '_')
       shortname += 1;
 
+    // printf("name: %s\n", shortname);
+
     inum = ialloc(T_FILE);
 
     bzero(&de, sizeof(de));
