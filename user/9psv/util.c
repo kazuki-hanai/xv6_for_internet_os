@@ -7,87 +7,7 @@
 #include "net/byteorder.h"
 #include "net/socket.h"
 #include "styx2000.h"
-
-uint8 styx2000_to_qid_type(uint16 t) {
-  uint8 res = 0;
-  if (t & T_DIR) {
-    res |= STYX2000_ODIR;
-  }
-  return res;
-}
-
-uint8 styx2000_to_xv6_mode(uint8 m) {
-  uint8 res = 0;
-  if (m & STYX2000_ORDWR)
-    res |= O_RDWR;
-  if (m & STYX2000_OWRITE) 
-    res |= O_WRONLY;
-  return res;
-}
-
-int styx2000_is_dir(struct styx2000_fid* fid) {
-  struct styx2000_qid qid;
-  if (styx2000_get_qid(fid->path, &qid) != 0) {
-    return -1;
-  } 
-
-  return qid.type & STYX2000_ODIR; 
-}
-
-char* styx2000_get_qid(char* path, struct styx2000_qid *qid) {
-  int fd;
-  struct stat st;
-
-  if ((fd = open(path, 0)) < 0) {
-    fprintf(2, "cannot open path: %s\n", path);
-    return "cannot open path";
-  }
-  if (fstat(fd, &st) < 0) {
-    fprintf(2, "cannot stat path: %s\n", path);
-    close(fd);
-    return "cannot stat path";
-  }
-
-  qid->type = styx2000_to_qid_type(st.type);
-  qid->vers = 0;
-  qid->path = (uint64)st.ino;
-
-  close(fd);
-  return 0;
-}
-
-int styx2000_make_stat(struct styx2000_fid *fid, struct styx2000_stat *stat) {
-  struct stat st;
-  if (fid->fd < 0) {
-    if ((fid->fd = open(fid->path, 0)) < 0) {
-      return -1;
-    }
-  }
-  if (fstat(fid->fd, &st) < 0) {
-    fprintf(2, "cannot stat path: %s\n", fid->path);
-    close(fid->fd);
-    fid->fd = -1;
-    return -1;
-  }
-
-  // TODO time, uid, gid
-  stat->type = 0;
-  stat->dev = st.dev;
-  if (styx2000_get_qid(fid->path, &stat->qid) != 0) {
-    return -1;
-  }
-  stat->mode = (styx2000_to_qid_type(st.type) << 24) + STYX2000_DEFPERM;
-  stat->atime = 0;
-  stat->mtime = 0;
-  stat->length = st.size;
-  stat->name = fid->path;
-  stat->uid = "guest";
-  stat->gid = "guest";
-  stat->muid = "";
-  return STYX2000_RSTAT_DEFLEN - 2 + strlen(stat->name) + 
-    strlen(stat->uid) + strlen(stat->gid) +
-    strlen(stat->muid) + BIT16SZ * 4;
-}
+#include "fcall.h"
 
 uint8* styx2000_gstring(uint8* p, uint8* ep, char **s) {
   int n;
@@ -414,7 +334,7 @@ void styx2000_debugfcall(struct styx2000_fcall *f) {
     break;
   case STYX2000_RATTACH:
     printf("=> RATTACH: qid { type: %d, vers: %d, path: %d }\n",
-      f->qid.type, f->qid.vers, f->qid.path);
+      f->qid->type, f->qid->vers, f->qid->path);
     break;
   case STYX2000_TWALK:
     printf("<= TWALK: fid: %d, newfid: %d, nwname: %d\n",
@@ -427,7 +347,7 @@ void styx2000_debugfcall(struct styx2000_fcall *f) {
     printf("=> RWALK: nwqid: %d\n", f->nwqid);
     for (int i = 0; i < f->nwqid; i++) {
       printf("wqid[%d] { type: %d, vers: %d, path: %d }\n",
-        i, f->wqid[i].type, f->wqid[i].vers, f->wqid[i].path);
+        i, f->wqid[i]->type, f->wqid[i]->vers, f->wqid[i]->path);
     }
     break;
   case STYX2000_RERROR:
@@ -444,7 +364,7 @@ void styx2000_debugfcall(struct styx2000_fcall *f) {
     break;
   case STYX2000_ROPEN:
     printf("=> ROPEN: qid: { type: %d, vers: %d, path: %d }, iounit: %d\n", 
-      f->qid.type, f->qid.vers, f->qid.path, f->iounit);
+      f->qid->type, f->qid->vers, f->qid->path, f->iounit);
     break;
   case STYX2000_TCREATE:
     printf("<= TCREATE: \n");
@@ -482,18 +402,19 @@ void styx2000_debugfcall(struct styx2000_fcall *f) {
     break;
   case STYX2000_RSTAT:
     printf("=> RSTAT: nstat: %d, stat: {\n", f->nstat);
-    printf("\ttype: %d\n", f->stat.type);
-    printf("\tdev: %d\n", f->stat.dev);
+    printf("\ttype: %d\n", f->stat->type);
+    printf("\tdev: %d\n", f->stat->dev);
     printf("\tqid: { type: %d, vers: %d, path: %d }\n", 
-      f->stat.qid.type, f->stat.qid.vers, f->stat.qid.path);
-    printf("\tmode: %d\n", f->stat.mode);
-    printf("\tatime: %d\n", f->stat.atime);
-    printf("\tmtime: %d\n", f->stat.mtime);
-    printf("\tlength: %d\n", f->stat.length);
-    printf("\tname: %s\n", f->stat.name);
-    printf("\tuid: %s\n", f->stat.uid);
-    printf("\tgid: %s\n", f->stat.gid);
-    printf("\tmuid: %s\n", f->stat.muid);
+      f->stat->qid->type, f->stat->qid->vers, f->stat->qid->path);
+    printf("\tmode: %d\n", f->stat->mode);
+    printf("\tatime: %d\n", f->stat->atime);
+    printf("\tmtime: %d\n", f->stat->mtime);
+    printf("\tlength: %d\n", f->stat->length);
+    printf("\tname: %s\n", f->stat->name);
+    printf("\tuid: %s\n", f->stat->uid);
+    printf("\tgid: %s\n", f->stat->gid);
+    printf("\tmuid: %s\n", f->stat->muid);
+    printf("}\n");
     break;
   case STYX2000_TWSTAT:
     printf("<= TWSTAT: \n");

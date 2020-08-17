@@ -23,11 +23,11 @@ uint8* styx2000_parse_tattach(struct styx2000_fcall *fcall, uint8* buf, int len)
 
 int styx2000_compose_rattach(struct styx2000_req *req, uint8* buf) {
   struct styx2000_fcall *f = &req->ofcall;
-  PBIT8(buf, f->qid.type);
+  PBIT8(buf, f->qid->type);
   buf += BIT8SZ;
-  PBIT32(buf, f->qid.vers);
+  PBIT32(buf, f->qid->vers);
   buf += BIT32SZ;
-  PBIT64(buf, f->qid.path);
+  PBIT64(buf, f->qid->path);
   buf += BIT64SZ;
   return 0;
 }

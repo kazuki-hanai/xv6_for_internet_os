@@ -14,11 +14,11 @@ uint8* styx2000_parse_topen(struct styx2000_fcall *fcall, uint8* buf, int len) {
 
 int styx2000_compose_ropen(struct styx2000_req *req, uint8* buf) {
   struct styx2000_fcall *f = &req->ofcall;
-  PBIT8(buf, f->qid.type);
+  PBIT8(buf, f->qid->type);
   buf += BIT8SZ;
-  PBIT32(buf, f->qid.vers);
+  PBIT32(buf, f->qid->vers);
   buf += BIT32SZ;
-  PBIT64(buf, f->qid.path);
+  PBIT64(buf, f->qid->path);
   buf += BIT64SZ;
   PBIT32(buf, f->iounit);
   buf += BIT32SZ;

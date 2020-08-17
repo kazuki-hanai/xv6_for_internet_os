@@ -16,29 +16,29 @@ int styx2000_compose_rstat(struct styx2000_req *req, uint8* buf) {
   buf += BIT16SZ;
   PBIT16(buf, f->nstat);
   buf += BIT16SZ;
-  PBIT16(buf, f->stat.type);
+  PBIT16(buf, f->stat->type);
   buf += BIT16SZ;
-  PBIT32(buf, f->stat.dev);
+  PBIT32(buf, f->stat->dev);
   buf += BIT32SZ;
   
-  PBIT8(buf, f->stat.qid.type);
+  PBIT8(buf, f->stat->qid->type);
   buf += BIT8SZ;
-  PBIT32(buf, f->stat.qid.vers);
+  PBIT32(buf, f->stat->qid->vers);
   buf += BIT32SZ;
-  PBIT64(buf, f->stat.qid.path);
+  PBIT64(buf, f->stat->qid->path);
   buf += BIT64SZ;
 
-  PBIT32(buf, f->stat.mode);
+  PBIT32(buf, f->stat->mode);
   buf += BIT32SZ;
-  PBIT32(buf, f->stat.atime);
+  PBIT32(buf, f->stat->atime);
   buf += BIT32SZ;
-  PBIT32(buf, f->stat.mtime);
+  PBIT32(buf, f->stat->mtime);
   buf += BIT32SZ;
-  PBIT64(buf, f->stat.length);
+  PBIT64(buf, f->stat->length);
   buf += BIT64SZ;
-  buf = styx2000_pstring(buf, f->stat.name);
-  buf = styx2000_pstring(buf, f->stat.uid);
-  buf = styx2000_pstring(buf, f->stat.gid);
-  buf = styx2000_pstring(buf, f->stat.muid);
+  buf = styx2000_pstring(buf, f->stat->name);
+  buf = styx2000_pstring(buf, f->stat->uid);
+  buf = styx2000_pstring(buf, f->stat->gid);
+  buf = styx2000_pstring(buf, f->stat->muid);
   return 0;
 }

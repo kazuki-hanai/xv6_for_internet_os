@@ -41,7 +41,8 @@ static int rversion(struct styx2000_server *srv, struct styx2000_req *req) {
 }
 
 static int rattach(struct styx2000_server *srv, struct styx2000_req *req) {
-  if ((req->fid = styx2000_allocfid(srv->fpool, srv->fs.rootpath, req->ifcall.fid)) == 0) {
+  struct styx2000_qid* root = srv->fs.root;
+  if ((req->fid = styx2000_allocfid(srv->fpool, req->ifcall.fid, root)) == 0) {
     // TODO: error respond
     printf("cannot allocate fid\n");
     return -1;
@@ -50,31 +51,46 @@ static int rattach(struct styx2000_server *srv, struct styx2000_req *req) {
   // service has a permission to attach.
   if (req->ifcall.afid != STYX2000_NOFID) {
     // TODO: lookup afid and respond error when there is no afid
+    req->error = 1;
+    req->ofcall.ename = "not supported afid";
     return -1;
   }
 
-  if ((req->ofcall.ename = styx2000_get_qid(srv->fs.rootpath, &req->ofcall.qid)) != 0) {
-      req->error = 1;
-  }
+  req->ofcall.qid = root;
   return 0;
 }
 
 static int rwalk(struct styx2000_server *srv, struct styx2000_req *req) {
-  char path[256];
-  char *p = path;
-  strcpy(p, srv->fs.rootpath);
-  p += strlen(srv->fs.rootpath);
+  char path[256], *p;
+  struct styx2000_qid *par;
+  struct styx2000_fid *fid;
+
+  if ((fid = styx2000_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
+    req->error = 1;
+    req->ofcall.ename = "not allocated fid";
+    return 0;
+  }
+  par = fid->qid;
+
+  strcpy(path, par->pathname);
+  p = path+strlen(par->pathname);
   for (int i = 0; i < req->ifcall.nwname; i++) {
+    struct styx2000_qid *qid;
     strcpy(p, req->ifcall.wname[i]);
-    if ((req->ofcall.ename = styx2000_get_qid(p, &req->ofcall.wqid[i])) != 0) {
-      req->error = 1;
-      return 0;
-    }
     p += strlen(req->ifcall.wname[i]);
+    if ((qid = styx2000_lookupqid(srv->qpool, styx2000_getqidno(path))) == 0) {
+      qid = styx2000_allocqid(srv->qpool, par, path);
+    }
+    par = qid;
+    req->ofcall.wqid[i] = qid;
   }
   req->ofcall.nwqid = req->ifcall.nwname;
-  if ((req->fid = styx2000_allocfid(srv->fpool, path, req->ifcall.newfid)) == 0) {
-    printf("[rwalk] cannot allocate newfid\n");
+  if ((req->fid = styx2000_allocfid(
+        srv->fpool,
+        req->ifcall.newfid,
+        par)) == 0
+  ) {
+    fprintf(2, "[rwalk] cannot allocate newfid\n");
     return -1;
   }
   return 0;
@@ -87,13 +103,14 @@ static int ropen(struct styx2000_server *srv, struct styx2000_req *req) {
     req->ofcall.ename = "specified fid was not allocated.";
     return 0;
   }
-  if (fid->fd) {
-    close(fid->fd);
+  struct styx2000_file* file = fid->qid->file;
+
+  if (file == 0) {
+    req->error = 1;
+    req->ofcall.ename = "specified file was not opend.";
   }
-  if ((fid->fd = open(fid->path, styx2000_to_xv6_mode(req->ifcall.mode))) < 0) {
-    printf("[ropen] cannot open: %s\n", req->ifcall.mode);
-    return -1;
-  }
+
+  // TODO: mode change(req->ifcall.mode)
   return 0;
 }
 
@@ -104,32 +121,39 @@ static int rclunk(struct styx2000_server *srv, struct styx2000_req *req) {
     req->ofcall.ename = "specified fid was not allocated.";
     return 0;
   }
-  if (fid->fd) {
-    close(fid->fd);
-  }
+  srv->fpool->destroy(fid);
   return 0;
 }
 
 static int rread(struct styx2000_server *srv, struct styx2000_req *req) {
   struct styx2000_fid *fid;
-  // struct styx2000_qid qid;
+  struct styx2000_qid *qid;
   if ((fid = styx2000_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
     req->ofcall.ename = "specified fid was not allocated.";
     return 0;
   }
-  if (fid->fd < 0) {
-    req->error = 1;
-    req->ofcall.ename = "cannot read. please open.";
-    return 0;
-  }
   req->ofcall.data = malloc(req->ifcall.count);
 
-  if (styx2000_is_dir(fid)) {
-    styx2000_get_dir(fid);
+  qid = fid->qid;
+  if (styx2000_is_dir(qid)) {
+    styx2000_get_dir(qid);
+    char* dp = req->ofcall.data;
+    int sum = 0;
+    struct styx2000_file* file = qid->file;
+    for (int i = 0; i < file->child_num; i++) {
+      struct styx2000_file* child = file->childs[i]->file;
+      struct styx2000_stat* stat = child->stat;
+      styx2000_compose_stat(dp, stat);
+      dp += stat->size;
+      sum += stat->size;
+    }
+    req->ofcall.count = sum;
+  // file
   } else {
     // TODO: offset process
-    if ((req->ofcall.count = read(fid->fd, req->ofcall.data, req->ifcall.count)) < 0) {
+    struct styx2000_file* file = qid->file;
+    if ((req->ofcall.count = read(file->fd, req->ofcall.data, req->ifcall.count)) < 0) {
       req->error = 1;
       req->ofcall.ename = "cannot read file.";
       return 0;
@@ -148,7 +172,13 @@ static int rstat(struct styx2000_server *srv, struct styx2000_req *req) {
     return 0;
   }
 
-  req->ofcall.parlen = styx2000_make_stat(fid, &req->ofcall.stat);
+  struct styx2000_file* file = fid->qid->file;
+  if (file != 0) {
+    printf("path: %s\n", file->path);
+  }
+  req->ofcall.stat = file->stat;
+
+  req->ofcall.parlen = file->stat->size+2;
   if (req->ofcall.parlen < 0) {
     req->error = 1;
     req->ofcall.ename = "make_stat error.";
@@ -257,6 +287,8 @@ static void stop_server(struct styx2000_server *srv) {
   close(srv->sockfd);
   free(srv->wbuf);
   free(srv->rbuf);
+  styx2000_freefidpool(srv->fpool);
+  styx2000_freeqidpool(srv->qpool);
   srv->sockfd = 0;
 }
 
@@ -264,8 +296,11 @@ static void initserver(struct styx2000_server *srv) {
   srv->msize = STYX2000_MAXMSGLEN;
   srv->wbuf = malloc(srv->msize);
   srv->rbuf = malloc(srv->msize);
-  srv->fs.rootpath = "/";
   srv->fpool = styx2000_allocfidpool();
+  srv->qpool = styx2000_allocqidpool();
+  srv->fs.rootpath = "/";
+  srv->fs.rootpathlen = 1;
+  srv->fs.root = styx2000_allocqid(srv->qpool, 0, srv->fs.rootpath);
   srv->start = start_server;
   srv->stop = stop_server;
   srv->send = styx2000_sendreq;

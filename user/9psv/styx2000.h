@@ -11,7 +11,7 @@
 #define STYX2000_TRVERSION_SIZE 6
 
 #define	STYX2000_QIDSZ	(BIT8SZ+BIT32SZ+BIT64SZ)
-#define STYX2000_MAXMSGLEN 2048
+#define STYX2000_MAXMSGLEN 4096
 
 #define	GBIT8(p)	((p)[0])
 #define	GBIT16(p)	((p)[0]|((p)[1]<<8))
@@ -30,10 +30,6 @@
 #define	BIT32SZ		4
 #define	BIT64SZ		8
 
-struct styx2000_filesystem {
-  char* rootpath;
-};
-
 struct styx2000_req {
   struct styx2000_fcall ifcall;
   struct styx2000_fcall ofcall;
@@ -48,6 +44,7 @@ struct styx2000_server {
   int                         msize;
   struct styx2000_filesystem  fs;
   struct styx2000_fidpool     *fpool;
+  struct styx2000_qidpool     *qpool;
   int                         (*start)(struct styx2000_server*);
   void                        (*stop)(struct styx2000_server*);
   int                         (*send)(struct styx2000_server*, struct styx2000_req*);
@@ -56,7 +53,7 @@ struct styx2000_server {
 
 struct styx2000_client {};
 
-// styx2000
+// util
 uint8*                  styx2000_gstring(uint8*, uint8*, char **);
 uint8*                  styx2000_pstring(uint8 *, char *);
 uint16                  styx2000_stringsz(char *);
@@ -64,13 +61,6 @@ uint32                  styx2000_getfcallsize(struct styx2000_fcall*);
 struct styx2000_req*    styx2000_parsefcall(uint8*, int);
 int                     styx2000_composefcall(struct styx2000_req *, uint8*, int);
 void                    styx2000_debugfcall(struct styx2000_fcall*);
-
-// util
-uint8                   styx2000_to_qid_type(uint16);
-uint8                   styx2000_to_xv6_mode(uint8);
-int                     styx2000_is_dir(struct styx2000_fid*);
-char*                   styx2000_get_qid(char*, struct styx2000_qid*);
-int                     styx2000_make_stat(struct styx2000_fid*, struct styx2000_stat*);
 
 // server
 void                    styx2000_initserver();
