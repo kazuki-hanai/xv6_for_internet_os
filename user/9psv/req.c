@@ -19,8 +19,10 @@ struct styx2000_req* styx2000_allocreq() {
 }
 
 void styx2000_freereq(struct styx2000_req *req) {
-  if (req->ofcall.type == STYX2000_TREAD) {
+  if (req->ofcall.type == STYX2000_RREAD) {
     free(req->ofcall.data);
+  } else if (req->ofcall.type == STYX2000_RSTAT) {
+    free(req->ofcall.stat);
   }
   free(req);
 }

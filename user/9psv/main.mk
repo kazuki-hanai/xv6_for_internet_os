@@ -5,6 +5,7 @@ STYX2000_SRCS = \
 	$(STYX2000_DIR)/util.c \
 	$(STYX2000_DIR)/fid.c \
 	$(STYX2000_DIR)/file.c \
+	$(STYX2000_DIR)/qid.c \
 	$(STYX2000_DIR)/req.c \
 	$(STYX2000_DIR)/version.c \
 	$(STYX2000_DIR)/error.c \

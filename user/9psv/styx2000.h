@@ -51,6 +51,7 @@ uint32                  styx2000_getfcallsize(struct styx2000_fcall*);
 struct styx2000_req*    styx2000_parsefcall(uint8*, int);
 int                     styx2000_composefcall(struct styx2000_fcall*, uint8*, int);
 void                    styx2000_debugfcall(struct styx2000_fcall*);
+int                     styx2000_is_dir(uint8 type);
 
 // req
 struct styx2000_req*    styx2000_allocreq();
@@ -80,6 +81,8 @@ int                     styx2000_compose_ropen(struct styx2000_fcall*, uint8*);
 // stat
 uint8*                  styx2000_parse_tstat(struct styx2000_fcall*, uint8*, int);
 int                     styx2000_compose_rstat(struct styx2000_fcall*, uint8*);
+int                     styx2000_compose_stat(char* data, struct styx2000_stat *stat, struct styx2000_qid *qid);
+struct styx2000_stat*   styx2000_get_stat(char *path);
 
 // read
 uint8*                  styx2000_parse_tread(struct styx2000_fcall*, uint8*, int);

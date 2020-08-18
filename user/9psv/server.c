@@ -130,7 +130,7 @@ static int ropen(struct styx2000_server *srv, struct styx2000_req *req) {
     return 0;
   }
 
-  int mode = styx2000_is_dir(fid->qid) ? O_RDONLY : O_RDWR;
+  int mode = styx2000_is_dir(fid->qid->type) ? O_RDONLY : O_RDWR;
   if ((file->fd = open(file->path, mode)) == -1) {
     req->error = 1;
     req->ofcall.ename = "specified file cannot open";
@@ -171,7 +171,7 @@ static int rread(struct styx2000_server *srv, struct styx2000_req *req) {
   req->ofcall.data = malloc(count);
 
   qid = fid->qid;
-  if (styx2000_is_dir(qid)) {
+  if (styx2000_is_dir(qid->type)) {
     if (req->ifcall.offset > 0) {
       req->ofcall.count = 0;
       return 0;
@@ -183,11 +183,12 @@ static int rread(struct styx2000_server *srv, struct styx2000_req *req) {
     int sum = 0;
     struct styx2000_file* file = qid->file;
     for (int i = 0; i < file->child_num; i++) {
-      struct styx2000_file* child = file->childs[i]->file;
-      struct styx2000_stat* stat = child->stat;
-      styx2000_compose_stat(dp, stat);
-      dp += stat->size;
-      sum += stat->size;
+      struct styx2000_qid*  chqid   = file->childs[i];
+      struct styx2000_stat* chstat    = styx2000_get_stat(chqid->pathname);
+      styx2000_compose_stat(dp, chstat, chqid);
+      dp += chstat->size+BIT16SZ;
+      sum += chstat->size+BIT16SZ;
+      free(chstat);
     }
     req->ofcall.count = sum;
   // file
@@ -219,15 +220,18 @@ static int rstat(struct styx2000_server *srv, struct styx2000_req *req) {
   }
 
   struct styx2000_file* file = fid->qid->file;
-  req->ofcall.stat = file->stat;
-
-  req->ofcall.parlen = file->stat->size;
-  if (req->ofcall.parlen < 0) {
+  struct styx2000_stat* stat = styx2000_get_stat(file->path);
+  
+  if (stat->size < 0) {
     req->error = 1;
     req->ofcall.ename = "make_stat error.";
     return 0;
   }
-  req->ofcall.nstat = req->ofcall.parlen - 2;
+
+  req->ofcall.stat = stat;
+  req->ofcall.nstat = stat->size;
+  req->ofcall.parlen = stat->size+BIT16SZ;
+  req->ofcall.statqid = fid->qid;
   return 0;
 }
 

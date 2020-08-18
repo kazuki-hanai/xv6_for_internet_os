@@ -42,7 +42,7 @@
 
 #define STYX2000_MAXWELEM 16
 
-#define STYX2000_RSTAT_DEFLEN 43
+#define STYX2000_RSTAT_DEFLEN 41
 
 #define	STYX2000_OREAD	    0	/* open for read */
 #define	STYX2000_OWRITE	    1	/* write */
@@ -74,18 +74,12 @@ struct styx2000_filesystem {
   int                   rootpathlen;
 };
 
-struct styx2000_filelist {
-  struct styx2000_qid*      qid;
-  struct styx2000_filelist* filelist;
-};
-
 struct styx2000_stat {
     /* system-modified data */
     int                   size;
     uint16                type;   /* server type */
     uint32                dev;    /* server subtype */
     /* file data */
-    struct styx2000_qid*  qid;    /* unique id from server */
     uint32                mode;   /* permissions */
     uint32                atime;  /* last read time */
     uint32                mtime;  /* last write time */
@@ -100,7 +94,6 @@ struct styx2000_file {
   struct styx2000_filesystem* fs;
   int                         fd;
   char*                       path;
-  struct styx2000_stat*       stat;
   struct styx2000_qid*        parent;
   int                         child_num;
   struct styx2000_qid*        childs[32];
@@ -193,6 +186,7 @@ struct styx2000_fcall {
       uint16                parlen;           /* Rstat */
       uint16                nstat;            /* Twstat, Rstat */
       struct styx2000_stat* stat;             /* Twstat, Rstat */
+      struct styx2000_qid*  statqid;              /* Twstat, Rstat */
     };
   };
 };
@@ -208,11 +202,7 @@ struct styx2000_fid*      styx2000_allocfid(
 struct styx2000_fid*      styx2000_lookupfid(struct styx2000_fidpool *, uint64);
 struct styx2000_fid*      styx2000_removefid(struct styx2000_fidpool*, uint64);
 
-// file
-uint8                     styx2000_to_qid_type(uint16);
-uint8                     styx2000_to_xv6_mode(uint8);
-int                       styx2000_is_dir(struct styx2000_qid* qid);
-int                       styx2000_compose_stat(char*, struct styx2000_stat*);
+// qid
 uint64                    styx2000_getqidno(char* path);
 struct styx2000_qidpool*  styx2000_allocqidpool();
 void                      styx2000_freeqidpool(struct styx2000_qidpool *qpool);

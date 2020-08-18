@@ -9,6 +9,10 @@
 #include "styx2000.h"
 #include "fcall.h"
 
+int styx2000_is_dir(uint8 type) {
+  return type & STYX2000_ODIR; 
+}
+
 uint8* styx2000_pstring(uint8 *p, char *s) {
 	uint32 n;
 
@@ -403,7 +407,7 @@ void styx2000_debugfcall(struct styx2000_fcall *f) {
     printf("\ttype: %d\n", f->stat->type);
     printf("\tdev: %d\n", f->stat->dev);
     printf("\tqid: { type: %d, vers: %d, path: %d }\n", 
-      f->stat->qid->type, f->stat->qid->vers, f->stat->qid->path);
+      f->statqid->type, f->statqid->vers, f->statqid->path);
     printf("\tmode: %d\n", f->stat->mode);
     printf("\tatime: %d\n", f->stat->atime);
     printf("\tmtime: %d\n", f->stat->mtime);
