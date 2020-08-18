@@ -166,7 +166,8 @@ static int rread(struct styx2000_server *srv, struct styx2000_req *req) {
     req->ofcall.ename = "specified fid was not allocated.";
     return 0;
   }
-  req->ofcall.data = malloc(req->ifcall.count);
+  int count = req->ifcall.count >= STYX2000_MAXMSGLEN ? 4000 : req->ifcall.count;
+  req->ofcall.data = malloc(count);
 
   qid = fid->qid;
   if (styx2000_is_dir(qid)) {
@@ -197,7 +198,7 @@ static int rread(struct styx2000_server *srv, struct styx2000_req *req) {
       req->ofcall.ename = "specified file is not opend.";
       return 0;
     }
-    if ((req->ofcall.count = read(file->fd, req->ofcall.data, req->ifcall.count)) < 0) {
+    if ((req->ofcall.count = read(file->fd, req->ofcall.data, count)) < 0) {
       req->error = 1;
       req->ofcall.ename = "cannot read file.";
       return 0;
