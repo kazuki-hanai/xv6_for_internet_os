@@ -7,6 +7,7 @@
 #include "net/byteorder.h"
 #include "net/socket.h"
 #include "styx2000.h"
+#include "fcall.h"
 
 static int respond(struct styx2000_server *srv, struct styx2000_req *req) {
   if (!req->error) {
@@ -78,7 +79,13 @@ static int rwalk(struct styx2000_server *srv, struct styx2000_req *req) {
     struct styx2000_qid *qid;
     strcpy(p, req->ifcall.wname[i]);
     p += strlen(req->ifcall.wname[i]);
-    if ((qid = styx2000_lookupqid(srv->qpool, styx2000_getqidno(path))) == 0) {
+    int qpath = styx2000_getqidno(path);
+    if (qpath == -1) {
+      req->error = 1;
+      req->ofcall.ename = "cannot open path";
+      return 0;
+    }
+    if ((qid = styx2000_lookupqid(srv->qpool, qpath)) == 0) {
       qid = styx2000_allocqid(srv->qpool, par, srv->fs, path);
     }
     if (qid == 0) {
@@ -115,9 +122,17 @@ static int ropen(struct styx2000_server *srv, struct styx2000_req *req) {
     return 0;
   }
 
-  if (fid->qid->file == 0) {
+  struct styx2000_file* file = fid->qid->file;
+  if (file == 0) {
     req->error = 1;
     req->ofcall.ename = "specified file was not opend";
+    return 0;
+  }
+
+  int mode = styx2000_is_dir(fid->qid) ? O_RDONLY : O_RDWR;
+  if ((file->fd = open(file->path, mode)) == -1) {
+    req->error = 1;
+    req->ofcall.ename = "specified file cannot open";
     return 0;
   }
 
@@ -133,6 +148,11 @@ static int rclunk(struct styx2000_server *srv, struct styx2000_req *req) {
     req->error = 1;
     req->ofcall.ename = "specified fid was not allocated.";
     return 0;
+  }
+  struct styx2000_file* file = fid->qid->file;
+  if (file->fd != -1) {
+    close(file->fd);
+    file->fd = -1;
   }
   srv->fpool->destroy(fid);
   return 0;
@@ -172,6 +192,11 @@ static int rread(struct styx2000_server *srv, struct styx2000_req *req) {
   } else {
     // TODO: offset process
     struct styx2000_file* file = qid->file;
+    if (file->fd == -1) {
+      req->error = 1;
+      req->ofcall.ename = "specified file is not opend.";
+      return 0;
+    }
     if ((req->ofcall.count = read(file->fd, req->ofcall.data, req->ifcall.count)) < 0) {
       req->error = 1;
       req->ofcall.ename = "cannot read file.";

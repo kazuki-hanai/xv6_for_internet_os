@@ -70,9 +70,15 @@ int styx2000_compose_stat(char* data, struct styx2000_stat *stat) {
   return p - (uint8*)data;
 }
 
-static struct styx2000_stat* get_stat(int fd, char *path, struct styx2000_qid* qid) {
+static struct styx2000_stat* get_stat(char *path, struct styx2000_qid* qid) {
   struct styx2000_stat* stat;
   struct stat st;
+  int fd;
+
+  if ((fd = open(path, O_RDONLY)) == -1) {
+    return 0;
+  }
+
   stat = malloc(sizeof *stat);
 
   if (fstat(fd, &st) < 0) {
@@ -95,6 +101,8 @@ static struct styx2000_stat* get_stat(int fd, char *path, struct styx2000_qid* q
   stat->size = STYX2000_RSTAT_DEFLEN - 2 + strlen(stat->name) + 
     strlen(stat->uid) + strlen(stat->gid) +
     strlen(stat->muid) + BIT16SZ * 4;
+
+  close(fd);
   return stat;
 }
 
@@ -132,6 +140,9 @@ static struct styx2000_qid* get_qid(struct styx2000_qidpool* qpool, char* path) 
 }
 
 static void freefile(struct styx2000_file* file) {
+  if (file->fd != -1) {
+    close(file->fd);
+  }
   free(file->stat);
   free(file);
 }
@@ -145,19 +156,16 @@ static void freeqid(struct styx2000_qid* qid) {
 }
 
 static struct styx2000_file* allocfile(
-  int fd,
   char* path,
-  int mode,
   struct styx2000_filesystem* fs,
   struct styx2000_qid* parent,
   struct styx2000_qid* qid
 ) {
   struct styx2000_file* file;
   file = malloc(sizeof *file);
-  file->fd = fd;
   file->fs = fs;
   file->path = path;
-  file->stat = get_stat(file->fd, path + fs->rootpathlen, qid);
+  file->stat = get_stat(path + fs->rootpathlen, qid);
   file->parent = 0;
   // file->parent = parent;
   file->child_num = 0;
@@ -230,20 +238,14 @@ struct styx2000_qid* styx2000_allocqid(
 
   qid = get_qid(qpool, pathname);
   
-  int mode, fd;
-  mode = styx2000_is_dir(qid) ? O_RDONLY : O_RDWR;
-  if ((fd = open(pathname, mode)) == -1) {
-    fprintf(2, "[allocqid] cannot open: %s\n", path);
-    return 0;
-  }
-
-  qid->file = allocfile(fd, pathname, mode, fs, parent, qid);
+  qid->file = allocfile(pathname, fs, parent, qid);
   qid->ref = 1;
   qid->qpool = qpool;
   qid->inc = incqidref;
   qid->dec = decqidref;
   qid->is_referenced = is_referenced;
   if (caninsertkey(qpool->map, qid->path, qid) == 0) {
+  printf("kore\n");
     freeqid(qid);
     return 0;
   }

@@ -9,21 +9,6 @@
 #include "styx2000.h"
 #include "fcall.h"
 
-uint8* styx2000_gstring(uint8* p, uint8* ep, char **s) {
-  int n;
-  if (p + 2 > ep)
-    return 0;
-  n = GBIT16(p);
-  p += 1;
-  if (p + n + 1 > ep)
-    return 0;
-  memmove(p, p+1, n);
-  p[n] = '\0';
-  *s = (char *)p;
-  p += n+1;
-  return p;
-}
-
 uint8* styx2000_pstring(uint8 *p, char *s) {
 	uint32 n;
 
@@ -39,6 +24,20 @@ uint8* styx2000_pstring(uint8 *p, char *s) {
 	memmove(p, s, n);
 	p += n;
 	return p;
+}
+uint8* styx2000_gstring(uint8* p, uint8* ep, char **s) {
+  int n;
+  if (p + 2 > ep)
+    return 0;
+  n = GBIT16(p);
+  p += 1;
+  if (p + n + 1 > ep)
+    return 0;
+  memmove(p, p+1, n);
+  p[n] = '\0';
+  *s = (char *)p;
+  p += n+1;
+  return p;
 }
 
 uint16 styx2000_stringsz(char *s) {
