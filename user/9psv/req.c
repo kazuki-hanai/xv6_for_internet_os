@@ -19,23 +19,26 @@ struct styx2000_req* styx2000_allocreq() {
 }
 
 void styx2000_freereq(struct styx2000_req *req) {
+  if (req->ofcall.type == STYX2000_TREAD) {
+    free(req->ofcall.data);
+  }
   free(req);
 }
 
-int styx2000_sendreq(struct styx2000_server *srv, struct styx2000_req *req) {
-  if (write(srv->sockfd, srv->wbuf, req->ofcall.size) <= 0) {
+int styx2000_sendreq(struct styx2000_conn *conn, struct styx2000_req *req) {
+  if (write(conn->sockfd, conn->wbuf, req->ofcall.size) <= 0) {
     return -1;
   }
   return 0;
 }
 
-struct styx2000_req* styx2000_recvreq(struct styx2000_server *srv) {
+struct styx2000_req* styx2000_recvreq(struct styx2000_conn *conn) {
   int rsize;
-  if ((rsize = read(srv->sockfd, srv->rbuf, STYX2000_MAXMSGLEN)) == -1) {
+  if ((rsize = read(conn->sockfd, conn->rbuf, STYX2000_MAXMSGLEN)) == -1) {
     return 0;
   }
   struct styx2000_req *req;
-  if ((req = styx2000_parsefcall(srv->rbuf, rsize)) == 0) {
+  if ((req = styx2000_parsefcall(conn->rbuf, rsize)) == 0) {
     return 0;
   }
   return req;

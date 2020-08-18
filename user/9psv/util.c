@@ -244,8 +244,7 @@ fail:
   return 0;
 }
 
-int styx2000_composefcall(struct styx2000_req *req, uint8* buf, int size) {
-  struct styx2000_fcall *f = &req->ofcall;
+int styx2000_composefcall(struct styx2000_fcall *f, uint8* buf, int size) {
   PBIT32(buf, f->size);
   buf += 4;
   PBIT8(buf, f->type);
@@ -255,7 +254,7 @@ int styx2000_composefcall(struct styx2000_req *req, uint8* buf, int size) {
 
   switch (f->type) {
     case STYX2000_RVERSION:
-      if (styx2000_compose_rversion(req, buf) == -1) {
+      if (styx2000_compose_rversion(f, buf) == -1) {
         return -1;
       }
       break;
@@ -263,22 +262,22 @@ int styx2000_composefcall(struct styx2000_req *req, uint8* buf, int size) {
       return 0;
       break;
     case STYX2000_RATTACH:
-      if (styx2000_compose_rattach(req, buf) == -1) {
+      if (styx2000_compose_rattach(f, buf) == -1) {
         return -1;
       }
       break;
     case STYX2000_RWALK:
-      if (styx2000_compose_rwalk(req, buf) == -1) {
+      if (styx2000_compose_rwalk(f, buf) == -1) {
         return -1;
       }
       break;
     case STYX2000_RERROR:
-      if (styx2000_compose_rerror(req, buf) == -1) {
+      if (styx2000_compose_rerror(f, buf) == -1) {
         return -1;
       }
       break;
     case STYX2000_ROPEN:
-      if (styx2000_compose_ropen(req, buf) == -1) {
+      if (styx2000_compose_ropen(f, buf) == -1) {
         return -1;
       }
       break;
@@ -287,21 +286,21 @@ int styx2000_composefcall(struct styx2000_req *req, uint8* buf, int size) {
     case STYX2000_RCREATE:
       break;
     case STYX2000_RREAD:
-      if (styx2000_compose_rread(req, buf) == -1) {
+      if (styx2000_compose_rread(f, buf) == -1) {
         return -1;
       }
       break;
     case STYX2000_RWRITE:
       break;
     case STYX2000_RCLUNK:
-      if (styx2000_compose_rclunk(req, buf) == -1) {
+      if (styx2000_compose_rclunk(f, buf) == -1) {
         return -1;
       }
       break;
     case STYX2000_RREMOVE:
       break;
     case STYX2000_RSTAT:
-      if (styx2000_compose_rstat(req, buf) == -1) {
+      if (styx2000_compose_rstat(f, buf) == -1) {
         return -1;
       }
       break;

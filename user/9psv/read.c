@@ -14,14 +14,12 @@ uint8* styx2000_parse_tread(struct styx2000_fcall *fcall, uint8* buf, int len) {
   return buf;
 }
 
-int styx2000_compose_rread(struct styx2000_req *req, uint8* buf) {
-  struct styx2000_fcall *f = &req->ofcall;
+int styx2000_compose_rread(struct styx2000_fcall *f, uint8* buf) {
   PBIT32(buf, f->count);
   buf += BIT32SZ;
   for (int i = 0; i < f->count; i++) {
     PBIT8(buf, f->data[i]);
     buf += 1;
   }
-  free(f->data);
   return 0;
 }

@@ -30,6 +30,12 @@
 #define	BIT32SZ		4
 #define	BIT64SZ		8
 
+struct styx2000_conn {
+  int sockfd;
+  uint8* wbuf;
+  uint8* rbuf;
+};
+
 struct styx2000_req {
   struct styx2000_fcall ifcall;
   struct styx2000_fcall ofcall;
@@ -43,14 +49,14 @@ uint8*                  styx2000_pstring(uint8 *, char *);
 uint16                  styx2000_stringsz(char *);
 uint32                  styx2000_getfcallsize(struct styx2000_fcall*);
 struct styx2000_req*    styx2000_parsefcall(uint8*, int);
-int                     styx2000_composefcall(struct styx2000_req *, uint8*, int);
+int                     styx2000_composefcall(struct styx2000_fcall*, uint8*, int);
 void                    styx2000_debugfcall(struct styx2000_fcall*);
 
 // req
 struct styx2000_req*    styx2000_allocreq();
 void                    styx2000_freereq(struct styx2000_req*);
-int                     styx2000_sendreq(struct styx2000_server *srv, struct styx2000_req *req);
-struct styx2000_req*    styx2000_recvreq(struct styx2000_server *srv);
+int                     styx2000_sendreq(struct styx2000_conn *conn, struct styx2000_req *req);
+struct styx2000_req*    styx2000_recvreq(struct styx2000_conn *conn);
 
 // version
 uint8*                  styx2000_parse_tversion(struct styx2000_fcall*, uint8*, int);

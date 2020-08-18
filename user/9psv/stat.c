@@ -10,8 +10,7 @@ uint8* styx2000_parse_tstat(struct styx2000_fcall *fcall, uint8* buf, int len) {
   return buf;
 }
 
-int styx2000_compose_rstat(struct styx2000_req *req, uint8* buf) {
-  struct styx2000_fcall *f = &req->ofcall;
+int styx2000_compose_rstat(struct styx2000_fcall *f, uint8* buf) {
   PBIT16(buf, f->parlen);
   buf += BIT16SZ;
   PBIT16(buf, f->nstat);

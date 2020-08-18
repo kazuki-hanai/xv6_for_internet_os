@@ -8,6 +8,7 @@
 #include "net/socket.h"
 #include "styx2000.h"
 #include "fcall.h"
+#include "styx2000_server.h"
 
 static int respond(struct styx2000_server *srv, struct styx2000_req *req) {
   if (!req->error) {
@@ -20,11 +21,11 @@ static int respond(struct styx2000_server *srv, struct styx2000_req *req) {
 
   // TODO error processing
 
-  if (styx2000_composefcall(req, srv->wbuf, srv->msize) == -1 ) {
+  if (styx2000_composefcall(&req->ofcall, srv->conn.wbuf, srv->msize) == -1 ) {
     return -1;
   }
 
-  if (srv->send(srv, req) == -1) {
+  if (srv->send(&srv->conn, req) == -1) {
     return -1;
   }
   return 0;
@@ -244,7 +245,7 @@ int main(int argc, char **argv) {
   }
 
   struct styx2000_req *req;
-  while ((req = srv.recv(&srv)) != 0) {
+  while ((req = srv.recv(&srv.conn)) != 0) {
     styx2000_debugfcall(&req->ifcall);
     switch (req->ifcall.type) {
       case STYX2000_TVERSION:
@@ -313,12 +314,12 @@ fail:
 
 static int start_server(struct styx2000_server *srv) {
   srv->msize = STYX2000_MAXMSGLEN;
-  srv->sockfd = socket(SOCK_TCP);
-  if (srv->sockfd == -1) {
+  srv->conn.sockfd = socket(SOCK_TCP);
+  if (srv->conn.sockfd == -1) {
     printf("socket error!\n");
     return -1;
   }
-  if (listen(srv->sockfd, STYX2000_PORT) == -1) {
+  if (listen(srv->conn.sockfd, STYX2000_PORT) == -1) {
     printf("socket error!\n");
     return -1;
   }
@@ -326,19 +327,19 @@ static int start_server(struct styx2000_server *srv) {
 }
 
 static void stop_server(struct styx2000_server *srv) {
-  close(srv->sockfd);
-  free(srv->wbuf);
-  free(srv->rbuf);
+  close(srv->conn.sockfd);
+  srv->conn.sockfd = 0;
+  free(srv->conn.wbuf);
+  free(srv->conn.rbuf);
   free(srv->fs);
   styx2000_freefidpool(srv->fpool);
   styx2000_freeqidpool(srv->qpool);
-  srv->sockfd = 0;
 }
 
 static void initserver(struct styx2000_server *srv) {
   srv->msize = STYX2000_MAXMSGLEN;
-  srv->wbuf = malloc(srv->msize);
-  srv->rbuf = malloc(srv->msize);
+  srv->conn.wbuf = malloc(srv->msize);
+  srv->conn.rbuf = malloc(srv->msize);
   srv->fpool = styx2000_allocfidpool();
   srv->qpool = styx2000_allocqidpool();
   srv->fs = malloc(sizeof(struct styx2000_filesystem));

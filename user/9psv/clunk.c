@@ -10,6 +10,6 @@ uint8* styx2000_parse_tclunk(struct styx2000_fcall *fcall, uint8* buf, int len) 
   return buf;
 }
 
-int styx2000_compose_rclunk(struct styx2000_req *req, uint8* buf) {
+int styx2000_compose_rclunk(struct styx2000_fcall *f, uint8* buf) {
   return 0;
 }

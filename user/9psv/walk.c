@@ -21,8 +21,7 @@ uint8* styx2000_parse_twalk(struct styx2000_fcall *fcall, uint8* buf, int len) {
   return buf;
 }
 
-int styx2000_compose_rwalk(struct styx2000_req *req, uint8* buf) {
-  struct styx2000_fcall *f = &req->ofcall;
+int styx2000_compose_rwalk(struct styx2000_fcall *f, uint8* buf) {
   PBIT16(buf, f->nwqid);
   buf += BIT16SZ;
   for (int i = 0; i < f->nwqid; i++) {
