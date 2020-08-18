@@ -39,7 +39,7 @@ int styx2000_is_dir(struct styx2000_qid* qid) {
 }
 
 int styx2000_compose_stat(char* data, struct styx2000_stat *stat) {
-  int len = stat->size;
+  int len = stat->size-2;
   uint8* p = (uint8*)data;
   PBIT16(p, len);
   p += BIT16SZ;
@@ -157,8 +157,9 @@ static struct styx2000_file* allocfile(
   file->fd = fd;
   file->fs = fs;
   file->path = path;
-  file->stat = get_stat(file->fd, path, qid);
-  file->parent = parent;
+  file->stat = get_stat(file->fd, path + fs->rootpathlen, qid);
+  file->parent = 0;
+  // file->parent = parent;
   file->child_num = 0;
   // TODO: make list
   for (int i = 0; i < 32; i++) {
@@ -192,7 +193,7 @@ uint64 styx2000_getqidno(char* path) {
   int fd;
   struct stat st;
 
-  if ((fd = open(path, O_RDWR)) == -1) {
+  if ((fd = open(path, O_RDONLY)) == -1) {
     fprintf(2, "[getqidno] cannot open: %s\n", path);
     return -1;
   }
@@ -218,12 +219,14 @@ struct styx2000_qid* styx2000_removeqid(struct styx2000_qidpool *qpool, uint64 q
 struct styx2000_qid* styx2000_allocqid(
   struct styx2000_qidpool* qpool,
   struct styx2000_qid* parent,
+  struct styx2000_filesystem* fs,
   char* path
 ) {
   struct styx2000_qid *qid;
 
-  char *pathname = malloc(strlen(path));
+  char *pathname = malloc(strlen(path)+1);
   strcpy(pathname, path);
+  pathname[strlen(path)] = 0;
 
   qid = get_qid(qpool, pathname);
   
@@ -234,7 +237,7 @@ struct styx2000_qid* styx2000_allocqid(
     return 0;
   }
 
-  qid->file = allocfile(fd, pathname, mode, &qpool->srv->fs, parent, qid);
+  qid->file = allocfile(fd, pathname, mode, fs, parent, qid);
   qid->ref = 1;
   qid->qpool = qpool;
   qid->inc = incqidref;
@@ -247,20 +250,32 @@ struct styx2000_qid* styx2000_allocqid(
   return qid;
 }
 
-int styx2000_get_dir(struct styx2000_qid* qid) {
+int styx2000_get_dir(struct styx2000_qid* qid, struct styx2000_filesystem* fs) {
   struct dirent de;
   struct styx2000_file* file = qid->file;
+  char path[256], *p;
   int i = 0;
-  while(read(file->fd, &de, sizeof(de)) == sizeof(de)){
-    if(de.inum == 0)
+
+  strcpy(path, qid->pathname);
+  p = path + strlen(qid->pathname);
+
+  int fd;
+  if ((fd = open(path, O_RDONLY)) == -1) {
+    return -1;
+  }
+  while(read(fd, &de, sizeof(de)) == sizeof(de)){
+    if(de.inum == 0 || de.inum == 1)
       continue;
+    
+    strcpy(p, de.name);
     struct styx2000_qid* nextq;
-    if ((nextq = styx2000_lookupqid(qid->qpool, styx2000_getqidno(de.name))) == 0) {
-      nextq = styx2000_allocqid(qid->qpool, qid, de.name);
+    if ((nextq = styx2000_lookupqid(qid->qpool, styx2000_getqidno(path))) == 0) {
+      nextq = styx2000_allocqid(qid->qpool, qid, fs, path);
     }
     file->childs[i] = nextq;
     i++;
   }
   file->child_num = i;
+  close(fd);
   return 0;
 }

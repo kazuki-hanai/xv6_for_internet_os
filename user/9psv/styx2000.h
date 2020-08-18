@@ -42,7 +42,7 @@ struct styx2000_server {
   uint8*                      wbuf;
   uint8*                      rbuf;
   int                         msize;
-  struct styx2000_filesystem  fs;
+  struct styx2000_filesystem* fs;
   struct styx2000_fidpool     *fpool;
   struct styx2000_qidpool     *qpool;
   int                         (*start)(struct styx2000_server*);

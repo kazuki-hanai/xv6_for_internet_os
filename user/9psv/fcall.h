@@ -69,9 +69,9 @@ struct intmap;
 struct styx2000_qid;
 
 struct styx2000_filesystem {
+  struct styx2000_qid* root;
   char*                 rootpath;
   int                   rootpathlen;
-  struct styx2000_qid* root;
 };
 
 struct styx2000_filelist {
@@ -219,5 +219,5 @@ void                      styx2000_freeqidpool(struct styx2000_qidpool *qpool);
 struct styx2000_qid*      styx2000_lookupqid(struct styx2000_qidpool *qpool, uint64 qid);
 struct styx2000_qid*      styx2000_removeqid(struct styx2000_qidpool *qpool, uint64 qid);
 struct styx2000_qid*      styx2000_allocqid(
-  struct styx2000_qidpool* qpool, struct styx2000_qid* parent, char* path);
-int                       styx2000_get_dir(struct styx2000_qid* qid);
+  struct styx2000_qidpool* qpool, struct styx2000_qid* parent, struct styx2000_filesystem* fs, char* path);
+int                       styx2000_get_dir(struct styx2000_qid* qid, struct styx2000_filesystem* fs);
