@@ -91,3 +91,7 @@ int                     styx2000_compose_rread(struct styx2000_fcall*, uint8*);
 // clunk
 uint8*                  styx2000_parse_tclunk(struct styx2000_fcall*, uint8*, int);
 int                     styx2000_compose_rclunk(struct styx2000_fcall*, uint8*);
+
+// remove
+uint8*                  styx2000_parse_tremove(struct styx2000_fcall*, uint8*, int);
+int                     styx2000_compose_rremove(struct styx2000_fcall*, uint8*);

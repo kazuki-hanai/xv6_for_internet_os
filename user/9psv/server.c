@@ -235,6 +235,24 @@ static int rstat(struct styx2000_server *srv, struct styx2000_req *req) {
   return 0;
 }
 
+static int rremove(struct styx2000_server *srv, struct styx2000_req *req) {
+  struct styx2000_fid *fid;
+  struct styx2000_qid *qid;
+  if ((fid = styx2000_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
+    req->error = 1;
+    req->ofcall.ename = "there are no specified file";
+    return 0;
+  }
+  qid = fid->qid;
+  if (unlink(qid->pathname) == -1) {
+    req->error = 1;
+    req->ofcall.ename = "cannot remove file";
+  }
+  srv->fpool->destroy(fid);
+  srv->qpool->destroy(qid);
+  return 0;
+}
+
 static int start_server(struct styx2000_server *srv);
 static void stop_server(struct styx2000_server *srv);
 static void initserver(struct styx2000_server *srv);
@@ -292,6 +310,9 @@ int main(int argc, char **argv) {
         }
         break;
       case STYX2000_TREMOVE:
+        if (rremove(&srv, req) == -1) {
+          goto fail;
+        }
         break;
       case STYX2000_TSTAT:
         if (rstat(&srv, req) == -1) {

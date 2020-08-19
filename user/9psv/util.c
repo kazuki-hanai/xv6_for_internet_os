@@ -106,7 +106,6 @@ uint32 styx2000_getfcallsize(struct styx2000_fcall *f) {
 		n += f->nwqid*STYX2000_QIDSZ;
 		break;
 	case STYX2000_TOPEN:
-	// case Topenfd:
 		n += BIT32SZ;
 		n += BIT8SZ;
 		break;
@@ -121,11 +120,6 @@ uint32 styx2000_getfcallsize(struct styx2000_fcall *f) {
 		n += STYX2000_QIDSZ;
 		n += BIT32SZ;
 		break;
-	// case Ropenfd:
-	// n += QIDSZ;
-	// n += BIT32SZ;
-	// n += BIT32SZ;
-	// break;
 	case STYX2000_TWRITE:
 		n += BIT32SZ;
 		n += BIT64SZ;
@@ -149,7 +143,6 @@ uint32 styx2000_getfcallsize(struct styx2000_fcall *f) {
 		n += BIT32SZ;
 		break;
 	case STYX2000_RREMOVE:
-		break;
 	case STYX2000_RCLUNK:
 		break;
 	case STYX2000_TSTAT:
@@ -226,6 +219,7 @@ struct styx2000_req* styx2000_parsefcall(uint8* buf, int size) {
       buf = styx2000_parse_tclunk(ifcall, buf, mlen);
       break;
     case STYX2000_TREMOVE:
+      buf = styx2000_parse_tremove(ifcall, buf, mlen);
       break;
     case STYX2000_TSTAT:
       buf = styx2000_parse_tstat(ifcall, buf, mlen);
@@ -302,6 +296,9 @@ int styx2000_composefcall(struct styx2000_fcall *f, uint8* buf, int size) {
       }
       break;
     case STYX2000_RREMOVE:
+      if (styx2000_compose_rremove(f, buf) == -1) {
+        return -1;
+      }
       break;
     case STYX2000_RSTAT:
       if (styx2000_compose_rstat(f, buf) == -1) {
@@ -394,7 +391,7 @@ void styx2000_debugfcall(struct styx2000_fcall *f) {
     printf("=> RCLUNK: \n");
     break;
   case STYX2000_TREMOVE:
-    printf("<= TREMOVE: \n");
+    printf("<= TREMOVE: fid: %d\n", f->fid);
     break;
   case STYX2000_RREMOVE:
     printf("=> RREMOVE: \n");

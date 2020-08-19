@@ -14,6 +14,7 @@ STYX2000_SRCS = \
 	$(STYX2000_DIR)/open.c \
 	$(STYX2000_DIR)/read.c \
 	$(STYX2000_DIR)/clunk.c \
+	$(STYX2000_DIR)/remove.c \
 	$(STYX2000_DIR)/stat.c \
 
 STYX2000_OBJS = $(addprefix $(BUILD_DIR)/, $(STYX2000_SRCS:.c=.o))
