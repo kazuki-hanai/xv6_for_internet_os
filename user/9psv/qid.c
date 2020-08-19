@@ -33,12 +33,12 @@ uint64_t styx2000_getqidno(char* path) {
   struct stat st;
 
   if ((fd = open(path, O_RDONLY)) == -1) {
-    fprintf(2, "[getqidno] cannot open: %s\n", path);
+    printf("[getqidno] cannot open: %s\n", path);
     return -1;
   }
 
   if (fstat(fd, &st) < 0) {
-    fprintf(2, "[getqidno] cannot stat path: %s\n", path);
+    printf("[getqidno] cannot stat path: %s\n", path);
     close(fd);
     return -1;
   }
@@ -53,18 +53,18 @@ static struct styx2000_qid* get_qid(struct styx2000_qidpool* qpool, char* path) 
   
   int fd;
   if ((fd = open(path, O_RDONLY)) == -1) {
-    fprintf(2, "[allocqid] cannot open: %s\n", path);
+    printf("[allocqid] cannot open: %s\n", path);
     return 0;
   }
 
   qid = malloc(sizeof *qid);
   if (qid == 0) {
-    fprintf(2, "[get_qid] malloc failed\n");
+    printf("[get_qid] malloc failed\n");
     return 0;
   }
 
   if (fstat(fd, &st) < 0) {
-    fprintf(2, "[get_qid] cannot stat path: %s\n", path);
+    printf("[get_qid] cannot stat path: %s\n", path);
     return 0;
   }
 

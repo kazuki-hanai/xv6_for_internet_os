@@ -17,7 +17,7 @@ struct styx2000_file* styx2000_allocfile(
   file->parent = 0;
   // file->parent = parent;
   file->child_num = 0;
-  // TODO: make list
+  // TODO: make filelist
   for (int i = 0; i < 32; i++) {
     file->childs[i] = 0;
   }
