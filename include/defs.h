@@ -17,7 +17,7 @@ struct mbuf;
 
 // bio.c
 void            binit(void);
-struct buf*     bread(uint, uint);
+struct buf*     bread(uint32_t, uint32_t);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
 void            bpin(struct buf*);
@@ -33,9 +33,9 @@ int             exec(char*, char**);
 
 // fs.c
 void            fsinit(int);
-int             dirlink(struct inode*, char*, uint);
-struct inode*   dirlookup(struct inode*, char*, uint*);
-struct inode*   ialloc(uint, short);
+int             dirlink(struct inode*, char*, uint32_t);
+struct inode*   dirlookup(struct inode*, char*, uint32_t*);
+struct inode*   ialloc(uint32_t, short);
 struct inode*   idup(struct inode*);
 void            iinit();
 void            ilock(struct inode*);
@@ -46,9 +46,9 @@ void            iupdate(struct inode*);
 int             namecmp(const char*, const char*);
 struct inode*   namei(char*);
 struct inode*   nameiparent(char*, char*);
-int             readi(struct inode*, int, uint64, uint, uint);
+int             readi(struct inode*, int, uint64_t, uint32_t, uint32_t);
 void            stati(struct inode*, struct stat*);
-int             writei(struct inode*, int, uint64, uint, uint);
+int             writei(struct inode*, int, uint64_t, uint32_t, uint32_t);
 
 // ramdisk.c
 void            ramdiskinit(void);
@@ -74,8 +74,8 @@ void            end_op();
 // pipe.c
 int             pipealloc(struct file**, struct file**);
 void            pipeclose(struct pipe*, int);
-int             piperead(struct pipe*, uint64, int);
-int             pipewrite(struct pipe*, uint64, int);
+int             piperead(struct pipe*, uint64_t, int);
+int             pipewrite(struct pipe*, uint64_t, int);
 
 // printf.c
 void            printf(char*, ...);
@@ -88,7 +88,7 @@ void            exit(int);
 int             fork(void);
 int             growproc(int);
 pagetable_t     proc_pagetable(struct proc *);
-void            proc_freepagetable(pagetable_t, uint64);
+void            proc_freepagetable(pagetable_t, uint64_t);
 int             kill(int);
 struct cpu*     mycpu(void);
 struct cpu*     getmycpu(void);
@@ -99,11 +99,11 @@ void            sched(void);
 void            setproc(struct proc*);
 void            sleep(void*, struct spinlock*);
 void            userinit(void);
-int             wait(uint64);
+int             wait(uint64_t);
 void            wakeup(void*);
 void            yield(void);
-int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
-int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
+int             either_copyout(int user_dst, uint64_t dst, void *src, uint64_t len);
+int             either_copyin(void *dst, int user_src, uint64_t src, uint64_t len);
 void            procdump(void);
 
 // swtch.S
@@ -125,25 +125,25 @@ void            initsleeplock(struct sleeplock*, char*);
 void            ticksleep(int);
 
 // string.c
-int             memcmp(const void*, const void*, uint);
-void*           memmove(void*, const void*, uint);
-void*           memset(void*, int, uint);
+int             memcmp(const void*, const void*, uint32_t);
+void*           memmove(void*, const void*, uint32_t);
+void*           memset(void*, int, uint32_t);
 char*           safestrcpy(char*, const char*, int);
 int             strlen(const char*);
-int             strncmp(const char*, const char*, uint);
+int             strncmp(const char*, const char*, uint32_t);
 char*           strncpy(char*, const char*, int);
 
 // syscall.c
 int             argint(int, int*);
 int             argstr(int, char*, int);
-int             argaddr(int, uint64 *);
+int             argaddr(int, uint64_t *);
 int             argfd(int, int *, struct file **);
-int             fetchstr(uint64, char*, int);
-int             fetchaddr(uint64, uint64*);
+int             fetchstr(uint64_t, char*, int);
+int             fetchaddr(uint64_t, uint64_t*);
 void            syscall();
 
 // trap.c
-extern uint     ticks;
+extern uint32_t ticks;
 void            trapinit(void);
 void            trapinithart(void);
 extern struct spinlock tickslock;
@@ -158,26 +158,26 @@ int             uartgetc(void);
 // vm.c
 void            kvminit(void);
 void            kvminithart(void);
-uint64          kvmpa(uint64);
-void            kvmmap(uint64, uint64, uint64, int);
-int             mappages(pagetable_t, uint64, uint64, uint64, int);
+uint64_t          kvmpa(uint64_t);
+void            kvmmap(uint64_t, uint64_t, uint64_t, int);
+int             mappages(pagetable_t, uint64_t, uint64_t, uint64_t, int);
 pagetable_t     uvmcreate(void);
-void            uvminit(pagetable_t, uchar *, uint);
-uint64          uvmalloc(pagetable_t, uint64, uint64);
-uint64          uvmdealloc(pagetable_t, uint64, uint64);
-int             uvmcopy(pagetable_t, pagetable_t, uint64);
-void            uvmfree(pagetable_t, uint64);
-void            uvmunmap(pagetable_t, uint64, uint64, int);
-void            uvmclear(pagetable_t, uint64);
-uint64          walkaddr(pagetable_t, uint64);
-int             copyout(pagetable_t, uint64, char *, uint64);
-int             copyin(pagetable_t, char *, uint64, uint64);
-int             copyinstr(pagetable_t, char *, uint64, uint64);
+void            uvminit(pagetable_t, uint8_t *, uint32_t);
+uint64_t          uvmalloc(pagetable_t, uint64_t, uint64_t);
+uint64_t          uvmdealloc(pagetable_t, uint64_t, uint64_t);
+int             uvmcopy(pagetable_t, pagetable_t, uint64_t);
+void            uvmfree(pagetable_t, uint64_t);
+void            uvmunmap(pagetable_t, uint64_t, uint64_t, int);
+void            uvmclear(pagetable_t, uint64_t);
+uint64_t          walkaddr(pagetable_t, uint64_t);
+int             copyout(pagetable_t, uint64_t, char *, uint64_t);
+int             copyin(pagetable_t, char *, uint64_t, uint64_t);
+int             copyinstr(pagetable_t, char *, uint64_t, uint64_t);
 
 // plic.c
 void            plicinit(void);
 void            plicinithart(void);
-uint64          plic_pending(void);
+uint64_t          plic_pending(void);
 int             plic_claim(void);
 void            plic_complete(int);
 
@@ -190,14 +190,14 @@ void            virtio_disk_intr();
 void            pci_init();
 
 // e1000.c
-void            e1000_init(uint32 *);
+void            e1000_init(uint32_t *);
 void            e1000_intr();
 int             e1000_transmit(struct mbuf *);
 
 // net.c
 void            net_rx(struct mbuf *);
-void            net_tx_udp(struct mbuf *, uint32,
-                            uint16, uint16);
+void            net_tx_udp(struct mbuf *, uint32_t,
+                            uint16_t, uint16_t);
 
 // arp.c
 void            arpinit();

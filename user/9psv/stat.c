@@ -6,13 +6,13 @@
 #include "net/byteorder.h"
 #include "fcall.h"
 
-uint8* styx2000_parse_tstat(struct styx2000_fcall *fcall, uint8* buf, int len) {
+uint8_t* styx2000_parse_tstat(struct styx2000_fcall *fcall, uint8_t* buf, int len) {
   fcall->fid = GBIT32(buf);
   buf += 4;
   return buf;
 }
 
-int styx2000_compose_rstat(struct styx2000_fcall *f, uint8* buf) {
+int styx2000_compose_rstat(struct styx2000_fcall *f, uint8_t* buf) {
   PBIT16(buf, f->parlen);
   buf += BIT16SZ;
   PBIT16(buf, f->nstat);
@@ -46,7 +46,7 @@ int styx2000_compose_rstat(struct styx2000_fcall *f, uint8* buf) {
 
 int styx2000_compose_stat(char* data, struct styx2000_stat *stat, struct styx2000_qid *qid) {
   int len = stat->size;
-  uint8* p = (uint8*)data;
+  uint8_t* p = (uint8_t*)data;
   PBIT16(p, len);
   p += BIT16SZ;
   PBIT16(p, stat->type);
@@ -73,7 +73,7 @@ int styx2000_compose_stat(char* data, struct styx2000_stat *stat, struct styx200
   p = styx2000_pstring(p, stat->uid);
   p = styx2000_pstring(p, stat->gid);
   p = styx2000_pstring(p, stat->muid);
-  return p - (uint8*)data;
+  return p - (uint8_t*)data;
 }
 
 struct styx2000_stat* styx2000_get_stat(char *path) {

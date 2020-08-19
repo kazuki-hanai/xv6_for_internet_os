@@ -14,33 +14,33 @@
 
 extern struct sock_cb_entry tcp_scb_table[SOCK_CB_LEN];
 
-static uint16 tcp_checksum(uint32, uint32, uint8, struct tcp *, uint16);
-static void tcp_send_core(struct mbuf *, uint32, uint16, uint16, uint32, uint32, uint32, uint8, uint16);
-static int is_seq_valid(uint32, uint32, uint32, uint16);
-static int check_ack(struct sock_cb *, uint8, uint32, uint32, uint32);
+static uint16_t tcp_checksum(uint32_t, uint32_t, uint8_t, struct tcp *, uint16_t);
+static void tcp_send_core(struct mbuf *, uint32_t, uint16_t, uint16_t, uint32_t, uint32_t, uint32_t, uint8_t, uint16_t);
+static int is_seq_valid(uint32_t, uint32_t, uint32_t, uint16_t);
+static int check_ack(struct sock_cb *, uint8_t, uint32_t, uint32_t, uint32_t);
 
 struct rx_tcp_context {
   struct sock_cb *scb;
   struct mbuf *m;
-  uint32 raddr;
-  uint16 sport;
-  uint16 dport;
-  uint16 len;
+  uint32_t raddr;
+  uint16_t sport;
+  uint16_t dport;
+  uint16_t len;
 };
 
 void tcpinit() {
 }
 
-static uint16 tcp_checksum(uint32 ip_src, uint32 ip_dst, uint8 ip_p, struct tcp *tcphdr, uint16 len) {
-  uint32 pseudo = 0;
+static uint16_t tcp_checksum(uint32_t ip_src, uint32_t ip_dst, uint8_t ip_p, struct tcp *tcphdr, uint16_t len) {
+  uint32_t pseudo = 0;
 
   pseudo += ntohs((ip_src >> 16) & 0xffff);
   pseudo += ntohs(ip_src & 0xffff);
   pseudo += ntohs((ip_dst >> 16) & 0xffff);
   pseudo += ntohs(ip_dst & 0xffff);
-  pseudo += (uint16)ip_p;
+  pseudo += (uint16_t)ip_p;
   pseudo += len;
-  uint32 res = cksum16((uint8 *)tcphdr, len, pseudo);
+  uint32_t res = cksum16((uint8_t *)tcphdr, len, pseudo);
   return res;
 }
 
@@ -100,16 +100,16 @@ int tcp_connect(struct sock_cb *scb) {
 
 static void tcp_send_core(
   struct mbuf *m,
-  uint32 raddr,
-  uint16 sport,
-  uint16 dport,
-  uint32 sndnxt,
-  uint32 rcvnxt,
-  uint32 rcvwnd,
-  uint8 flg,
-  uint16 payload_len
+  uint32_t raddr,
+  uint16_t sport,
+  uint16_t dport,
+  uint32_t sndnxt,
+  uint32_t rcvnxt,
+  uint32_t rcvwnd,
+  uint8_t flg,
+  uint16_t payload_len
 ) {
-  extern uint32 local_ip;
+  extern uint32_t local_ip;
   struct tcp *tcphdr;
 
   tcphdr = mbufpushhdr(m, *tcphdr);
@@ -130,7 +130,7 @@ static void tcp_send_core(
 }
 
 // https://tools.ietf.org/html/rfc793#page-56
-int tcp_send(struct sock_cb *scb, struct mbuf *m, uint8 flg) {
+int tcp_send(struct sock_cb *scb, struct mbuf *m, uint8_t flg) {
   if (scb == 0)
     return -1;
   if (m == 0)
@@ -243,7 +243,7 @@ int tcp_abort() {
   return -1;
 }
 
-static int is_seq_valid(uint32 rcvwnd, uint32 rcvnxt, uint32 segseq, uint16 seglen) {
+static int is_seq_valid(uint32_t rcvwnd, uint32_t rcvnxt, uint32_t segseq, uint16_t seglen) {
   if (rcvwnd == 0) {
     return (seglen == 0 && segseq == rcvnxt) && (seglen == 0);
   } else {
@@ -256,12 +256,12 @@ static int is_seq_valid(uint32 rcvwnd, uint32 rcvnxt, uint32 segseq, uint16 segl
   }
 }
 
-static int tcp_recv_listen(struct sock_cb *scb, struct mbuf *m, uint32 raddr, uint16 dport, uint16 len) {
+static int tcp_recv_listen(struct sock_cb *scb, struct mbuf *m, uint32_t raddr, uint16_t dport, uint16_t len) {
   struct tcp *tcphdr = m->tcphdr;
-  uint16 sport = scb->sport;
-  uint32 ack = ntohl(tcphdr->ack);
-  uint32 seq = ntohl(tcphdr->seq);
-  uint8 flg = tcphdr->flg;
+  uint16_t sport = scb->sport;
+  uint32_t ack = ntohl(tcphdr->ack);
+  uint32_t seq = ntohl(tcphdr->seq);
+  uint8_t flg = tcphdr->flg;
 
   // if received SYN, send SYN,ACK
   if (TCP_FLG_ISSET(flg, TCP_FLG_RST)) {
@@ -295,11 +295,11 @@ static int tcp_recv_listen(struct sock_cb *scb, struct mbuf *m, uint32 raddr, ui
   return 0;
 }
 
-static int tcp_recv_syn_sent(struct sock_cb *scb, struct mbuf *m, uint16 len) {
+static int tcp_recv_syn_sent(struct sock_cb *scb, struct mbuf *m, uint16_t len) {
   struct tcp *tcphdr = m->tcphdr;
-  uint32 ack = ntohl(tcphdr->ack);
-  uint32 seq = ntohl(tcphdr->seq);
-  uint8 flg = tcphdr->flg;
+  uint32_t ack = ntohl(tcphdr->ack);
+  uint32_t seq = ntohl(tcphdr->seq);
+  uint8_t flg = tcphdr->flg;
 
   // SYN/ACK received
   if (TCP_FLG_ISSET(flg, TCP_FLG_ACK)) {
@@ -337,7 +337,7 @@ static int tcp_recv_syn_sent(struct sock_cb *scb, struct mbuf *m, uint16 len) {
   return TCP_OP_OK;
 }
 
-static int check_rst(struct sock_cb *scb, uint8 flg) {
+static int check_rst(struct sock_cb *scb, uint8_t flg) {
   if (TCP_FLG_ISSET(flg, TCP_FLG_RST)) {
     switch(scb->state) {
       case SOCK_CB_SYN_RCVD:
@@ -365,7 +365,7 @@ static int check_rst(struct sock_cb *scb, uint8 flg) {
   return 0;
 }
 
-static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uint32 sndwnd) {
+static int check_ack(struct sock_cb *scb, uint8_t flg, uint32_t ack, uint32_t seq, uint32_t sndwnd) {
   if (!TCP_FLG_ISSET(flg, TCP_FLG_ACK)) {
     return TCP_OP_ERR;
   }
@@ -432,7 +432,7 @@ static int check_ack(struct sock_cb *scb, uint8 flg, uint32 ack, uint32 seq, uin
   return TCP_OP_OK;
 }
 
-static int check_syn(struct sock_cb *scb, uint8 flg) {
+static int check_syn(struct sock_cb *scb, uint8_t flg) {
   if (
     scb->state == SOCK_CB_SYN_RCVD ||
     scb->state == SOCK_CB_ESTAB ||
@@ -452,7 +452,7 @@ static int check_syn(struct sock_cb *scb, uint8 flg) {
   return TCP_OP_OK;
 }
 
-static int check_text(struct sock_cb *scb, uint32 seq, uint16 datalen) {
+static int check_text(struct sock_cb *scb, uint32_t seq, uint16_t datalen) {
   switch(scb->state) {
   case SOCK_CB_ESTAB:
   case SOCK_CB_FIN_WAIT_1:
@@ -480,7 +480,7 @@ static int check_text(struct sock_cb *scb, uint32 seq, uint16 datalen) {
   return TCP_OP_OK;
 }
 
-static int check_fin(struct sock_cb *scb, uint8 flg) {
+static int check_fin(struct sock_cb *scb, uint8_t flg) {
   if (TCP_FLG_ISSET(flg, TCP_FLG_FIN)) {
     switch(scb->state) {
       case SOCK_CB_CLOSED:
@@ -519,12 +519,12 @@ static int check_fin(struct sock_cb *scb, uint8 flg) {
   return TCP_OP_OK;
 }
 
-static int tcp_recv_core(struct sock_cb *scb, struct mbuf *m, uint16 len) {
+static int tcp_recv_core(struct sock_cb *scb, struct mbuf *m, uint16_t len) {
   struct tcp *tcphdr = m->tcphdr;
-  uint32 ack = ntohl(tcphdr->ack);
-  uint32 seq = ntohl(tcphdr->seq);
-  uint8 flg = tcphdr->flg;
-  uint16 datalen = TCP_DATA_LEN(tcphdr, len);
+  uint32_t ack = ntohl(tcphdr->ack);
+  uint32_t seq = ntohl(tcphdr->seq);
+  uint8_t flg = tcphdr->flg;
+  uint16_t datalen = TCP_DATA_LEN(tcphdr, len);
   
   struct mbuf *snd_m = 0;
 
@@ -616,19 +616,19 @@ static int tcp_recv_core(struct sock_cb *scb, struct mbuf *m, uint16 len) {
 }
 
 // segment arrives
-void tcp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr) {
+void tcp_recv(struct mbuf *m, uint16_t len, struct ipv4 *iphdr) {
   struct sock_cb *scb = 0;
   // pull header
   struct tcp *tcphdr = mbufpullhdr(m, *tcphdr);
   if (!tcphdr)
     goto fail;
   m->tcphdr = tcphdr;
-  uint32 raddr = ntohl(iphdr->ip_src);
-  uint16 sport = ntohs(tcphdr->dport);
-  uint16 dport = ntohs(tcphdr->sport);
+  uint32_t raddr = ntohl(iphdr->ip_src);
+  uint16_t sport = ntohs(tcphdr->dport);
+  uint16_t dport = ntohs(tcphdr->sport);
 
   // checksum
-  uint16 sum = tcp_checksum(iphdr->ip_src, iphdr->ip_dst, iphdr->ip_p, tcphdr, len);
+  uint16_t sum = tcp_checksum(iphdr->ip_src, iphdr->ip_dst, iphdr->ip_p, tcphdr, len);
   if (sum) {
     printf("[bad tcp] checksum doesn't match, %d, len: %d\n", sum, len);
     goto fail;

@@ -12,8 +12,8 @@
 #include "net/arptable.h"
 
 extern struct arp_tabel arptable;
-extern uint8 local_mac[];
-extern uint32 local_ip;
+extern uint8_t local_mac[];
+extern uint32_t local_ip;
 
 struct mbufq arp_q;
 
@@ -24,7 +24,7 @@ void arpinit() {
 
 // sends an ARP packet
 int
-arp_send(uint16 op, uint8 dmac[ETH_ADDR_LEN], uint32 dip)
+arp_send(uint16_t op, uint8_t dmac[ETH_ADDR_LEN], uint32_t dip)
 {
   struct mbuf *m;
   struct arp *arphdr;
@@ -38,7 +38,7 @@ arp_send(uint16 op, uint8 dmac[ETH_ADDR_LEN], uint32 dip)
   arphdr->hrd = htons(ARP_HRD_ETHER);
   arphdr->pro = htons(ETH_TYPE_IP);
   arphdr->hln = ETH_ADDR_LEN;
-  arphdr->pln = sizeof(uint32);
+  arphdr->pln = sizeof(uint32_t);
   arphdr->op = htons(op);
 
   // ethernet + IP part of ARP header
@@ -57,8 +57,8 @@ void
 arp_recv(struct mbuf *m)
 {
   struct arp *arphdr;
-  uint8 smac[ETH_ADDR_LEN];
-  uint32 sip, tip;
+  uint8_t smac[ETH_ADDR_LEN];
+  uint32_t sip, tip;
 
   arphdr = mbufpullhdr(m, *arphdr);
   if (!arphdr)
@@ -68,7 +68,7 @@ arp_recv(struct mbuf *m)
   if (ntohs(arphdr->hrd) != ARP_HRD_ETHER ||
       ntohs(arphdr->pro) != ETH_TYPE_IP ||
       arphdr->hln != ETH_ADDR_LEN ||
-      arphdr->pln != sizeof(uint32)) {
+      arphdr->pln != sizeof(uint32_t)) {
     goto done;
   }
 

@@ -35,8 +35,8 @@
 #define STYX2000_TWSTAT   126
 #define STYX2000_RWSTAT   127
 
-#define STYX2000_NOTAG     (uint16)~0U
-#define STYX2000_NOFID     (uint32)~0U
+#define STYX2000_NOTAG     (uint16_t)~0U
+#define STYX2000_NOFID     (uint32_t)~0U
 #define STYX2000_NOUID     (-1)
 #define STYX2000_IOHDRSZ   24
 
@@ -77,13 +77,13 @@ struct styx2000_filesystem {
 struct styx2000_stat {
     /* system-modified data */
     int                   size;
-    uint16                type;   /* server type */
-    uint32                dev;    /* server subtype */
+    uint16_t                type;   /* server type */
+    uint32_t                dev;    /* server subtype */
     /* file data */
-    uint32                mode;   /* permissions */
-    uint32                atime;  /* last read time */
-    uint32                mtime;  /* last write time */
-    uint64                length; /* file length */
+    uint32_t                mode;   /* permissions */
+    uint32_t                atime;  /* last read time */
+    uint32_t                mtime;  /* last write time */
+    uint64_t                length; /* file length */
     char                  *name;  /* last element of path */
     char                  *uid;   /* owner name */
     char                  *gid;   /* group name */
@@ -103,9 +103,9 @@ struct styx2000_file {
 struct styx2000_qid {
   // qid fields
   char*                       pathname;
-	uint64	                    path;
-	uint32	                    vers;
-	uint8 	                    type;
+	uint64_t                    path;
+	uint32_t                    vers;
+	uint8_t 	                  type;
   void*                       file;
   int                         ref;
   struct styx2000_qidpool*    qpool;
@@ -115,7 +115,7 @@ struct styx2000_qid {
 };
 
 struct styx2000_fid {
-  uint64                    fid;
+  uint64_t                    fid;
   struct styx2000_qid*      qid;
   struct styx2000_fidpool*  fpool;
 };
@@ -133,58 +133,58 @@ struct styx2000_qidpool {
 };
 
 struct styx2000_fcall {
-  uint32                size;
-  uint8	                type;
-  uint16	              tag;
-  uint32	              fid;
+  uint32_t                  size;
+  uint8_t                   type;
+  uint16_t                  tag;
+  uint32_t                  fid;
   union {
     struct {
-      uint32                msize;            /* Tversion, Rversion */
+      uint32_t              msize;            /* Tversion, Rversion */
       char                  *version;         /* Tversion, Rversion */
     };
     struct {
-      uint16                oldtag;           /* Tflush */
+      uint16_t              oldtag;           /* Tflush */
     };
     struct {
       char                  *ename;           /* Rerror */
-      uint32	              errornum;	        /* Rerror 9P2000.u extension */
+      uint32_t              errornum;	        /* Rerror 9P2000.u extension */
     };
     struct {
       struct styx2000_qid*  qid;              /* Rattach, Ropen, Rcreate */
-      uint32                iounit;           /* Ropen, Rcreate */
+      uint32_t              iounit;           /* Ropen, Rcreate */
     };
     struct {
       struct styx2000_qid*  aqid;             /* Rauth */
     };
     struct {
-      uint32                afid;             /* Tauth, Tattach */
+      uint32_t              afid;             /* Tauth, Tattach */
       char                  *uname;           /* Tauth, Tattach */
       char                  *aname;           /* Tauth, Tattach */
-      uint32	              uidnum;		        /* Tauth, Tattach 9P2000.u extension */
+      uint32_t              uidnum;		        /* Tauth, Tattach 9P2000.u extension */
     };
     struct {
-      uint32                perm;             /* Tcreate */
+      uint32_t              perm;             /* Tcreate */
       char                  *name;            /* Tcreate */
-      uint8                 mode;             /* Tcreate, Topen */
-      uint8	                *extension;	      /* Tcreate 9P2000.u extension */
+      uint8_t               mode;             /* Tcreate, Topen */
+      uint8_t               *extension;	      /* Tcreate 9P2000.u extension */
     };
     struct {
-      uint32                newfid;           /* Twalk */
-      uint16                nwname;           /* Twalk */
+      uint32_t              newfid;           /* Twalk */
+      uint16_t              nwname;           /* Twalk */
       char                  *wname[STYX2000_MAXWELEM]; /* Twalk */
     };
     struct {
-      uint16                nwqid;            /* Rwalk */
+      uint16_t              nwqid;            /* Rwalk */
       struct styx2000_qid*  wqid[STYX2000_MAXWELEM];   /* Rwalk */
     };
     struct {
-      uint64                offset;           /* Tread, Twrite */
-      uint32                count;            /* Tread, Twrite, Rread */
+      uint64_t              offset;           /* Tread, Twrite */
+      uint32_t              count;            /* Tread, Twrite, Rread */
       char                  *data;            /* Twrite, Rread */
     };
     struct {
-      uint16                parlen;           /* Rstat */
-      uint16                nstat;            /* Twstat, Rstat */
+      uint16_t              parlen;           /* Rstat */
+      uint16_t              nstat;            /* Twstat, Rstat */
       struct styx2000_stat* stat;             /* Twstat, Rstat */
       struct styx2000_qid*  statqid;              /* Twstat, Rstat */
     };
@@ -196,18 +196,18 @@ struct styx2000_fidpool*  styx2000_allocfidpool();
 void                      styx2000_freefidpool(struct styx2000_fidpool*);
 struct styx2000_fid*      styx2000_allocfid(
   struct styx2000_fidpool* fpool,
-  uint64 fid,
+  uint64_t fid,
   struct styx2000_qid* qid
 );
-struct styx2000_fid*      styx2000_lookupfid(struct styx2000_fidpool *, uint64);
-struct styx2000_fid*      styx2000_removefid(struct styx2000_fidpool*, uint64);
+struct styx2000_fid*      styx2000_lookupfid(struct styx2000_fidpool *, uint64_t);
+struct styx2000_fid*      styx2000_removefid(struct styx2000_fidpool*, uint64_t);
 
 // qid
-uint64                    styx2000_getqidno(char* path);
+uint64_t                  styx2000_getqidno(char* path);
 struct styx2000_qidpool*  styx2000_allocqidpool();
 void                      styx2000_freeqidpool(struct styx2000_qidpool *qpool);
-struct styx2000_qid*      styx2000_lookupqid(struct styx2000_qidpool *qpool, uint64 qid);
-struct styx2000_qid*      styx2000_removeqid(struct styx2000_qidpool *qpool, uint64 qid);
+struct styx2000_qid*      styx2000_lookupqid(struct styx2000_qidpool *qpool, uint64_t qid);
+struct styx2000_qid*      styx2000_removeqid(struct styx2000_qidpool *qpool, uint64_t qid);
 struct styx2000_qid*      styx2000_allocqid(
   struct styx2000_qidpool* qpool, struct styx2000_qid* parent, struct styx2000_filesystem* fs, char* path);
 int                       styx2000_get_dir(struct styx2000_qid* qid, struct styx2000_filesystem* fs);

@@ -62,8 +62,8 @@ bzero(int dev, int bno)
 // Blocks.
 
 // Allocate a zeroed disk block.
-static uint
-balloc(uint dev)
+static uint32_t
+balloc(uint32_t dev)
 {
   int b, bi, m;
   struct buf *bp;
@@ -88,7 +88,7 @@ balloc(uint dev)
 
 // Free a disk block.
 static void
-bfree(int dev, uint b)
+bfree(int dev, uint32_t b)
 {
   struct buf *bp;
   int bi, m;
@@ -188,13 +188,13 @@ iinit()
   }
 }
 
-static struct inode* iget(uint dev, uint inum);
+static struct inode* iget(uint32_t dev, uint32_t inum);
 
 // Allocate an inode on device dev.
 // Mark it as allocated by  giving it type type.
 // Returns an unlocked but allocated and referenced inode.
 struct inode*
-ialloc(uint dev, short type)
+ialloc(uint32_t dev, short type)
 {
   int inum;
   struct buf *bp;
@@ -241,7 +241,7 @@ iupdate(struct inode *ip)
 // and return the in-memory copy. Does not lock
 // the inode and does not read it from disk.
 static struct inode*
-iget(uint dev, uint inum)
+iget(uint32_t dev, uint32_t inum)
 {
   struct inode *ip, *empty;
 
@@ -375,10 +375,10 @@ iunlockput(struct inode *ip)
 
 // Return the disk block address of the nth block in inode ip.
 // If there is no such block, bmap allocates one.
-static uint
-bmap(struct inode *ip, uint bn)
+static uint32_t
+bmap(struct inode *ip, uint32_t bn)
 {
-  uint addr, *a;
+  uint32_t addr, *a;
   struct buf *bp;
 
   if(bn < NDIRECT){
@@ -393,7 +393,7 @@ bmap(struct inode *ip, uint bn)
     if((addr = ip->addrs[NDIRECT]) == 0)
       ip->addrs[NDIRECT] = addr = balloc(ip->dev);
     bp = bread(ip->dev, addr);
-    a = (uint*)bp->data;
+    a = (uint32_t*)bp->data;
     if((addr = a[bn]) == 0){
       a[bn] = addr = balloc(ip->dev);
       log_write(bp);
@@ -415,7 +415,7 @@ itrunc(struct inode *ip)
 {
   int i, j;
   struct buf *bp;
-  uint *a;
+  uint32_t*a;
 
   for(i = 0; i < NDIRECT; i++){
     if(ip->addrs[i]){
@@ -426,7 +426,7 @@ itrunc(struct inode *ip)
 
   if(ip->addrs[NDIRECT]){
     bp = bread(ip->dev, ip->addrs[NDIRECT]);
-    a = (uint*)bp->data;
+    a = (uint32_t*)bp->data;
     for(j = 0; j < NINDIRECT; j++){
       if(a[j])
         bfree(ip->dev, a[j]);
@@ -457,9 +457,9 @@ stati(struct inode *ip, struct stat *st)
 // If user_dst==1, then dst is a user virtual address;
 // otherwise, dst is a kernel address.
 int
-readi(struct inode *ip, int user_dst, uint64 dst, uint off, uint n)
+readi(struct inode *ip, int user_dst, uint64_t dst, uint32_t off, uint32_t n)
 {
-  uint tot, m;
+  uint32_t tot, m;
   struct buf *bp;
 
   if(off > ip->size || off + n < off)
@@ -484,9 +484,9 @@ readi(struct inode *ip, int user_dst, uint64 dst, uint off, uint n)
 // If user_src==1, then src is a user virtual address;
 // otherwise, src is a kernel address.
 int
-writei(struct inode *ip, int user_src, uint64 src, uint off, uint n)
+writei(struct inode *ip, int user_src, uint64_t src, uint32_t off, uint32_t n)
 {
-  uint tot, m;
+  uint32_t tot, m;
   struct buf *bp;
 
   if(off > ip->size || off + n < off)
@@ -528,16 +528,16 @@ namecmp(const char *s, const char *t)
 // Look for a directory entry in a directory.
 // If found, set *poff to byte offset of entry.
 struct inode*
-dirlookup(struct inode *dp, char *name, uint *poff)
+dirlookup(struct inode *dp, char *name, uint32_t*poff)
 {
-  uint off, inum;
+  uint32_t off, inum;
   struct dirent de;
 
   if(dp->type != T_DIR)
     panic("dirlookup not DIR");
 
   for(off = 0; off < dp->size; off += sizeof(de)){
-    if(readi(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+    if(readi(dp, 0, (uint64_t)&de, off, sizeof(de)) != sizeof(de))
       panic("dirlookup read");
     if(de.inum == 0)
       continue;
@@ -555,7 +555,7 @@ dirlookup(struct inode *dp, char *name, uint *poff)
 
 // Write a new directory entry (name, inum) into the directory dp.
 int
-dirlink(struct inode *dp, char *name, uint inum)
+dirlink(struct inode *dp, char *name, uint32_t inum)
 {
   int off;
   struct dirent de;
@@ -569,7 +569,7 @@ dirlink(struct inode *dp, char *name, uint inum)
 
   // Look for an empty dirent.
   for(off = 0; off < dp->size; off += sizeof(de)){
-    if(readi(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+    if(readi(dp, 0, (uint64_t)&de, off, sizeof(de)) != sizeof(de))
       panic("dirlink read");
     if(de.inum == 0)
       break;
@@ -577,7 +577,7 @@ dirlink(struct inode *dp, char *name, uint inum)
 
   strncpy(de.name, name, DIRSIZ);
   de.inum = inum;
-  if(writei(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+  if(writei(dp, 0, (uint64_t)&de, off, sizeof(de)) != sizeof(de))
     panic("dirlink");
 
   return 0;

@@ -4,7 +4,7 @@
 #include "defs.h"
 #include "lib/buddy.h"
 
-extern uint64 bd_allocated;
+extern uint64_t bd_allocated;
 
 void buddy_test() {
   printf("\t[buddy test] start...\n");

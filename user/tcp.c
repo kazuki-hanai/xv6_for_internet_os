@@ -4,10 +4,10 @@
 #include "net/sock_cb.h"
 #include "user.h"
 
-uint32 get_ip(char *ip) {
+uint32_t get_ip(char *ip) {
   int len = strlen(ip);
   int b = 0;
-  uint32 res = 0;
+  uint32_t res = 0;
   for (int i = 0; i < len; i++) {
     if (ip[i] == '.') {
       res <<= 8;
@@ -49,7 +49,7 @@ int get_arg(int argc, char **argv) {
 }
 
 int sock_listen(char **argv) {
-  uint16 sport = atoi(argv[0]);
+  uint16_t sport = atoi(argv[0]);
   int sock;
   sock = socket(SOCK_TCP);
   listen(sock, sport);
@@ -57,8 +57,8 @@ int sock_listen(char **argv) {
 }
 
 int sock_connect(char **argv) {
-  uint32 raddr = get_ip(argv[0]);
-  uint16 dport = atoi(argv[1]);
+  uint32_t raddr = get_ip(argv[0]);
+  uint16_t dport = atoi(argv[1]);
   int sock;
   sock = socket(SOCK_TCP);
   connect(sock, raddr, dport);

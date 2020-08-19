@@ -3,10 +3,10 @@
 #include "net/sock_cb.h"
 #include "user.h"
 
-uint32 get_ip(char *ip) {
+uint32_t get_ip(char *ip) {
   int len = strlen(ip);
   int b = 0;
-  uint32 res = 0;
+  uint32_t res = 0;
   for (int i = 0; i < len; i++) {
     if (ip[i] == '.') {
       res <<= 8;
@@ -31,9 +31,9 @@ main(int argc, char **argv)
     printf("usage: %s port\n", argv[0]);
     exit(1);
   }
-  // uint32 raddr = get_ip(argv[1]);
-  uint16 sport = atoi(argv[1]);
-  // uint16 dport = atoi(argv[2]);
+  // uint32_t raddr = get_ip(argv[1]);
+  uint16_t sport = atoi(argv[1]);
+  // uint16_t dport = atoi(argv[2]);
   int sock;
 
   sock = socket(SOCK_UDP);

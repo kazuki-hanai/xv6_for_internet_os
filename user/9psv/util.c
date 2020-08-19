@@ -9,12 +9,12 @@
 #include "styx2000.h"
 #include "fcall.h"
 
-int styx2000_is_dir(uint8 type) {
+int styx2000_is_dir(uint8_t type) {
   return type & STYX2000_ODIR; 
 }
 
-uint8* styx2000_pstring(uint8 *p, char *s) {
-	uint32 n;
+uint8_t* styx2000_pstring(uint8_t *p, char *s) {
+	uint32_t n;
 
 	if(s == 0){
 		PBIT16(p, 0);
@@ -29,7 +29,7 @@ uint8* styx2000_pstring(uint8 *p, char *s) {
 	p += n;
 	return p;
 }
-uint8* styx2000_gstring(uint8* p, uint8* ep, char **s) {
+uint8_t* styx2000_gstring(uint8_t* p, uint8_t* ep, char **s) {
   int n;
   if (p + 2 > ep)
     return 0;
@@ -44,14 +44,14 @@ uint8* styx2000_gstring(uint8* p, uint8* ep, char **s) {
   return p;
 }
 
-uint16 styx2000_stringsz(char *s) {
+uint16_t styx2000_stringsz(char *s) {
 	if(s == 0)
 		return BIT16SZ;
 	return BIT16SZ+strlen(s);
 }
 
-uint32 styx2000_getfcallsize(struct styx2000_fcall *f) {
-  uint32 n;
+uint32_t styx2000_getfcallsize(struct styx2000_fcall *f) {
+  uint32_t n;
 	int i;
 
 	n = 0;
@@ -163,7 +163,7 @@ uint32 styx2000_getfcallsize(struct styx2000_fcall *f) {
 	return n;
 }
 
-static uint8* parse_hdr(struct styx2000_fcall *fcall, uint8* buf) {
+static uint8_t* parse_hdr(struct styx2000_fcall *fcall, uint8_t* buf) {
   fcall->size = GBIT32(buf);
   buf += 4;
   fcall->type = GBIT8(buf);
@@ -173,7 +173,7 @@ static uint8* parse_hdr(struct styx2000_fcall *fcall, uint8* buf) {
   return buf;
 }
 
-struct styx2000_req* styx2000_parsefcall(uint8* buf, int size) {
+struct styx2000_req* styx2000_parsefcall(uint8_t* buf, int size) {
   if (buf == 0) {
     return 0;
   }
@@ -242,7 +242,7 @@ fail:
   return 0;
 }
 
-int styx2000_composefcall(struct styx2000_fcall *f, uint8* buf, int size) {
+int styx2000_composefcall(struct styx2000_fcall *f, uint8_t* buf, int size) {
   PBIT32(buf, f->size);
   buf += 4;
   PBIT8(buf, f->type);

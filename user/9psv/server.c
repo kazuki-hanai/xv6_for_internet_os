@@ -76,7 +76,7 @@ static int rwalk(struct styx2000_server *srv, struct styx2000_req *req) {
 
   strcpy(path, par->pathname);
   p = path+strlen(par->pathname);
-  for (int i = 0; i < req->ifcall.nwname; i++) {
+  for (uint32_t i = 0; i < req->ifcall.nwname; i++) {
     struct styx2000_qid *qid;
     strcpy(p, req->ifcall.wname[i]);
     p += strlen(req->ifcall.wname[i]);

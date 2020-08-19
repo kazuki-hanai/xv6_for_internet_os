@@ -34,17 +34,17 @@ void styx2000_freefidpool(struct styx2000_fidpool *fpool) {
   free(fpool);
 }
 
-struct styx2000_fid* styx2000_lookupfid(struct styx2000_fidpool *fpool, uint64 fid) {
+struct styx2000_fid* styx2000_lookupfid(struct styx2000_fidpool *fpool, uint64_t fid) {
   return lookupkey(fpool->map, fid);
 }
 
-struct styx2000_fid* styx2000_removefid(struct styx2000_fidpool *fpool, uint64 fid) {
+struct styx2000_fid* styx2000_removefid(struct styx2000_fidpool *fpool, uint64_t fid) {
   return deletekey(fpool->map, fid);
 }
 
 struct styx2000_fid* styx2000_allocfid(
   struct styx2000_fidpool* fpool,
-  uint64 fid,
+  uint64_t fid,
   struct styx2000_qid* qid
 ) {
   struct styx2000_fid *f;

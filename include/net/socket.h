@@ -12,12 +12,12 @@
 
 void socket_init();
 struct sock_cb* sockalloc(int socktype);
-uint64 socklisten(struct sock_cb *, uint16);
-uint64 sockconnect(struct sock_cb *, uint32, uint16);
-int socksend(struct sock_cb*, uint64, int, int);
-int sockrecv(struct sock_cb*, uint64, int, int);
+uint64_t socklisten(struct sock_cb *, uint16_t);
+uint64_t sockconnect(struct sock_cb *, uint32_t, uint16_t);
+int socksend(struct sock_cb*, uint64_t, int, int);
+int sockrecv(struct sock_cb*, uint64_t, int, int);
 void sockclose(struct sock_cb*);
 
-uint16 get_new_sport();
-uint16 get_specified_sport(uint16);
-void release_sport(uint16);
+uint16_t get_new_sport();
+uint16_t get_specified_sport(uint16_t);
+void release_sport(uint16_t);

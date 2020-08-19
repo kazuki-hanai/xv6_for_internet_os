@@ -6,7 +6,7 @@
 #include "lib/buddy.h"
 
 #define MAX_FREED PGSIZE * MAX_PAGES
-uint64 bd_allocated;
+uint64_t bd_allocated;
 
 struct bd_list {
   struct bd_list *prev;

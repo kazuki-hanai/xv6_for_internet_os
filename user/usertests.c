@@ -966,7 +966,7 @@ concreate(char *s)
   int i, pid, n, fd;
   char fa[N];
   struct {
-    ushort inum;
+    uint16_t  inum;
     char name[DIRSIZ];
   } de;
 
@@ -1629,13 +1629,13 @@ sbrkmuch(char *s)
 {
   enum { BIG=100*1024*1024 };
   char *c, *oldbrk, *a, *lastaddr, *p;
-  uint64 amt;
+  uint64_t amt;
 
   oldbrk = sbrk(0);
 
   // can one grow address space to something big?
   a = sbrk(0);
-  amt = BIG - (uint64)a;
+  amt = BIG - (uint64_t)a;
   p = sbrk(amt);
   if (p != a) {
     printf("%s: sbrk test failed to grow big address space; enough phys mem?\n", s);
@@ -1722,7 +1722,7 @@ sbrkfail(char *s)
   for(i = 0; i < sizeof(pids)/sizeof(pids[0]); i++){
     if((pids[i] = fork()) == 0){
       // allocate a lot of memory
-      sbrk(BIG - (uint64)sbrk(0));
+      sbrk(BIG - (uint64_t)sbrk(0));
       write(fds[1], "x", 1);
       // sit around until killed
       for(;;) sleep(1000);
@@ -1800,10 +1800,10 @@ void
 validatetest(char *s)
 {
   int hi;
-  uint64 p;
+  uint64_t p;
 
   hi = 1100*1024;
-  for(p = 0; p <= (uint)hi; p += PGSIZE){
+  for(p = 0; p <= (uint32_t)hi; p += PGSIZE){
     // try to crash the kernel by passing in a bad string pointer
     if(link("nosuchfile", (char*)p) != -1){
       printf("%s: link should not succeed\n", s);
@@ -1963,7 +1963,7 @@ stacktest(char *s)
 }
 
 // regression test. copyin(), copyout(), and copyinstr() used to cast
-// the virtual page address to uint, which (with certain wild system
+// the virtual page address to uint32_t, which (with certain wild system
 // call arguments) resulted in a kernel page faults.
 void
 pgbug(char *s)
@@ -1989,7 +1989,7 @@ sbrkbugs(char *s)
     exit(1);
   }
   if(pid == 0){
-    int sz = (uint64) sbrk(0);
+    int sz = (uint64_t) sbrk(0);
     // free all user memory; there used to be a bug that
     // would not adjust p->sz correctly in this case,
     // causing exit() to panic.
@@ -2005,7 +2005,7 @@ sbrkbugs(char *s)
     exit(1);
   }
   if(pid == 0){
-    int sz = (uint64) sbrk(0);
+    int sz = (uint64_t) sbrk(0);
     // set the break to somewhere in the very first
     // page; there used to be a bug that would incorrectly
     // free the first page.
@@ -2021,7 +2021,7 @@ sbrkbugs(char *s)
   }
   if(pid == 0){
     // set the break in the middle of a page.
-    sbrk((10*4096 + 2048) - (uint64)sbrk(0));
+    sbrk((10*4096 + 2048) - (uint64_t)sbrk(0));
 
     // reduce the break a bit, but not enough to
     // cause a page to be freed. this used to cause

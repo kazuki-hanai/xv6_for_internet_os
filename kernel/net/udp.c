@@ -16,8 +16,8 @@ extern struct sock_cb_entry udp_scb_table[SOCK_CB_LEN];
 
 // sends a UDP packet
 void
-udp_send(struct mbuf *m, uint32 dip,
-           uint16 sport, uint16 dport)
+udp_send(struct mbuf *m, uint32_t dip,
+           uint16_t sport, uint16_t dport)
 {
   struct udp *udphdr;
 
@@ -34,11 +34,11 @@ udp_send(struct mbuf *m, uint32 dip,
 
 // receives a UDP packet
 void
-udp_recv(struct mbuf *m, uint16 len, struct ipv4 *iphdr)
+udp_recv(struct mbuf *m, uint16_t len, struct ipv4 *iphdr)
 {
   struct udp *udphdr;
-  uint32 raddr;
-  uint16 sport, dport;
+  uint32_t raddr;
+  uint16_t sport, dport;
 
   udphdr = mbufpullhdr(m, *udphdr);
   if (!udphdr)

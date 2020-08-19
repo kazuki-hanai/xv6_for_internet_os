@@ -19,11 +19,11 @@
 extern struct sock_cb_entry tcp_scb_table[SOCK_CB_LEN];
 extern struct sock_cb_entry udp_scb_table[SOCK_CB_LEN];
 
-uint8 sport_table[SPORT_NUM];
+uint8_t sport_table[SPORT_NUM];
 struct spinlock sport_lock;
-uint16 current_sport = START_OF_SPORT;
+uint16_t current_sport = START_OF_SPORT;
 
-uint16 get_new_sport() {
+uint16_t get_new_sport() {
   int islooped = 0;
   acquire(&sport_lock);
   while (islooped < 2) {
@@ -48,8 +48,8 @@ uint16 get_new_sport() {
   return -1;
 }
 
-uint16 get_specified_sport(uint16 sport) {
-  uint16 res = -1;
+uint16_t get_specified_sport(uint16_t sport) {
+  uint16_t res = -1;
   acquire(&sport_lock);
   if ((sport_table[sport/8] & (1 << (sport % 8))) == 0) {
     sport_table[sport/8] |= (1 << (sport % 8));
@@ -59,7 +59,7 @@ uint16 get_specified_sport(uint16 sport) {
   return res;
 }
 
-void release_sport(uint16 sport) {
+void release_sport(uint16_t sport) {
   if (sport > MAX_SPORT)
     return;
   acquire(&sport_lock);
@@ -90,7 +90,7 @@ void sockfree(struct sock_cb *scb) {
   free_sock_cb(scb);
 }
 
-uint64 socklisten(struct sock_cb *scb, uint16 sport) {
+uint64_t socklisten(struct sock_cb *scb, uint16_t sport) {
   // port already used
   if (get_specified_sport(sport) < 0) {
     return -1;
@@ -109,7 +109,7 @@ uint64 socklisten(struct sock_cb *scb, uint16 sport) {
   return 0;
 }
 
-uint64 sockconnect(struct sock_cb *scb, uint32 raddr, uint16 dport) {
+uint64_t sockconnect(struct sock_cb *scb, uint32_t raddr, uint16_t dport) {
   scb->raddr = raddr;
   scb->sport = get_new_sport();
   scb->dport = dport;
@@ -126,7 +126,7 @@ uint64 sockconnect(struct sock_cb *scb, uint32 raddr, uint16 dport) {
   return 0;
 }
 
-int socksend(struct sock_cb *scb, uint64 addr, int n, int is_copyin) {
+int socksend(struct sock_cb *scb, uint64_t addr, int n, int is_copyin) {
   struct proc *pr = myproc();
 
   int bufsize = 0;
@@ -169,7 +169,7 @@ int socksend(struct sock_cb *scb, uint64 addr, int n, int is_copyin) {
   return res;
 }
 
-int sockrecv(struct sock_cb *scb, uint64 addr, int n, int is_copyout) {
+int sockrecv(struct sock_cb *scb, uint64_t addr, int n, int is_copyout) {
   struct proc *pr = myproc();
 
   struct mbuf *m = 0;
@@ -178,7 +178,7 @@ int sockrecv(struct sock_cb *scb, uint64 addr, int n, int is_copyout) {
   // TODO tcp push check
   
   if (scb->socktype == SOCK_TCP) {
-    uint16 sport = scb->sport;
+    uint16_t sport = scb->sport;
     while (1) {
       scb = get_sock_cb(tcp_scb_table, sport);
       if (scb == 0 || scb->state == SOCK_CB_CLOSE_WAIT)

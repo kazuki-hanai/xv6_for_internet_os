@@ -19,20 +19,20 @@ strcmp(const char *p, const char *q)
 {
   while(*p && *p == *q)
     p++, q++;
-  return (uchar)*p - (uchar)*q;
+  return (uint8_t)*p - (uint8_t)*q;
 }
 
 int
-strncmp(const char *p, const char *q, uint n)
+strncmp(const char *p, const char *q, uint32_t n)
 {
   while(n > 0 && *p && *p == *q)
     n--, p++, q++;
   if(n == 0)
     return 0;
-  return (uchar)*p - (uchar)*q;
+  return (uint8_t)*p - (uint8_t)*q;
 }
 
-uint
+uint32_t
 strlen(const char *s)
 {
   int n;
@@ -43,7 +43,7 @@ strlen(const char *s)
 }
 
 void*
-memset(void *dst, int c, uint n)
+memset(void *dst, int c, uint32_t n)
 {
   char *cdst = (char *) dst;
   int i;

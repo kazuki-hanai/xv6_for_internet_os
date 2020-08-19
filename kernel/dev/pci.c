@@ -14,9 +14,9 @@ void pci_init()
     int bus = 0;
     int func = 0;
     int offset = 0;
-    uint32 off = (bus << 16) | (dev << 11) | (func << 8) | (offset);
-    volatile uint32 *base = (uint32 *)ECAM + off;
-    uint32 id = base[0];
+    uint32_t off = (bus << 16) | (dev << 11) | (func << 8) | (offset);
+    volatile uint32_t *base = (uint32_t *)ECAM + off;
+    uint32_t id = base[0];
 
     if (id != -1) 
       printf("pci id: %x\n", id);
@@ -26,14 +26,14 @@ void pci_init()
       __sync_synchronize();
 
       // for(int i = 0; i < 6; i++) {
-      //   uint32 old = base[4+i];
+      //   uint32_t old = base[4+i];
       //   base[4+i] = 0xffffffff;
       //   __sync_synchronize();
       //   base[4+i] = old;
       // }
 
-      base[4+0] = (uint32) E1000_REG;
-      e1000_init((uint32 *)E1000_REG);
+      base[4+0] = (uint32_t) E1000_REG;
+      e1000_init((uint32_t *)E1000_REG);
     }
   }
 }

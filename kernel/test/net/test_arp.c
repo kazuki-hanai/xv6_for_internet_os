@@ -8,11 +8,11 @@
 #include "net/sock_cb.h"
 
 extern struct arp_cache_entry arptable[ARP_DEFUALT_ENTRY_NUM];
-struct arp_cache* get_arp_cache(uint32 ip);
+struct arp_cache* get_arp_cache(uint32_t ip);
 extern struct mbufq tx_queue;
 void nic_mock_recv(struct mbuf *m);
-uint64 sys_sockconnect_core(struct sock_cb *scb, uint32 raddr, uint16 dport);
-uint64 sys_socklisten_core(struct sock_cb *scb, uint16 sport);
+uint64_t sys_sockconnect_core(struct sock_cb *scb, uint32_t raddr, uint16_t dport);
+uint64_t sys_socklisten_core(struct sock_cb *scb, uint16_t sport);
 
 void arp_table_test();
 void arp_packet_test();
@@ -65,19 +65,19 @@ void arp_packet_test() {
 
 void arp_table_test() {
   printf("\t\t[arp table test] start...\n");
-  uint32 ip1 = 0x00000001;
-  uint32 ip2 = 0x00000002;
-  uint32 ip3 = ip1 + ARP_DEFUALT_ENTRY_NUM;
+  uint32_t ip1 = 0x00000001;
+  uint32_t ip2 = 0x00000002;
+  uint32_t ip3 = ip1 + ARP_DEFUALT_ENTRY_NUM;
 
-  uint8 mac1[ETH_ADDR_LEN];
+  uint8_t mac1[ETH_ADDR_LEN];
   memset(mac1, 0, ETH_ADDR_LEN);
   mac1[ETH_ADDR_LEN-1] = 0x1;
 
-  uint8 mac2[ETH_ADDR_LEN];
+  uint8_t mac2[ETH_ADDR_LEN];
   memset(mac2, 0, ETH_ADDR_LEN);
   mac2[ETH_ADDR_LEN-1] = 0x2;
 
-  uint8 mac3[ETH_ADDR_LEN];
+  uint8_t mac3[ETH_ADDR_LEN];
   memset(mac3, 0, ETH_ADDR_LEN);
   mac3[ETH_ADDR_LEN-1] = 0x3;
 

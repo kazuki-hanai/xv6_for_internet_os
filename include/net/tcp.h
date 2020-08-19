@@ -34,21 +34,21 @@
 
 
 struct tcp {
-  uint16 sport;
-  uint16 dport;
-  uint32 seq;
-  uint32 ack;
+  uint16_t sport;
+  uint16_t dport;
+  uint32_t seq;
+  uint32_t ack;
 // little endian only
 // use #define to check endian if you want to support big endian
-  uint8 off;
-  uint8 flg;
-  uint16 wnd;
-  uint16 sum;
-  uint16 urg;
+  uint8_t off;
+  uint8_t flg;
+  uint16_t wnd;
+  uint16_t sum;
+  uint16_t urg;
 };
 
 int tcp_listen(struct sock_cb *);
 int tcp_connect(struct sock_cb *);
-int tcp_send(struct sock_cb *, struct mbuf *m, uint8);
+int tcp_send(struct sock_cb *, struct mbuf *m, uint8_t);
 int tcp_close(struct sock_cb *);
-void tcp_recv(struct mbuf *, uint16, struct ipv4 *);
+void tcp_recv(struct mbuf *, uint16_t, struct ipv4 *);

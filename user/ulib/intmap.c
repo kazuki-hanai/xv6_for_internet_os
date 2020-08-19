@@ -7,7 +7,7 @@ enum {
 
 struct intlist
 {
-	uint64	id;
+	uint64_t id;
 	void*	aux;
 	struct intlist*	link;
 };
@@ -19,8 +19,8 @@ struct intmap
 	void            (*inc)(void*);
 };
 
-static uint64
-hashid(uint64 id)
+static uint64_t
+hashid(uint64_t id)
 {
 	return id%NHASH;
 }
@@ -66,7 +66,7 @@ freemap(struct intmap *map, void (*destroy)(void*))
 }
 
 static struct intlist**
-llookup(struct intmap *map, uint64 id)
+llookup(struct intmap *map, uint64_t id)
 {
 	struct intlist **lf;
 
@@ -83,7 +83,7 @@ llookup(struct intmap *map, uint64 id)
  * Inc() is expected to have its own locking.
  */
 void*
-lookupkey(struct intmap *map, uint64 id)
+lookupkey(struct intmap *map, uint64_t id)
 {
 	struct intlist *f;
 	void *v;
@@ -99,11 +99,11 @@ lookupkey(struct intmap *map, uint64 id)
 }
 
 void*
-insertkey(struct intmap *map, uint64 id, void *v)
+insertkey(struct intmap *map, uint64_t id, void *v)
 {
 	struct intlist *f;
 	void *ov;
-	uint64 h;
+	uint64_t h;
 
 	// wlock(&map->rwlock);
 	if((f = *llookup(map, id))){
@@ -124,11 +124,11 @@ insertkey(struct intmap *map, uint64 id, void *v)
 }
 
 int
-caninsertkey(struct intmap *map, uint64 id, void *v)
+caninsertkey(struct intmap *map, uint64_t id, void *v)
 {
 	struct intlist *f;
 	int rv;
-	uint64 h;
+	uint64_t h;
 
 	// wlock(&map->rwlock);
 	if(*llookup(map, id))
@@ -147,7 +147,7 @@ caninsertkey(struct intmap *map, uint64 id, void *v)
 }
 
 void*
-deletekey(struct intmap *map, uint64 id)
+deletekey(struct intmap *map, uint64_t id)
 {
 	struct intlist **lf, *f;
 	void *ov;

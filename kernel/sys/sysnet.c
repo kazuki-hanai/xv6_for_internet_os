@@ -6,7 +6,7 @@
 #include "file.h"
 #include "net/socket.h"
 
-uint64
+uint64_t
 sys_socket(void)
 {
   struct file *f;
@@ -41,11 +41,11 @@ bad:
   return -1;
 }
 
-uint64 sys_socklisten() {
+uint64_t sys_socklisten() {
   int fd;
   struct file *f;
   struct sock_cb *scb;
-  uint16 sport;
+  uint16_t sport;
 
   if (argint(1, (int *)&sport) < 0 || argfd(0, &fd, &f) < 0 ) {
     return -1;
@@ -61,11 +61,11 @@ uint64 sys_socklisten() {
 }
 
 
-uint64 sys_sockconnect() {
+uint64_t sys_sockconnect() {
   struct file *f;
   struct sock_cb *scb;
-  uint32 raddr;
-  uint16 dport;
+  uint32_t raddr;
+  uint16_t dport;
 
   if (argint(2, (int *)&dport) < 0 || argint(1, (int *)&raddr) < 0 || argfd(0, 0, &f) < 0) {
     return -1;

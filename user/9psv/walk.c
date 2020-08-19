@@ -4,8 +4,8 @@
 #include "net/byteorder.h"
 #include "fcall.h"
 
-uint8* styx2000_parse_twalk(struct styx2000_fcall *fcall, uint8* buf, int len) {
-  uint8 *ep = buf + len;
+uint8_t* styx2000_parse_twalk(struct styx2000_fcall *fcall, uint8_t* buf, int len) {
+  uint8_t *ep = buf + len;
   fcall->fid = GBIT32(buf);
   buf += 4;
   fcall->newfid = GBIT32(buf);
@@ -21,7 +21,7 @@ uint8* styx2000_parse_twalk(struct styx2000_fcall *fcall, uint8* buf, int len) {
   return buf;
 }
 
-int styx2000_compose_rwalk(struct styx2000_fcall *f, uint8* buf) {
+int styx2000_compose_rwalk(struct styx2000_fcall *f, uint8_t* buf) {
   PBIT16(buf, f->nwqid);
   buf += BIT16SZ;
   for (int i = 0; i < f->nwqid; i++) {

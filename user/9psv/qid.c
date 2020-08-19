@@ -20,15 +20,15 @@ static int is_referenced(struct styx2000_qid *qid) {
   return qid->ref != 0;
 }
 
-static inline uint8 to_qid_type(uint16 t) {
-  uint8 res = 0;
+static inline uint8_t to_qid_type(uint16_t t) {
+  uint8_t res = 0;
   if (t & T_DIR) {
     res |= STYX2000_ODIR;
   }
   return res;
 }
 
-uint64 styx2000_getqidno(char* path) {
+uint64_t styx2000_getqidno(char* path) {
   int fd;
   struct stat st;
 
@@ -44,7 +44,7 @@ uint64 styx2000_getqidno(char* path) {
   }
 
   close(fd);
-  return (uint64)st.ino;
+  return (uint64_t)st.ino;
 }
 
 static struct styx2000_qid* get_qid(struct styx2000_qidpool* qpool, char* path) {
@@ -69,7 +69,7 @@ static struct styx2000_qid* get_qid(struct styx2000_qidpool* qpool, char* path) 
   }
 
   qid->pathname = path;
-  qid->path = (uint64)st.ino;
+  qid->path = (uint64_t)st.ino;
   qid->vers = 0;
   qid->type = to_qid_type(st.type);
   qid->file = 0;
@@ -99,11 +99,11 @@ void styx2000_freeqidpool(struct styx2000_qidpool *qpool) {
   free(qpool);
 }
 
-struct styx2000_qid* styx2000_lookupqid(struct styx2000_qidpool *qpool, uint64 qid) {
+struct styx2000_qid* styx2000_lookupqid(struct styx2000_qidpool *qpool, uint64_t qid) {
   return lookupkey(qpool->map, qid);
 }
 
-struct styx2000_qid* styx2000_removeqid(struct styx2000_qidpool *qpool, uint64 qid) {
+struct styx2000_qid* styx2000_removeqid(struct styx2000_qidpool *qpool, uint64_t qid) {
   return deletekey(qpool->map, qid);
 }
 

@@ -4,9 +4,9 @@
 
 // an Ethernet packet header (start of the packet).
 struct eth {
-  uint8  dhost[ETH_ADDR_LEN];
-  uint8  shost[ETH_ADDR_LEN];
-  uint16 type;
+  uint8_t  dhost[ETH_ADDR_LEN];
+  uint8_t  shost[ETH_ADDR_LEN];
+  uint16_t type;
 } __attribute__((packed));
 
 #define ETH_TYPE_IP  0x0800 // Internet protocol
@@ -14,5 +14,5 @@ struct eth {
 
 #define ETH_MAX_SIZE 1518
 
-void eth_send(struct mbuf *, uint16, uint32 dip);
+void eth_send(struct mbuf *, uint16_t, uint32_t dip);
 void eth_recv(struct mbuf *);

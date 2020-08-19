@@ -100,13 +100,13 @@
 // [E1000 3.3.3]
 struct tx_desc
 {
-  uint64 addr;
-  uint16 length;
-  uint8 cso;
-  uint8 cmd;
-  uint8 status;
-  uint8 css;
-  uint16 special;
+  uint64_t addr;
+  uint16_t length;
+  uint8_t cso;
+  uint8_t cmd;
+  uint8_t status;
+  uint8_t css;
+  uint16_t special;
 };
 
 /* Receive Descriptor bit definitions [E1000 3.2.3.1] */
@@ -116,10 +116,10 @@ struct tx_desc
 // [E1000 3.2.3]
 struct rx_desc
 {
-  uint64 addr;       /* Address of the descriptor's data buffer */
-  uint16 length;     /* Length of data DMAed into data buffer */
-  uint16 csum;       /* Packet checksum */
-  uint8 status;      /* Descriptor status */
-  uint8 errors;      /* Descriptor Errors */
-  uint16 special;
+  uint64_t addr;       /* Address of the descriptor's data buffer */
+  uint16_t length;     /* Length of data DMAed into data buffer */
+  uint16_t csum;       /* Packet checksum */
+  uint8_t status;      /* Descriptor status */
+  uint8_t errors;      /* Descriptor Errors */
+  uint16_t special;
 };

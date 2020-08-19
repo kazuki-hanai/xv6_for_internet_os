@@ -13,11 +13,11 @@
 #include "net/udp.h"
 #include "defs.h"
 
-uint32 local_ip = MAKE_IP_ADDR(192, 168, 22, 2); // qemu's idea of the guest IP
+uint32_t local_ip = MAKE_IP_ADDR(192, 168, 22, 2); // qemu's idea of the guest IP
 
 // sends an IP packet
 void
-ip_send(struct mbuf *m, uint8 proto, uint32 dip)
+ip_send(struct mbuf *m, uint8_t proto, uint32_t dip)
 {
   struct ipv4 *iphdr;
 
@@ -31,7 +31,7 @@ ip_send(struct mbuf *m, uint8 proto, uint32 dip)
   iphdr->ip_dst = htonl(dip);
   iphdr->ip_len = htons(m->len);
   iphdr->ip_ttl = 100;
-  iphdr->ip_sum = htons(cksum16((uint8 *)iphdr, sizeof(*iphdr), 0));
+  iphdr->ip_sum = htons(cksum16((uint8_t *)iphdr, sizeof(*iphdr), 0));
 
   // now on to the ethernet layer
   eth_send(m, ETH_TYPE_IP, dip);
@@ -42,7 +42,7 @@ void
 ip_recv(struct mbuf *m)
 {
   struct ipv4 *iphdr;
-  uint16 len;
+  uint16_t len;
 
   iphdr = mbufpullhdr(m, *iphdr);
   if (!iphdr)
@@ -52,7 +52,7 @@ ip_recv(struct mbuf *m)
   if (iphdr->ip_vhl != ((4 << 4) | (20 >> 2)))
     goto fail;
   // validate IP checksum
-  if (cksum16((uint8 *)iphdr, sizeof(*iphdr), 0))
+  if (cksum16((uint8_t *)iphdr, sizeof(*iphdr), 0))
     goto fail;
   // can't support fragmented IP packets
   if (IP_GET_OFF(htons(iphdr->ip_off)) != 0)

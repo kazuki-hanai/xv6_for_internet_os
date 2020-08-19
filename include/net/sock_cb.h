@@ -36,28 +36,28 @@ struct sock_cb {
   struct spinlock lock;
   int socktype;
   enum sock_cb_state state;
-  uint16 sport;
-  uint32 raddr;
-  uint16 dport;
+  uint16_t sport;
+  uint32_t raddr;
+  uint16_t dport;
   struct {
-    uint32 init_seq; // initial send sequence number
-    uint32 unack; // oldest unacknowledged sequence number
-    uint32 nxt_seq; // next sequence number to be sent
-    uint32 wnd;
-    uint32 wl1;
-    uint32 wl2;
+    uint32_t init_seq; // initial send sequence number
+    uint32_t unack; // oldest unacknowledged sequence number
+    uint32_t nxt_seq; // next sequence number to be sent
+    uint32_t wnd;
+    uint32_t wl1;
+    uint32_t wl2;
   } snd;
   struct {
-    uint32 init_seq; // initial receive sequence number
-    uint32 nxt_seq; // next sequence number to be sent
-    uint32 wnd;
+    uint32_t init_seq; // initial receive sequence number
+    uint32_t nxt_seq; // next sequence number to be sent
+    uint32_t wnd;
   } rcv;
   struct mbufq txq;
   struct mbufq rxq;
-  // uint8 window[TCP_DEFAULT_WINDOW];
+  // uint8_t window[TCP_DEFAULT_WINDOW];
   struct sock_cb *prev;
   struct sock_cb *next;
-  uint8 *wnd;
+  uint8_t *wnd;
   int wnd_idx;
 };
 
@@ -66,12 +66,12 @@ struct sock_cb_entry {
   struct sock_cb *head;
 };
 
-struct sock_cb* alloc_sock_cb(struct file *, uint32, uint16, uint16, int);
+struct sock_cb* alloc_sock_cb(struct file *, uint32_t, uint16_t, uint16_t, int);
 void free_sock_cb(struct sock_cb *);
 void add_sock_cb(struct sock_cb *);
-struct sock_cb* get_sock_cb(struct sock_cb_entry [], uint16);
+struct sock_cb* get_sock_cb(struct sock_cb_entry [], uint16_t);
 int push_to_scb_rxq(struct sock_cb *, struct mbuf *);
 struct mbuf *pop_from_scb_rxq(struct sock_cb *scb);
-int push_to_scb_txq(struct sock_cb *, struct mbuf *, uint32 sndnxt, uint8 flg, uint16 datalen);
+int push_to_scb_txq(struct sock_cb *, struct mbuf *, uint32_t sndnxt, uint8_t flg, uint16_t datalen);
 struct mbuf *pop_from_scb_txq(struct sock_cb *scb);
 int sock_cb_acquiresleep(struct sock_cb *scb);

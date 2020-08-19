@@ -46,17 +46,17 @@ ushort
 xshort(ushort x)
 {
   ushort y;
-  uchar *a = (uchar*)&y;
+  u_char *a = (u_char*)&y;
   a[0] = x;
   a[1] = x >> 8;
   return y;
 }
 
-uint
+uint32_t
 xint(uint x)
 {
   uint y;
-  uchar *a = (uchar*)&y;
+  u_char *a = (u_char*)&y;
   a[0] = x;
   a[1] = x >> 8;
   a[2] = x >> 16;
@@ -230,7 +230,7 @@ rsect(uint sec, void *buf)
   }
 }
 
-uint
+uint32_t
 ialloc(ushort type)
 {
   uint inum = freeinode++;
@@ -247,7 +247,7 @@ ialloc(ushort type)
 void
 balloc(int used)
 {
-  uchar buf[BSIZE];
+  u_char buf[BSIZE];
   int i;
 
   printf("balloc: first %d blocks have been allocated\n", used);

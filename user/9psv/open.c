@@ -4,7 +4,7 @@
 #include "net/byteorder.h"
 #include "fcall.h"
 
-uint8* styx2000_parse_topen(struct styx2000_fcall *fcall, uint8* buf, int len) {
+uint8_t* styx2000_parse_topen(struct styx2000_fcall *fcall, uint8_t* buf, int len) {
   fcall->fid = GBIT32(buf);
   buf += 4;
   fcall->mode = GBIT8(buf);
@@ -12,7 +12,7 @@ uint8* styx2000_parse_topen(struct styx2000_fcall *fcall, uint8* buf, int len) {
   return buf;
 }
 
-int styx2000_compose_ropen(struct styx2000_fcall *f, uint8* buf) {
+int styx2000_compose_ropen(struct styx2000_fcall *f, uint8_t* buf) {
   PBIT8(buf, f->qid->type);
   buf += BIT8SZ;
   PBIT32(buf, f->qid->vers);

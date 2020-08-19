@@ -17,12 +17,12 @@ static struct mbuf *tx_mbuf[TX_RING_SIZE];
 static struct rx_desc rx_ring[RX_RING_SIZE] __attribute__((aligned(16)));
 
 // remember where the e1000's registers live.
-static volatile uint32 *regs;
+static volatile uint32_t *regs;
 
 struct spinlock e1000_lock;
 
 void
-e1000_init(uint32 *xregs)
+e1000_init(uint32_t *xregs)
 {
   int i;
 
@@ -42,7 +42,7 @@ e1000_init(uint32 *xregs)
     tx_ring[i].status = E1000_TXD_STAT_DD;
     tx_mbuf[i] = 0;
   }
-  regs[E1000_TDBAL] = (uint64) tx_ring;
+  regs[E1000_TDBAL] = (uint64_t) tx_ring;
   if(sizeof(tx_ring) % 128 != 0)
     panic("e1000");
   regs[E1000_TDLEN] = sizeof(tx_ring);
@@ -51,9 +51,9 @@ e1000_init(uint32 *xregs)
   // [E1000 14.4] Receive initialization
   memset(rx_ring, 0, sizeof(rx_ring));
   for (i = 0; i < RX_RING_SIZE; i++) {
-    rx_ring[i].addr = (uint64) kalloc();
+    rx_ring[i].addr = (uint64_t) kalloc();
   }
-  regs[E1000_RDBAL] = (uint64) rx_ring;
+  regs[E1000_RDBAL] = (uint64_t) rx_ring;
   if(sizeof(rx_ring) % 128 != 0)
     panic("e1000");
   regs[E1000_RDH] = 0;
@@ -103,8 +103,8 @@ e1000_transmit(struct mbuf *m)
     tx_mbuf[index == 0 ? TX_RING_SIZE-1: index-1] = 0;
   }
 
-  tx_ring[index].addr = (uint64) m->head;
-  tx_ring[index].length = (uint16) m->len;
+  tx_ring[index].addr = (uint64_t) m->head;
+  tx_ring[index].length = (uint16_t) m->len;
   tx_ring[index].cmd = E1000_TXD_CMD_RS | E1000_TXD_CMD_EOP;
   tx_ring[index].status = 0;
 
@@ -123,7 +123,7 @@ e1000_recv(void)
   int index = (regs[E1000_RDT]+1) % RX_RING_SIZE;
   while(rx_ring[index].status & E1000_RXD_STAT_DD) {
     struct mbuf *m = mbufalloc(0);
-    uint16 len = rx_ring[index].length;
+    uint16_t len = rx_ring[index].length;
     rx_ring[index].status ^= E1000_RXD_STAT_DD;
     memmove((void *)m->buf, (void *)rx_ring[index].addr, len);
     mbufput(m, len);

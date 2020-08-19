@@ -12,7 +12,7 @@ void sysnet_test() {
 // get_new_sport()
 // release_sport()
 void sport_test() {
-  uint16 sport[128];
+  uint16_t sport[128];
 
   printf("\t\t[sport test] start...\n");
   for (int k = 0; k < 2; k++) {
