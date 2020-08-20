@@ -1,8 +1,5 @@
 #include "user.h"
-#include "types.h"
 #include "stat.h"
-#include "arch/riscv.h"
-#include "param.h"
 #include "fcntl.h"
 #include "net/byteorder.h"
 #include "net/socket.h"
@@ -289,6 +286,9 @@ int styx2000_composefcall(struct styx2000_fcall *f, uint8_t* buf, int size) {
       }
       break;
     case STYX2000_RWRITE:
+      if (styx2000_compose_rwrite(f, buf) == -1) {
+        return -1;
+      }
       break;
     case STYX2000_RCLUNK:
       if (styx2000_compose_rclunk(f, buf) == -1) {
@@ -366,10 +366,12 @@ void styx2000_debugfcall(struct styx2000_fcall *f) {
       f->qid->type, f->qid->vers, f->qid->path, f->iounit);
     break;
   case STYX2000_TCREATE:
-    printf("<= TCREATE: \n");
+    printf("<= TCREATE: fid: %d, name: %s, perm: %d, mode: %d\n",
+      f->fid, f->name, f->perm, f->mode);
     break;
   case STYX2000_RCREATE:
-    printf("=> RCREATE: \n");
+    printf("=> RCREATE: qid: { type: %d, vers: %d, path: %d }, iounit: %d\n", 
+      f->qid->type, f->qid->vers, f->qid->path, f->iounit);
     break;
   case STYX2000_TREAD:
     printf("<= TREAD: fid: %d, offset: %d, count: %d\n",
@@ -379,10 +381,11 @@ void styx2000_debugfcall(struct styx2000_fcall *f) {
     printf("=> RREAD: count: %d, data: [...]\n", f->count);
     break;
   case STYX2000_TWRITE:
-    printf("<= TWRITE: \n");
+    printf("<= TWRITE: fid: %d, offset: %d, count: %d, data: [...]\n",
+      f->fid, f->offset, f->count);
     break;
   case STYX2000_RWRITE:
-    printf("=> RWRITE: \n");
+    printf("=> RWRITE: count: %d\n", f->count);
     break;
   case STYX2000_TCLUNK:
     printf("<= TCLUNK: fid: %d\n", f->fid);

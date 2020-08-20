@@ -1,18 +1,17 @@
 #pragma once
 
-#include "types.h"
 #include "file.h"
 #include "styx2000.h"
 
-#define VERSION9P "9P2000"
-
+#define STYX2000_TLERROR  6
+#define STYX2000_RLERROR  7
 #define STYX2000_TVERSION 100
 #define STYX2000_RVERSION 101
 #define STYX2000_TAUTH    102
 #define STYX2000_RAUTH    103
 #define STYX2000_TATTACH  104
 #define STYX2000_RATTACH  105
-// #define STYX2000_TERROR   106
+#define STYX2000_TERROR   106
 #define STYX2000_RERROR   107
 #define STYX2000_TFLUSH   108
 #define STYX2000_RFLUSH   109
@@ -70,24 +69,24 @@ struct styx2000_qid;
 
 struct styx2000_filesystem {
   struct styx2000_qid* root;
-  char*                 rootpath;
-  int                   rootpathlen;
+  char*                rootpath;
+  int                  rootpathlen;
 };
 
 struct styx2000_stat {
     /* system-modified data */
     int                   size;
-    uint16_t                type;   /* server type */
-    uint32_t                dev;    /* server subtype */
+    uint16_t              type;   /* server type */
+    uint32_t              dev;    /* server subtype */
     /* file data */
-    uint32_t                mode;   /* permissions */
-    uint32_t                atime;  /* last read time */
-    uint32_t                mtime;  /* last write time */
-    uint64_t                length; /* file length */
-    char                  *name;  /* last element of path */
-    char                  *uid;   /* owner name */
-    char                  *gid;   /* group name */
-    char                  *muid;  /* last modifier name */
+    uint32_t              mode;   /* permissions */
+    uint32_t              atime;  /* last read time */
+    uint32_t              mtime;  /* last write time */
+    uint64_t              length; /* file length */
+    char*                 name;  /* last element of path */
+    char*                 uid;   /* owner name */
+    char*                 gid;   /* group name */
+    char*                 muid;  /* last modifier name */
 };
 
 struct styx2000_file {
@@ -115,7 +114,7 @@ struct styx2000_qid {
 };
 
 struct styx2000_fid {
-  uint64_t                    fid;
+  uint64_t                  fid;
   struct styx2000_qid*      qid;
   struct styx2000_fidpool*  fpool;
 };
@@ -146,8 +145,7 @@ struct styx2000_fcall {
       uint16_t              oldtag;           /* Tflush */
     };
     struct {
-      char                  *ename;           /* Rerror */
-      uint32_t              errornum;	        /* Rerror 9P2000.u extension */
+      uint32_t              ecode;	        /* Lerror 9P2000.L extension */
     };
     struct {
       struct styx2000_qid*  qid;              /* Rattach, Ropen, Rcreate */
@@ -160,13 +158,13 @@ struct styx2000_fcall {
       uint32_t              afid;             /* Tauth, Tattach */
       char                  *uname;           /* Tauth, Tattach */
       char                  *aname;           /* Tauth, Tattach */
-      uint32_t              uidnum;		        /* Tauth, Tattach 9P2000.u extension */
+      uint32_t              uidnum;		        /* Tauth, Tattach 9P2000.L extension */
     };
     struct {
       uint32_t              perm;             /* Tcreate */
       char                  *name;            /* Tcreate */
       uint8_t               mode;             /* Tcreate, Topen */
-      uint8_t               *extension;	      /* Tcreate 9P2000.u extension */
+      uint8_t               *extension;	      /* Tcreate 9P2000.L extension */
     };
     struct {
       uint32_t              newfid;           /* Twalk */
@@ -186,7 +184,7 @@ struct styx2000_fcall {
       uint16_t              parlen;           /* Rstat */
       uint16_t              nstat;            /* Twstat, Rstat */
       struct styx2000_stat* stat;             /* Twstat, Rstat */
-      struct styx2000_qid*  statqid;              /* Twstat, Rstat */
+      struct styx2000_qid*  statqid;          /* Twstat, Rstat */
     };
   };
 };

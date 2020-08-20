@@ -1,7 +1,5 @@
 #pragma once
 
-#include "types.h"
-#include "file.h"
 #include "styx2000.h"
 #include "fcall.h"
 

@@ -13,6 +13,7 @@ STYX2000_SRCS = \
 	$(STYX2000_DIR)/walk.c \
 	$(STYX2000_DIR)/open.c \
 	$(STYX2000_DIR)/read.c \
+	$(STYX2000_DIR)/write.c \
 	$(STYX2000_DIR)/clunk.c \
 	$(STYX2000_DIR)/remove.c \
 	$(STYX2000_DIR)/stat.c \

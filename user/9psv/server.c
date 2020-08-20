@@ -1,8 +1,4 @@
 #include "user.h"
-#include "types.h"
-#include "stat.h"
-#include "arch/riscv.h"
-#include "param.h"
 #include "fcntl.h"
 #include "net/byteorder.h"
 #include "net/socket.h"
@@ -32,12 +28,12 @@ static int respond(struct styx2000_server *srv, struct styx2000_req *req) {
 }
 
 static int rversion(struct styx2000_server *srv, struct styx2000_req *req) {
-  if (strncmp(req->ifcall.version, "9P2000", 6) != 0) {
+  if (strncmp(req->ifcall.version, VERSION9P, 6) != 0) {
     req->ofcall.version = "unknown";
     req->ofcall.msize = req->ifcall.msize;
     return -1;
   }
-  req->ofcall.version = "9P2000";
+  req->ofcall.version = VERSION9P;
   req->ofcall.msize = req->ifcall.msize;
   return 0;
 }
@@ -83,7 +79,7 @@ static int rwalk(struct styx2000_server *srv, struct styx2000_req *req) {
     int qpath = styx2000_getqidno(path);
     if (qpath == -1) {
       req->error = 1;
-      req->ofcall.ename = "cannot open path";
+      req->ofcall.ename = "No such file or directory";
       return 0;
     }
     if ((qid = styx2000_lookupqid(srv->qpool, qpath)) == 0) {
@@ -91,7 +87,7 @@ static int rwalk(struct styx2000_server *srv, struct styx2000_req *req) {
     }
     if (qid == 0) {
       req->error = 1;
-      req->ofcall.ename = "cannot open path";
+      req->ofcall.ename = "No such file or directory";
       return 0;
     } 
     par = qid;
@@ -113,20 +109,20 @@ static int ropen(struct styx2000_server *srv, struct styx2000_req *req) {
   struct styx2000_fid *fid;
   if ((fid = styx2000_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "specified fid was not allocated.";
+    req->ofcall.ename = "No such file or directory";
     return 0;
   }
   
   if (fid->qid == 0) {
     req->error = 1;
-    req->ofcall.ename = "there are no specified file";
+    req->ofcall.ename = "No such file or directory";
     return 0;
   }
 
   struct styx2000_file* file = fid->qid->file;
   if (file == 0) {
     req->error = 1;
-    req->ofcall.ename = "specified file was not opend";
+    req->ofcall.ename = "No such file or directory";
     return 0;
   }
 
@@ -207,6 +203,10 @@ static int rread(struct styx2000_server *srv, struct styx2000_req *req) {
     }
   }
 
+  return 0;
+}
+
+static int rwrite(struct styx2000_server *srv, struct styx2000_req *req) {
   return 0;
 }
 
@@ -306,6 +306,9 @@ int main(int argc, char **argv) {
   while ((req = srv.recv(&srv.conn)) != 0) {
     styx2000_debugfcall(&req->ifcall);
     switch (req->ifcall.type) {
+      case STYX2000_TLERROR:
+        goto fail;
+        break;
       case STYX2000_TVERSION:
         if (rversion(&srv, req) == -1) {
           goto fail;
@@ -339,6 +342,9 @@ int main(int argc, char **argv) {
         }
         break;
       case STYX2000_TWRITE:
+        if (rwrite(&srv, req) == -1) {
+          goto fail;
+        }
         break;
       case STYX2000_TCLUNK:
         if (rclunk(&srv, req) == -1) {

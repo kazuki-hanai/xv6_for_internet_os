@@ -1,6 +1,4 @@
 #include "user.h"
-#include "types.h"
-#include "param.h"
 #include "styx2000.h"
 #include "net/byteorder.h"
 #include "fcall.h"
@@ -68,13 +66,13 @@ struct styx2000_fid* styx2000_allocfid(
 
 static void freefid(struct styx2000_fid* fid) {
   // TODO free qid
-  // struct styx2000_qid *qid = fid->qid;
-  // if (qid != 0) {
-  //   qid->dec(qid);
-  //   if (!qid->is_referenced(qid)) {
-  //     qid = styx2000_removeqid(qid->qpool, qid->path);
-  //     qid->qpool->destroy(qid);
-  //   }
-  // }
+  struct styx2000_qid *qid = fid->qid;
+  if (qid != 0) {
+    qid->dec(qid);
+    if (!qid->is_referenced(qid)) {
+      qid = styx2000_removeqid(qid->qpool, qid->path);
+      qid->qpool->destroy(qid);
+    }
+  }
   free(fid);
 }

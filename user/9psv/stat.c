@@ -1,5 +1,4 @@
 #include "user.h"
-#include "param.h"
 #include "stat.h"
 #include "fcntl.h"
 #include "styx2000.h"

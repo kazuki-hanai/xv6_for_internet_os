@@ -1,5 +1,4 @@
 #include "user.h"
-#include "param.h"
 #include "styx2000.h"
 #include "net/byteorder.h"
 #include "fcall.h"

@@ -1,7 +1,4 @@
 #include "user.h"
-#include "types.h"
-#include "arch/riscv.h"
-#include "param.h"
 #include "net/byteorder.h"
 #include "net/socket.h"
 #include "styx2000.h"
@@ -23,6 +20,8 @@ void styx2000_freereq(struct styx2000_req *req) {
     free(req->ofcall.data);
   } else if (req->ofcall.type == STYX2000_RSTAT) {
     free(req->ofcall.stat);
+  } else if (req->ifcall.type == STYX2000_TWRITE) {
+    free(req->ifcall.data);
   }
   free(req);
 }

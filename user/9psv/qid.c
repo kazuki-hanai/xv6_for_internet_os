@@ -1,6 +1,4 @@
 #include "user.h"
-#include "types.h"
-#include "param.h"
 #include "stat.h"
 #include "fcntl.h"
 #include "styx2000.h"
@@ -19,7 +17,6 @@ static void decqidref(struct styx2000_qid *qid) {
 static int is_referenced(struct styx2000_qid *qid) {
   return qid->ref != 0;
 }
-
 static inline uint8_t to_qid_type(uint16_t t) {
   uint8_t res = 0;
   if (t & T_DIR) {
