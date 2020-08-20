@@ -87,7 +87,16 @@
 // #define	P9_OLOCK	    0x2000	/* or'ed in, lock after opening */
 // #define	P9_OAPPEND	  0x4000	/* or'ed in, append only */
 
+
 #define P9_DEFPERM    0x0777
+
+#define P9_NOFILE       0
+#define P9_NODIRENT     1
+#define P9_FILEEXISTS   2
+#define P9_NOTFOUND     3
+#define P9_NOTDIR       4
+#define P9_UNKNOWNFID   5
+#define P9_PERM         6
 
 #define P9_IS_DIR(t) (t & P9_ODIR)
 
@@ -221,7 +230,7 @@ struct p9_fcall {
       uint16_t        oldtag;               /* Tflush */
     };
     struct {
-      char*           ename;	              /* Rerror */
+      const char*     ename;	              /* Rerror */
     };
     struct {
       struct p9_qid*  qid;                  /* Rattach, Ropen, Rcreate */
@@ -280,8 +289,8 @@ struct p9_req {
 
 // util
 uint8_t*                p9_gstring(uint8_t*, uint8_t*, char **);
-uint8_t*                p9_pstring(uint8_t *, char *);
-uint16_t                p9_stringsz(char *);
+uint8_t*                p9_pstring(uint8_t *, const char *);
+uint16_t                p9_stringsz(const char *);
 uint32_t                p9_getfcallsize(struct p9_fcall*);
 int                     p9_composefcall(struct p9_fcall*, uint8_t*, int);
 void                    p9_debugfcall(struct p9_fcall*);

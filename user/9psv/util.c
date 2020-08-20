@@ -5,7 +5,7 @@
 #include "net/socket.h"
 #include "p9.h"
 
-uint8_t* p9_pstring(uint8_t *p, char *s) {
+uint8_t* p9_pstring(uint8_t *p, const char *s) {
 	uint32_t n;
 
 	if(s == 0){
@@ -36,7 +36,7 @@ uint8_t* p9_gstring(uint8_t* p, uint8_t* ep, char **s) {
   return p;
 }
 
-uint16_t p9_stringsz(char *s) {
+uint16_t p9_stringsz(const char *s) {
 	if(s == 0)
 		return BIT16SZ;
 	return BIT16SZ+strlen(s);

@@ -49,7 +49,7 @@ static int rattach(struct p9_server *srv, struct p9_req *req) {
   if (req->ifcall.afid != P9_NOFID) {
     // TODO: lookup afid and respond error when there is no afid
     req->error = 1;
-    req->ofcall.ename = "not supported afid";
+    req->ofcall.ename = p9_geterrstr(P9_PERM);
     return -1;
   }
 
@@ -64,7 +64,8 @@ static int rwalk(struct p9_server *srv, struct p9_req *req) {
 
   if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "not allocated fid";
+    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
+    return -1;
     return 0;
   }
   par = fid->qid;
@@ -78,7 +79,7 @@ static int rwalk(struct p9_server *srv, struct p9_req *req) {
     int qpath = p9_getqidno(path);
     if (qpath == -1) {
       req->error = 1;
-      req->ofcall.ename = "No such file or directory";
+      req->ofcall.ename = p9_geterrstr(P9_NOFILE);
       return 0;
     }
     if ((qid = p9_lookupqid(srv->qpool, qpath)) == 0) {
@@ -86,7 +87,7 @@ static int rwalk(struct p9_server *srv, struct p9_req *req) {
     }
     if (qid == 0) {
       req->error = 1;
-      req->ofcall.ename = "No such file or directory";
+      req->ofcall.ename = p9_geterrstr(P9_NOFILE);
       return 0;
     } 
     par = qid;
@@ -108,27 +109,27 @@ static int ropen(struct p9_server *srv, struct p9_req *req) {
   struct p9_fid *fid;
   if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "No such file or directory";
+    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
     return 0;
   }
   
   if (fid->qid == 0) {
     req->error = 1;
-    req->ofcall.ename = "No such file or directory";
+    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
     return 0;
   }
 
   struct p9_file* file = fid->qid->file;
   if (file == 0) {
     req->error = 1;
-    req->ofcall.ename = "No such file or directory";
+    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
     return 0;
   }
 
   int mode = P9_IS_DIR(fid->qid->type) ? O_RDONLY : O_RDWR;
   if ((file->fd = open(file->path, mode)) == -1) {
     req->error = 1;
-    req->ofcall.ename = "specified file cannot open";
+    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
     return 0;
   }
 
@@ -142,7 +143,7 @@ static int rclunk(struct p9_server *srv, struct p9_req *req) {
   struct p9_fid *fid;
   if ((fid = p9_removefid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "specified fid was not allocated.";
+    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
     return 0;
   }
   struct p9_file* file = fid->qid->file;
@@ -159,7 +160,7 @@ static int rread(struct p9_server *srv, struct p9_req *req) {
   struct p9_qid *qid;
   if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "specified fid was not allocated.";
+    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
     return 0;
   }
   int count = req->ifcall.count >= P9_MAXMSGLEN ? 4000 : req->ifcall.count;
@@ -192,12 +193,12 @@ static int rread(struct p9_server *srv, struct p9_req *req) {
     struct p9_file* file = qid->file;
     if (file->fd == -1) {
       req->error = 1;
-      req->ofcall.ename = "specified file is not opend.";
+      req->ofcall.ename = p9_geterrstr(P9_NOFILE);
       return 0;
     }
     if ((req->ofcall.count = read(file->fd, req->ofcall.data, count)) < 0) {
       req->error = 1;
-      req->ofcall.ename = "cannot read file.";
+      req->ofcall.ename = p9_geterrstr(P9_NOFILE);
       return 0;
     }
   }
@@ -214,7 +215,7 @@ static int rstat(struct p9_server *srv, struct p9_req *req) {
 
   if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "specified fid was not allocated.";
+    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
     return 0;
   }
 
@@ -223,7 +224,7 @@ static int rstat(struct p9_server *srv, struct p9_req *req) {
   
   if (stat->size < 0) {
     req->error = 1;
-    req->ofcall.ename = "make_stat error.";
+    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
     return 0;
   }
 
@@ -239,13 +240,13 @@ static int rremove(struct p9_server *srv, struct p9_req *req) {
   struct p9_qid *qid;
   if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "there are no specified file";
+    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
     return 0;
   }
   qid = fid->qid;
   if (unlink(qid->pathname) == -1) {
     req->error = 1;
-    req->ofcall.ename = "cannot remove file";
+    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
   }
   srv->fpool->destroy(fid);
   srv->qpool->destroy(qid);
