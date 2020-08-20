@@ -53,13 +53,6 @@ uint32_t p9_getfcallsize(struct p9_fcall *f) {
 
 	switch(f->type)
 	{
-  case P9_RLERROR:
-    n += BIT32SZ;
-    break;
-  case P9_TGETATTR:
-    break;
-  case P9_RGETATTR:
-    break;
 	case P9_TVERSION:
 		n += BIT32SZ;
 		n += p9_stringsz(f->version);
@@ -87,6 +80,8 @@ uint32_t p9_getfcallsize(struct p9_fcall *f) {
 		n += p9_stringsz(f->uname);
 		n += p9_stringsz(f->aname);
 		break;
+  case P9_RERROR:
+    n += p9_stringsz(f->ename);
 	case P9_RATTACH:
 		n += P9_QIDSZ;
 		break;
@@ -168,15 +163,6 @@ int p9_composefcall(struct p9_fcall *f, uint8_t* buf, int size) {
   buf += 2;
 
   switch (f->type) {
-  case P9_TGETATTR:
-    break;
-  case P9_RGETATTR:
-    break;
-  case P9_RLERROR:
-    if (p9_compose_rlerror(f, buf) == -1) {
-      return -1;
-    }
-    break;
   case P9_RVERSION:
     if (p9_compose_rversion(f, buf) == -1) {
       return -1;
@@ -187,6 +173,11 @@ int p9_composefcall(struct p9_fcall *f, uint8_t* buf, int size) {
     break;
   case P9_RATTACH:
     if (p9_compose_rattach(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RERROR:
+    if (p9_compose_rerror(f, buf) == -1) {
       return -1;
     }
     break;
@@ -239,36 +230,6 @@ int p9_composefcall(struct p9_fcall *f, uint8_t* buf, int size) {
 
 void p9_debugfcall(struct p9_fcall *f) {
   switch (f->type) {
-  case P9_RLERROR:
-    printf("=> RLERROR: ecode: %d\n", f->ecode);
-    break;
-  case P9_TGETATTR:
-    printf("=> TGETATTR: fid: %d, req_mask: %x\n", f->fid, f->);
-    break;
-  case P9_RGETATTR:
-    printf("=> RGETATTR: valid: %x, attr: {\n", f->valid);
-    printf("\tqid: { type: %d, vers: %d, path: %d }\n", 
-      f->attrqid->type, f->attrqid->vers, f->attrqid->path);
-    printf("\tmode: %d\n", f->attr->mode);
-    printf("\tuid: %d\n", f->attr->uid);
-    printf("\tgid: %d\n", f->attr->gid);
-    printf("\tulink: %d\n", f->attr->ulink);
-    printf("\trdev: %d\n", f->attr->rdev);
-    printf("\tsize: %d\n", f->attr->size);
-    printf("\tblksize: %d\n", f->attr->blksize);
-    printf("\tblocks: %d\n", f->attr->blocks);
-    printf("\tatime_sec: %d\n", f->attr->atime_sec);
-    printf("\tatime_nsec: %d\n", f->attr->atime_nsec);
-    printf("\tmtime_sec: %d\n", f->attr->mtime_sec);
-    printf("\tmtime_nsec: %d\n", f->attr->mtime_nsec);
-    printf("\tctime_sec: %d\n", f->attr->ctime_sec);
-    printf("\tctime_nsec: %d\n", f->attr->ctime_nsec);
-    printf("\tbtime_sec: %d\n", f->attr->btime_sec);
-    printf("\tbtime_nsec: %d\n", f->attr->btime_nsec);
-    printf("\tgen: %d\n", f->attr->gen);
-    printf("\tdata_ver: %d\n", f->attr->data_ver);
-    printf("}\n");
-    break;
   case P9_TVERSION:
     printf("<= TVERSION: %s\n", f->version);
     break;
@@ -289,6 +250,8 @@ void p9_debugfcall(struct p9_fcall *f) {
     printf("=> RATTACH: qid { type: %d, vers: %d, path: %d }\n",
       f->qid->type, f->qid->vers, f->qid->path);
     break;
+  case P9_RERROR:
+    printf("=> RATTACH: ename: %s\n", f->ename);
   case P9_TWALK:
     printf("<= TWALK: fid: %d, newfid: %d, nwname: %d\n",
       f->fid, f->newfid, f->nwname);

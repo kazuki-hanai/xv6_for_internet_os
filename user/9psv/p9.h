@@ -3,7 +3,7 @@
 #include "file.h"
 #include "net/sock_cb.h"
 
-#define VERSION9P "9P2000.L"
+#define VERSION9P "9P2000"
 
 #define P9_PORT 564
 
@@ -30,10 +30,6 @@
 #define	BIT32SZ		4
 #define	BIT64SZ		8
 
-#define P9_TLERROR  6
-#define P9_RLERROR  7
-#define P9_TGETATTR 24
-#define P9_RGETATTR 25
 #define P9_TVERSION 100
 #define P9_RVERSION 101
 #define P9_TAUTH    102
@@ -97,19 +93,6 @@
 
 struct intmap;
 struct p9_qid;
-
-struct p9_conn {
-  int sockfd;
-  uint8_t* wbuf;
-  uint8_t* rbuf;
-};
-
-struct p9_req {
-  struct p9_fcall ifcall;
-  struct p9_fcall ofcall;
-  struct p9_fid   *fid;
-  int                   error;
-};
 
 struct p9_filesystem {
   struct p9_qid* root;
@@ -238,7 +221,7 @@ struct p9_fcall {
       uint16_t        oldtag;               /* Tflush */
     };
     struct {
-      uint32_t        ecode;	              /* Lerror 9P2000.L extension */
+      char*           ename;	              /* Rerror */
     };
     struct {
       struct p9_qid*  qid;                  /* Rattach, Ropen, Rcreate */
@@ -280,6 +263,19 @@ struct p9_fcall {
       struct p9_qid*  statqid;              /* Twstat, Rstat */
     };
   };
+};
+
+struct p9_conn {
+  int sockfd;
+  uint8_t* wbuf;
+  uint8_t* rbuf;
+};
+
+struct p9_req {
+  struct p9_fcall ifcall;
+  struct p9_fcall ofcall;
+  struct p9_fid   *fid;
+  int                   error;
 };
 
 // util
@@ -329,7 +325,7 @@ uint8_t*                p9_parse_twalk(struct p9_fcall*, uint8_t*, int);
 int                     p9_compose_rwalk(struct p9_fcall*, uint8_t*);
 
 // error
-int                     p9_compose_rlerror(struct p9_fcall*, uint8_t*);
+int                     p9_compose_rerror(struct p9_fcall*, uint8_t*);
 const char*             p9_geterrstr(int key);
 
 // open
