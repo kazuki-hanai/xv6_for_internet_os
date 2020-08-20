@@ -3,14 +3,9 @@
 #include "fcntl.h"
 #include "net/byteorder.h"
 #include "net/socket.h"
-#include "styx2000.h"
-#include "fcall.h"
+#include "p9.h"
 
-int styx2000_is_dir(uint8_t type) {
-  return type & STYX2000_ODIR; 
-}
-
-uint8_t* styx2000_pstring(uint8_t *p, char *s) {
+uint8_t* p9_pstring(uint8_t *p, char *s) {
 	uint32_t n;
 
 	if(s == 0){
@@ -26,7 +21,7 @@ uint8_t* styx2000_pstring(uint8_t *p, char *s) {
 	p += n;
 	return p;
 }
-uint8_t* styx2000_gstring(uint8_t* p, uint8_t* ep, char **s) {
+uint8_t* p9_gstring(uint8_t* p, uint8_t* ep, char **s) {
   int n;
   if (p + 2 > ep)
     return 0;
@@ -41,13 +36,13 @@ uint8_t* styx2000_gstring(uint8_t* p, uint8_t* ep, char **s) {
   return p;
 }
 
-uint16_t styx2000_stringsz(char *s) {
+uint16_t p9_stringsz(char *s) {
 	if(s == 0)
 		return BIT16SZ;
 	return BIT16SZ+strlen(s);
 }
 
-uint32_t styx2000_getfcallsize(struct styx2000_fcall *f) {
+uint32_t p9_getfcallsize(struct p9_fcall *f) {
   uint32_t n;
 	int i;
 
@@ -58,188 +53,113 @@ uint32_t styx2000_getfcallsize(struct styx2000_fcall *f) {
 
 	switch(f->type)
 	{
-	case STYX2000_TVERSION:
+  case P9_RLERROR:
+    n += BIT32SZ;
+    break;
+  case P9_TGETATTR:
+    break;
+  case P9_RGETATTR:
+    break;
+	case P9_TVERSION:
 		n += BIT32SZ;
-		n += styx2000_stringsz(f->version);
+		n += p9_stringsz(f->version);
 		break;
-	case STYX2000_RVERSION:
+	case P9_RVERSION:
 		n += BIT32SZ;
-		n += styx2000_stringsz(f->version);
+		n += p9_stringsz(f->version);
 		break;
-	case STYX2000_RERROR:
-		n += styx2000_stringsz(f->ename);
-		break;
-	case STYX2000_TFLUSH:
+	case P9_TFLUSH:
 		n += BIT16SZ;
 		break;
-	case STYX2000_RFLUSH:
+	case P9_RFLUSH:
 		break;
-	case STYX2000_TAUTH:
+	case P9_TAUTH:
 		n += BIT32SZ;
-		n += styx2000_stringsz(f->uname);
-		n += styx2000_stringsz(f->aname);
+		n += p9_stringsz(f->uname);
+		n += p9_stringsz(f->aname);
 		break;
-  case STYX2000_RAUTH:
-		n += STYX2000_QIDSZ;
+  case P9_RAUTH:
+		n += P9_QIDSZ;
 		break;
-	case STYX2000_TATTACH:
+	case P9_TATTACH:
 		n += BIT32SZ;
 		n += BIT32SZ;
-		n += styx2000_stringsz(f->uname);
-		n += styx2000_stringsz(f->aname);
+		n += p9_stringsz(f->uname);
+		n += p9_stringsz(f->aname);
 		break;
-	case STYX2000_RATTACH:
-		n += STYX2000_QIDSZ;
+	case P9_RATTACH:
+		n += P9_QIDSZ;
 		break;
-	case STYX2000_TWALK:
+	case P9_TWALK:
 		n += BIT32SZ;
 		n += BIT32SZ;
 		n += BIT16SZ;
 		for(i=0; i<f->nwname; i++)
-			n += styx2000_stringsz(f->wname[i]);
+			n += p9_stringsz(f->wname[i]);
 		break;
-	case STYX2000_RWALK:
+	case P9_RWALK:
 		n += BIT16SZ;
-		n += f->nwqid*STYX2000_QIDSZ;
+		n += f->nwqid*P9_QIDSZ;
 		break;
-	case STYX2000_TOPEN:
+	case P9_TOPEN:
 		n += BIT32SZ;
 		n += BIT8SZ;
 		break;
-	case STYX2000_TCREATE:
+	case P9_TCREATE:
 		n += BIT32SZ;
-		n += styx2000_stringsz(f->name);
+		n += p9_stringsz(f->name);
 		n += BIT32SZ;
 		n += BIT8SZ;
 		break;
-	case STYX2000_ROPEN:
-	case STYX2000_RCREATE:
-		n += STYX2000_QIDSZ;
+	case P9_ROPEN:
+	case P9_RCREATE:
+		n += P9_QIDSZ;
 		n += BIT32SZ;
 		break;
-	case STYX2000_TWRITE:
+	case P9_TWRITE:
 		n += BIT32SZ;
 		n += BIT64SZ;
 		n += BIT32SZ;
 		n += f->count;
 		break;
-	case STYX2000_RWRITE:
+	case P9_RWRITE:
 		n += BIT32SZ;
 		break;
-	case STYX2000_TREAD:
+	case P9_TREAD:
 		n += BIT32SZ;
 		n += BIT64SZ;
 		n += BIT32SZ;
 		break;
-	case STYX2000_RREAD:
+	case P9_RREAD:
 		n += BIT32SZ;
 		n += f->count;
 		break;
-	case STYX2000_TCLUNK:
-	case STYX2000_TREMOVE:
+	case P9_TCLUNK:
+	case P9_TREMOVE:
 		n += BIT32SZ;
 		break;
-	case STYX2000_RREMOVE:
-	case STYX2000_RCLUNK:
+	case P9_RREMOVE:
+	case P9_RCLUNK:
 		break;
-	case STYX2000_TSTAT:
+	case P9_TSTAT:
 		n += BIT32SZ;
 		break;
-	case STYX2000_RSTAT:
+	case P9_RSTAT:
 		n += BIT16SZ;
 		n += f->parlen;
 		break;
-	case STYX2000_TWSTAT:
+	case P9_TWSTAT:
 		n += BIT32SZ;
 		n += BIT16SZ;
 		n += f->nstat;
 		break;
-	case STYX2000_RWSTAT:
+	case P9_RWSTAT:
 		break;
 	}
 	return n;
 }
 
-static uint8_t* parse_hdr(struct styx2000_fcall *fcall, uint8_t* buf) {
-  fcall->size = GBIT32(buf);
-  buf += 4;
-  fcall->type = GBIT8(buf);
-  buf += 1;
-  fcall->tag = GBIT16(buf);
-  buf += 2;
-  return buf;
-}
-
-struct styx2000_req* styx2000_parsefcall(uint8_t* buf, int size) {
-  if (buf == 0) {
-    return 0;
-  }
-  if (size < STYX2000_HDR_SIZE) {
-    return 0;
-  }
-
-  struct styx2000_req *req = styx2000_allocreq();
-  if (req == 0) {
-    return 0;
-  }
-  memset(req, 0, sizeof *req);
-  struct styx2000_fcall *ifcall = &req->ifcall;
-
-  buf = parse_hdr(ifcall, buf);
-  int mlen = ifcall->size - STYX2000_HDR_SIZE;
-
-  switch (ifcall->type) {
-    case STYX2000_TVERSION:
-      buf = styx2000_parse_tversion(ifcall, buf, mlen);
-      break;
-    case STYX2000_TAUTH:
-      break;
-    case STYX2000_TATTACH:
-      buf = styx2000_parse_tattach(ifcall, buf, mlen);
-      break;
-    case STYX2000_TWALK:
-      buf = styx2000_parse_twalk(ifcall, buf, mlen);
-      break;
-    case STYX2000_TOPEN:
-      buf = styx2000_parse_topen(ifcall, buf, mlen);
-      break;
-    case STYX2000_TFLUSH:
-      break;
-    case STYX2000_TCREATE:
-      break;
-    case STYX2000_TREAD:
-      buf = styx2000_parse_tread(ifcall, buf, mlen);
-      break;
-    case STYX2000_TWRITE:
-      break;
-    case STYX2000_TCLUNK:
-      buf = styx2000_parse_tclunk(ifcall, buf, mlen);
-      break;
-    case STYX2000_TREMOVE:
-      buf = styx2000_parse_tremove(ifcall, buf, mlen);
-      break;
-    case STYX2000_TSTAT:
-      buf = styx2000_parse_tstat(ifcall, buf, mlen);
-      break;
-    case STYX2000_TWSTAT:
-      break;
-    default:
-      goto fail;
-  }
-
-  if (buf == 0) {
-    goto fail;
-  }
-
-  return req;
-
-fail:
-  if (req)
-    styx2000_freereq(req);
-  return 0;
-}
-
-int styx2000_composefcall(struct styx2000_fcall *f, uint8_t* buf, int size) {
+int p9_composefcall(struct p9_fcall *f, uint8_t* buf, int size) {
   PBIT32(buf, f->size);
   buf += 4;
   PBIT8(buf, f->type);
@@ -248,161 +168,192 @@ int styx2000_composefcall(struct styx2000_fcall *f, uint8_t* buf, int size) {
   buf += 2;
 
   switch (f->type) {
-    case STYX2000_RVERSION:
-      if (styx2000_compose_rversion(f, buf) == -1) {
-        return -1;
-      }
-      break;
-    case STYX2000_RAUTH:
-      return 0;
-      break;
-    case STYX2000_RATTACH:
-      if (styx2000_compose_rattach(f, buf) == -1) {
-        return -1;
-      }
-      break;
-    case STYX2000_RWALK:
-      if (styx2000_compose_rwalk(f, buf) == -1) {
-        return -1;
-      }
-      break;
-    case STYX2000_RERROR:
-      if (styx2000_compose_rerror(f, buf) == -1) {
-        return -1;
-      }
-      break;
-    case STYX2000_ROPEN:
-      if (styx2000_compose_ropen(f, buf) == -1) {
-        return -1;
-      }
-      break;
-    case STYX2000_RFLUSH:
-      break;
-    case STYX2000_RCREATE:
-      break;
-    case STYX2000_RREAD:
-      if (styx2000_compose_rread(f, buf) == -1) {
-        return -1;
-      }
-      break;
-    case STYX2000_RWRITE:
-      if (styx2000_compose_rwrite(f, buf) == -1) {
-        return -1;
-      }
-      break;
-    case STYX2000_RCLUNK:
-      if (styx2000_compose_rclunk(f, buf) == -1) {
-        return -1;
-      }
-      break;
-    case STYX2000_RREMOVE:
-      if (styx2000_compose_rremove(f, buf) == -1) {
-        return -1;
-      }
-      break;
-    case STYX2000_RSTAT:
-      if (styx2000_compose_rstat(f, buf) == -1) {
-        return -1;
-      }
-      break;
-    case STYX2000_RWSTAT:
-      break;
-    default:
+  case P9_TGETATTR:
+    break;
+  case P9_RGETATTR:
+    break;
+  case P9_RLERROR:
+    if (p9_compose_rlerror(f, buf) == -1) {
       return -1;
+    }
+    break;
+  case P9_RVERSION:
+    if (p9_compose_rversion(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RAUTH:
+    return 0;
+    break;
+  case P9_RATTACH:
+    if (p9_compose_rattach(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RWALK:
+    if (p9_compose_rwalk(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_ROPEN:
+    if (p9_compose_ropen(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RFLUSH:
+    break;
+  case P9_RCREATE:
+    break;
+  case P9_RREAD:
+    if (p9_compose_rread(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RWRITE:
+    if (p9_compose_rwrite(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RCLUNK:
+    if (p9_compose_rclunk(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RREMOVE:
+    if (p9_compose_rremove(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RSTAT:
+    if (p9_compose_rstat(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RWSTAT:
+    break;
+  default:
+    return -1;
   }
   return 0;
 }
 
-void styx2000_debugfcall(struct styx2000_fcall *f) {
+void p9_debugfcall(struct p9_fcall *f) {
   switch (f->type) {
-  case STYX2000_TVERSION:
+  case P9_RLERROR:
+    printf("=> RLERROR: ecode: %d\n", f->ecode);
+    break;
+  case P9_TGETATTR:
+    printf("=> TGETATTR: fid: %d, req_mask: %x\n", f->fid, f->);
+    break;
+  case P9_RGETATTR:
+    printf("=> RGETATTR: valid: %x, attr: {\n", f->valid);
+    printf("\tqid: { type: %d, vers: %d, path: %d }\n", 
+      f->attrqid->type, f->attrqid->vers, f->attrqid->path);
+    printf("\tmode: %d\n", f->attr->mode);
+    printf("\tuid: %d\n", f->attr->uid);
+    printf("\tgid: %d\n", f->attr->gid);
+    printf("\tulink: %d\n", f->attr->ulink);
+    printf("\trdev: %d\n", f->attr->rdev);
+    printf("\tsize: %d\n", f->attr->size);
+    printf("\tblksize: %d\n", f->attr->blksize);
+    printf("\tblocks: %d\n", f->attr->blocks);
+    printf("\tatime_sec: %d\n", f->attr->atime_sec);
+    printf("\tatime_nsec: %d\n", f->attr->atime_nsec);
+    printf("\tmtime_sec: %d\n", f->attr->mtime_sec);
+    printf("\tmtime_nsec: %d\n", f->attr->mtime_nsec);
+    printf("\tctime_sec: %d\n", f->attr->ctime_sec);
+    printf("\tctime_nsec: %d\n", f->attr->ctime_nsec);
+    printf("\tbtime_sec: %d\n", f->attr->btime_sec);
+    printf("\tbtime_nsec: %d\n", f->attr->btime_nsec);
+    printf("\tgen: %d\n", f->attr->gen);
+    printf("\tdata_ver: %d\n", f->attr->data_ver);
+    printf("}\n");
+    break;
+  case P9_TVERSION:
     printf("<= TVERSION: %s\n", f->version);
     break;
-  case STYX2000_RVERSION:
+  case P9_RVERSION:
     printf("=> RVERSION: %s\n", f->version);
     break;
-  case STYX2000_TAUTH:
+  case P9_TAUTH:
     printf("<= TAUTH: \n");
     break;
-  case STYX2000_RAUTH:
+  case P9_RAUTH:
     printf("=> RAUTH: \n");
     break;
-  case STYX2000_TATTACH:
+  case P9_TATTACH:
     printf("<= TATTACH: fid: %d, afid: %d, uname: %s, aname: %s\n",
       f->fid, f->afid, f->uname, f->aname);
     break;
-  case STYX2000_RATTACH:
+  case P9_RATTACH:
     printf("=> RATTACH: qid { type: %d, vers: %d, path: %d }\n",
       f->qid->type, f->qid->vers, f->qid->path);
     break;
-  case STYX2000_TWALK:
+  case P9_TWALK:
     printf("<= TWALK: fid: %d, newfid: %d, nwname: %d\n",
       f->fid, f->newfid, f->nwname);
     for (int i = 0; i < f->nwname; i++) {
       printf("\twname: %s\n", f->wname[i]);
     }
     break;
-  case STYX2000_RWALK:
+  case P9_RWALK:
     printf("=> RWALK: nwqid: %d\n", f->nwqid);
     for (int i = 0; i < f->nwqid; i++) {
       printf("wqid[%d] { type: %d, vers: %d, path: %d }\n",
         i, f->wqid[i]->type, f->wqid[i]->vers, f->wqid[i]->path);
     }
     break;
-  case STYX2000_RERROR:
-    printf("=> RERROR: ename: %s\n", f->ename);
-    break;
-  case STYX2000_TFLUSH:
+  case P9_TFLUSH:
     printf("<= TFLUSH: \n");
     break;
-  case STYX2000_RFLUSH:
+  case P9_RFLUSH:
     printf("=> RFLUSH: \n");
     break;
-  case STYX2000_TOPEN:
+  case P9_TOPEN:
     printf("<= TOPEN: fid: %d, mode: %d\n", f->fid, f->mode);
     break;
-  case STYX2000_ROPEN:
+  case P9_ROPEN:
     printf("=> ROPEN: qid: { type: %d, vers: %d, path: %d }, iounit: %d\n", 
       f->qid->type, f->qid->vers, f->qid->path, f->iounit);
     break;
-  case STYX2000_TCREATE:
+  case P9_TCREATE:
     printf("<= TCREATE: fid: %d, name: %s, perm: %d, mode: %d\n",
       f->fid, f->name, f->perm, f->mode);
     break;
-  case STYX2000_RCREATE:
+  case P9_RCREATE:
     printf("=> RCREATE: qid: { type: %d, vers: %d, path: %d }, iounit: %d\n", 
       f->qid->type, f->qid->vers, f->qid->path, f->iounit);
     break;
-  case STYX2000_TREAD:
+  case P9_TREAD:
     printf("<= TREAD: fid: %d, offset: %d, count: %d\n",
       f->fid, f->offset, f->count);
     break;
-  case STYX2000_RREAD:
+  case P9_RREAD:
     printf("=> RREAD: count: %d, data: [...]\n", f->count);
     break;
-  case STYX2000_TWRITE:
+  case P9_TWRITE:
     printf("<= TWRITE: fid: %d, offset: %d, count: %d, data: [...]\n",
       f->fid, f->offset, f->count);
     break;
-  case STYX2000_RWRITE:
+  case P9_RWRITE:
     printf("=> RWRITE: count: %d\n", f->count);
     break;
-  case STYX2000_TCLUNK:
+  case P9_TCLUNK:
     printf("<= TCLUNK: fid: %d\n", f->fid);
     break;
-  case STYX2000_RCLUNK:
+  case P9_RCLUNK:
     printf("=> RCLUNK: \n");
     break;
-  case STYX2000_TREMOVE:
+  case P9_TREMOVE:
     printf("<= TREMOVE: fid: %d\n", f->fid);
     break;
-  case STYX2000_RREMOVE:
+  case P9_RREMOVE:
     printf("=> RREMOVE: \n");
     break;
-  case STYX2000_TSTAT:
+  case P9_TSTAT:
     printf("<= TSTAT: fid: %d\n", f->fid);
     break;
-  case STYX2000_RSTAT:
+  case P9_RSTAT:
     printf("=> RSTAT: nstat: %d, stat: {\n", f->nstat);
     printf("\ttype: %d\n", f->stat->type);
     printf("\tdev: %d\n", f->stat->dev);
@@ -418,10 +369,10 @@ void styx2000_debugfcall(struct styx2000_fcall *f) {
     printf("\tmuid: %s\n", f->stat->muid);
     printf("}\n");
     break;
-  case STYX2000_TWSTAT:
+  case P9_TWSTAT:
     printf("<= TWSTAT: \n");
     break;
-  case STYX2000_RWSTAT:
+  case P9_RWSTAT:
     printf("=> RWSTAT: \n");
     break;
   }

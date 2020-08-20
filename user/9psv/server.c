@@ -2,22 +2,22 @@
 #include "fcntl.h"
 #include "net/byteorder.h"
 #include "net/socket.h"
-#include "styx2000.h"
-#include "fcall.h"
-#include "styx2000_server.h"
+#include "p9.h"
+#include "p9_server.h"
+#include "errno.h"
 
-static int respond(struct styx2000_server *srv, struct styx2000_req *req) {
+static int respond(struct p9_server *srv, struct p9_req *req) {
   if (!req->error) {
     req->ofcall.type = req->ifcall.type+1;
   } else {
-    req->ofcall.type = STYX2000_RERROR;
+    req->ofcall.type = P9_RERROR;
   }
-  req->ofcall.size = styx2000_getfcallsize(&req->ofcall);
+  req->ofcall.size = p9_getfcallsize(&req->ofcall);
   req->ofcall.tag = req->ifcall.tag;
 
   // TODO error processing
 
-  if (styx2000_composefcall(&req->ofcall, srv->conn.wbuf, srv->msize) == -1 ) {
+  if (p9_composefcall(&req->ofcall, srv->conn.wbuf, srv->msize) == -1 ) {
     return -1;
   }
 
@@ -27,8 +27,8 @@ static int respond(struct styx2000_server *srv, struct styx2000_req *req) {
   return 0;
 }
 
-static int rversion(struct styx2000_server *srv, struct styx2000_req *req) {
-  if (strncmp(req->ifcall.version, VERSION9P, 6) != 0) {
+static int rversion(struct p9_server *srv, struct p9_req *req) {
+  if (strncmp(req->ifcall.version, VERSION9P, strlen(VERSION9P)) != 0) {
     req->ofcall.version = "unknown";
     req->ofcall.msize = req->ifcall.msize;
     return -1;
@@ -38,19 +38,19 @@ static int rversion(struct styx2000_server *srv, struct styx2000_req *req) {
   return 0;
 }
 
-static int rattach(struct styx2000_server *srv, struct styx2000_req *req) {
-  struct styx2000_qid* root = srv->fs->root;
-  if ((req->fid = styx2000_allocfid(srv->fpool, req->ifcall.fid, root)) == 0) {
+static int rattach(struct p9_server *srv, struct p9_req *req) {
+  struct p9_qid* root = srv->fs->root;
+  if ((req->fid = p9_allocfid(srv->fpool, req->ifcall.fid, root)) == 0) {
     // TODO: error respond
     printf("cannot allocate fid\n");
     return -1;
   }
   // We don't support afid at present. Afid is a special fid provided to prove
   // service has a permission to attach.
-  if (req->ifcall.afid != STYX2000_NOFID) {
+  if (req->ifcall.afid != P9_NOFID) {
     // TODO: lookup afid and respond error when there is no afid
     req->error = 1;
-    req->ofcall.ename = "not supported afid";
+    req->ofcall.ecode = EPERM;
     return -1;
   }
 
@@ -58,14 +58,14 @@ static int rattach(struct styx2000_server *srv, struct styx2000_req *req) {
   return 0;
 }
 
-static int rwalk(struct styx2000_server *srv, struct styx2000_req *req) {
+static int rwalk(struct p9_server *srv, struct p9_req *req) {
   char path[256], *p;
-  struct styx2000_qid *par;
-  struct styx2000_fid *fid;
+  struct p9_qid *par;
+  struct p9_fid *fid;
 
-  if ((fid = styx2000_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
+  if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "not allocated fid";
+    req->ofcall.ecode = EIO;
     return 0;
   }
   par = fid->qid;
@@ -73,28 +73,28 @@ static int rwalk(struct styx2000_server *srv, struct styx2000_req *req) {
   strcpy(path, par->pathname);
   p = path+strlen(par->pathname);
   for (uint32_t i = 0; i < req->ifcall.nwname; i++) {
-    struct styx2000_qid *qid;
+    struct p9_qid *qid;
     strcpy(p, req->ifcall.wname[i]);
     p += strlen(req->ifcall.wname[i]);
-    int qpath = styx2000_getqidno(path);
+    int qpath = p9_getqidno(path);
     if (qpath == -1) {
       req->error = 1;
-      req->ofcall.ename = "No such file or directory";
+      req->ofcall.ecode = ENOENT;
       return 0;
     }
-    if ((qid = styx2000_lookupqid(srv->qpool, qpath)) == 0) {
-      qid = styx2000_allocqid(srv->qpool, par, srv->fs, path);
+    if ((qid = p9_lookupqid(srv->qpool, qpath)) == 0) {
+      qid = p9_allocqid(srv->qpool, par, srv->fs, path);
     }
     if (qid == 0) {
       req->error = 1;
-      req->ofcall.ename = "No such file or directory";
+      req->ofcall.ecode = ENOENT;
       return 0;
     } 
     par = qid;
     req->ofcall.wqid[i] = qid;
   }
   req->ofcall.nwqid = req->ifcall.nwname;
-  if ((req->fid = styx2000_allocfid(
+  if ((req->fid = p9_allocfid(
         srv->fpool,
         req->ifcall.newfid,
         par)) == 0
@@ -105,31 +105,31 @@ static int rwalk(struct styx2000_server *srv, struct styx2000_req *req) {
   return 0;
 }
 
-static int ropen(struct styx2000_server *srv, struct styx2000_req *req) {
-  struct styx2000_fid *fid;
-  if ((fid = styx2000_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
+static int ropen(struct p9_server *srv, struct p9_req *req) {
+  struct p9_fid *fid;
+  if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "No such file or directory";
+    req->ofcall.ecode = ENOENT;
     return 0;
   }
   
   if (fid->qid == 0) {
     req->error = 1;
-    req->ofcall.ename = "No such file or directory";
+    req->ofcall.ecode = ENOENT;
     return 0;
   }
 
-  struct styx2000_file* file = fid->qid->file;
+  struct p9_file* file = fid->qid->file;
   if (file == 0) {
     req->error = 1;
-    req->ofcall.ename = "No such file or directory";
+    req->ofcall.ecode = ENOENT;
     return 0;
   }
 
-  int mode = styx2000_is_dir(fid->qid->type) ? O_RDONLY : O_RDWR;
+  int mode = P9_IS_DIR(fid->qid->type) ? O_RDONLY : O_RDWR;
   if ((file->fd = open(file->path, mode)) == -1) {
     req->error = 1;
-    req->ofcall.ename = "specified file cannot open";
+    req->ofcall.ecode = ENOENT;
     return 0;
   }
 
@@ -139,14 +139,14 @@ static int ropen(struct styx2000_server *srv, struct styx2000_req *req) {
   return 0;
 }
 
-static int rclunk(struct styx2000_server *srv, struct styx2000_req *req) {
-  struct styx2000_fid *fid;
-  if ((fid = styx2000_removefid(srv->fpool, req->ifcall.fid)) == 0) {
+static int rclunk(struct p9_server *srv, struct p9_req *req) {
+  struct p9_fid *fid;
+  if ((fid = p9_removefid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "specified fid was not allocated.";
+    req->ofcall.ecode = EIO;
     return 0;
   }
-  struct styx2000_file* file = fid->qid->file;
+  struct p9_file* file = fid->qid->file;
   if (file->fd != -1) {
     close(file->fd);
     file->fd = -1;
@@ -155,33 +155,33 @@ static int rclunk(struct styx2000_server *srv, struct styx2000_req *req) {
   return 0;
 }
 
-static int rread(struct styx2000_server *srv, struct styx2000_req *req) {
-  struct styx2000_fid *fid;
-  struct styx2000_qid *qid;
-  if ((fid = styx2000_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
+static int rread(struct p9_server *srv, struct p9_req *req) {
+  struct p9_fid *fid;
+  struct p9_qid *qid;
+  if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "specified fid was not allocated.";
+    req->ofcall.ecode = EIO;
     return 0;
   }
-  int count = req->ifcall.count >= STYX2000_MAXMSGLEN ? 4000 : req->ifcall.count;
+  int count = req->ifcall.count >= P9_MAXMSGLEN ? 4000 : req->ifcall.count;
   req->ofcall.data = malloc(count);
 
   qid = fid->qid;
-  if (styx2000_is_dir(qid->type)) {
+  if (P9_IS_DIR(qid->type)) {
     if (req->ifcall.offset > 0) {
       req->ofcall.count = 0;
       return 0;
     }
     // TODO: offset
     // TODO: dir update
-    styx2000_get_dir(qid, srv->fs);
+    p9_get_dir(qid, srv->fs);
     char* dp = req->ofcall.data;
     int sum = 0;
-    struct styx2000_file* file = qid->file;
+    struct p9_file* file = qid->file;
     for (int i = 0; i < file->child_num; i++) {
-      struct styx2000_qid*  chqid   = file->childs[i];
-      struct styx2000_stat* chstat    = styx2000_get_stat(chqid->pathname);
-      styx2000_compose_stat(dp, chstat, chqid);
+      struct p9_qid*  chqid   = file->childs[i];
+      struct p9_stat* chstat    = p9_get_stat(chqid->pathname);
+      p9_compose_stat(dp, chstat, chqid);
       dp += chstat->size+BIT16SZ;
       sum += chstat->size+BIT16SZ;
       free(chstat);
@@ -190,15 +190,15 @@ static int rread(struct styx2000_server *srv, struct styx2000_req *req) {
   // file
   } else {
     // TODO: offset process
-    struct styx2000_file* file = qid->file;
+    struct p9_file* file = qid->file;
     if (file->fd == -1) {
       req->error = 1;
-      req->ofcall.ename = "specified file is not opend.";
+      req->ofcall.ecode = ENOENT;
       return 0;
     }
     if ((req->ofcall.count = read(file->fd, req->ofcall.data, count)) < 0) {
       req->error = 1;
-      req->ofcall.ename = "cannot read file.";
+      req->ofcall.ecode = EIO;
       return 0;
     }
   }
@@ -206,25 +206,27 @@ static int rread(struct styx2000_server *srv, struct styx2000_req *req) {
   return 0;
 }
 
-static int rwrite(struct styx2000_server *srv, struct styx2000_req *req) {
+static int rwrite(struct p9_server *srv, struct p9_req *req) {
+  req->error = 1;
+  req->ofcall.ecode = ENOSYS;
   return 0;
 }
 
-static int rstat(struct styx2000_server *srv, struct styx2000_req *req) {
-  struct styx2000_fid *fid;
+static int rstat(struct p9_server *srv, struct p9_req *req) {
+  struct p9_fid *fid;
 
-  if ((fid = styx2000_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
+  if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "specified fid was not allocated.";
+    req->ofcall.ecode = EIO;
     return 0;
   }
 
-  struct styx2000_file* file = fid->qid->file;
-  struct styx2000_stat* stat = styx2000_get_stat(file->path);
+  struct p9_file* file = fid->qid->file;
+  struct p9_stat* stat = p9_get_stat(file->path);
   
   if (stat->size < 0) {
     req->error = 1;
-    req->ofcall.ename = "make_stat error.";
+    req->ofcall.ecode = ENOSYS;
     return 0;
   }
 
@@ -235,140 +237,140 @@ static int rstat(struct styx2000_server *srv, struct styx2000_req *req) {
   return 0;
 }
 
-static int rremove(struct styx2000_server *srv, struct styx2000_req *req) {
-  struct styx2000_fid *fid;
-  struct styx2000_qid *qid;
-  if ((fid = styx2000_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
+static int rremove(struct p9_server *srv, struct p9_req *req) {
+  struct p9_fid *fid;
+  struct p9_qid *qid;
+  if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
     req->error = 1;
-    req->ofcall.ename = "there are no specified file";
+    req->ofcall.ecode = EIO;
     return 0;
   }
   qid = fid->qid;
   if (unlink(qid->pathname) == -1) {
     req->error = 1;
-    req->ofcall.ename = "cannot remove file";
+    req->ofcall.ecode = EIO;
   }
   srv->fpool->destroy(fid);
   srv->qpool->destroy(qid);
   return 0;
 }
 
-static int start_server(struct styx2000_server *srv) {
-  srv->msize = STYX2000_MAXMSGLEN;
+static int start_server(struct p9_server *srv) {
+  srv->msize = P9_MAXMSGLEN;
   srv->conn.sockfd = socket(SOCK_TCP);
   if (srv->conn.sockfd == -1) {
     printf("socket error!\n");
     return -1;
   }
-  if (listen(srv->conn.sockfd, STYX2000_PORT) == -1) {
+  if (listen(srv->conn.sockfd, P9_PORT) == -1) {
     printf("socket error!\n");
     return -1;
   }
   return 0;
 }
 
-static void stop_server(struct styx2000_server *srv) {
+static void stop_server(struct p9_server *srv) {
   close(srv->conn.sockfd);
   srv->conn.sockfd = 0;
   free(srv->conn.wbuf);
   free(srv->conn.rbuf);
   free(srv->fs);
-  styx2000_freefidpool(srv->fpool);
-  styx2000_freeqidpool(srv->qpool);
+  p9_freefidpool(srv->fpool);
+  p9_freeqidpool(srv->qpool);
 }
 
-static void initserver(struct styx2000_server *srv) {
-  srv->msize = STYX2000_MAXMSGLEN;
+static void initserver(struct p9_server *srv) {
+  srv->msize = P9_MAXMSGLEN;
   srv->conn.wbuf = malloc(srv->msize);
   srv->conn.rbuf = malloc(srv->msize);
-  srv->fpool = styx2000_allocfidpool();
-  srv->qpool = styx2000_allocqidpool();
-  srv->fs = malloc(sizeof(struct styx2000_filesystem));
+  srv->fpool = p9_allocfidpool();
+  srv->qpool = p9_allocqidpool();
+  srv->fs = malloc(sizeof(struct p9_filesystem));
   srv->fs->rootpath = "/";
   srv->fs->rootpathlen = 1;
-  srv->fs->root = styx2000_allocqid(srv->qpool, 0, srv->fs, srv->fs->rootpath);
+  srv->fs->root = p9_allocqid(srv->qpool, 0, srv->fs, srv->fs->rootpath);
   srv->start = start_server;
   srv->stop = stop_server;
-  srv->send = styx2000_sendreq;
-  srv->recv = styx2000_recvreq;
+  srv->send = p9_sendreq;
+  srv->recv = p9_recvreq;
 }
 
 int main(int argc, char **argv) {
   printf("Launch 9p server!\n");
-  struct styx2000_server srv;
+  struct p9_server srv;
   initserver(&srv);
 
   if (srv.start(&srv) == -1) {
     goto fail;
   }
 
-  struct styx2000_req *req;
+  struct p9_req *req;
   while ((req = srv.recv(&srv.conn)) != 0) {
-    styx2000_debugfcall(&req->ifcall);
+    p9_debugfcall(&req->ifcall);
     switch (req->ifcall.type) {
-      case STYX2000_TLERROR:
+      case P9_TLERROR:
         goto fail;
         break;
-      case STYX2000_TVERSION:
+      case P9_TVERSION:
         if (rversion(&srv, req) == -1) {
           goto fail;
         }
         break;
-      case STYX2000_TAUTH:
+      case P9_TAUTH:
         goto fail;
         break;
-      case STYX2000_TATTACH:
+      case P9_TATTACH:
         if (rattach(&srv, req) == -1) {
           goto fail;
         }
         break;
-      case STYX2000_TWALK:
+      case P9_TWALK:
         if (rwalk(&srv, req) == -1) {
           goto fail;
         }
         break;
-      case STYX2000_TOPEN:
+      case P9_TOPEN:
         if (ropen(&srv, req) == -1) {
           goto fail;
         }
         break;
-      case STYX2000_TFLUSH:
+      case P9_TFLUSH:
         break;
-      case STYX2000_TCREATE:
+      case P9_TCREATE:
         break;
-      case STYX2000_TREAD:
+      case P9_TREAD:
         if (rread(&srv, req) == -1) {
           goto fail;
         }
         break;
-      case STYX2000_TWRITE:
+      case P9_TWRITE:
         if (rwrite(&srv, req) == -1) {
           goto fail;
         }
         break;
-      case STYX2000_TCLUNK:
+      case P9_TCLUNK:
         if (rclunk(&srv, req) == -1) {
           goto fail;
         }
         break;
-      case STYX2000_TREMOVE:
+      case P9_TREMOVE:
         if (rremove(&srv, req) == -1) {
           goto fail;
         }
         break;
-      case STYX2000_TSTAT:
+      case P9_TSTAT:
         if (rstat(&srv, req) == -1) {
           goto fail;
         }
         break;
-      case STYX2000_TWSTAT:
+      case P9_TWSTAT:
         break;
       default:
         goto fail;
     }
     respond(&srv, req);
-    styx2000_debugfcall(&req->ofcall);
-    styx2000_freereq(req);
+    p9_debugfcall(&req->ofcall);
+    p9_freereq(req);
     req = 0;
   }
   srv.stop(&srv);

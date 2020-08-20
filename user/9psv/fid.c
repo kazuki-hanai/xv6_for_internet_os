@@ -1,20 +1,19 @@
 #include "user.h"
-#include "styx2000.h"
+#include "p9.h"
 #include "net/byteorder.h"
-#include "fcall.h"
 
-static void freefid(struct styx2000_fid*);
+static void freefid(struct p9_fid*);
 
 static void incfidref(void *v) {
-  struct styx2000_fid *f;
+  struct p9_fid *f;
   f = v;
   if (f) {
     // incref
   }
 }
 
-struct styx2000_fidpool* styx2000_allocfidpool() {
-  struct styx2000_fidpool *fpool;
+struct p9_fidpool* p9_allocfidpool() {
+  struct p9_fidpool *fpool;
   fpool = malloc(sizeof *fpool);
   if (fpool == 0) {
     return 0;
@@ -27,25 +26,25 @@ struct styx2000_fidpool* styx2000_allocfidpool() {
   return fpool;
 }
 
-void styx2000_freefidpool(struct styx2000_fidpool *fpool) {
+void p9_freefidpool(struct p9_fidpool *fpool) {
   freemap(fpool->map, (void (*)(void *))fpool->destroy);
   free(fpool);
 }
 
-struct styx2000_fid* styx2000_lookupfid(struct styx2000_fidpool *fpool, uint64_t fid) {
+struct p9_fid* p9_lookupfid(struct p9_fidpool *fpool, uint64_t fid) {
   return lookupkey(fpool->map, fid);
 }
 
-struct styx2000_fid* styx2000_removefid(struct styx2000_fidpool *fpool, uint64_t fid) {
+struct p9_fid* p9_removefid(struct p9_fidpool *fpool, uint64_t fid) {
   return deletekey(fpool->map, fid);
 }
 
-struct styx2000_fid* styx2000_allocfid(
-  struct styx2000_fidpool* fpool,
+struct p9_fid* p9_allocfid(
+  struct p9_fidpool* fpool,
   uint64_t fid,
-  struct styx2000_qid* qid
+  struct p9_qid* qid
 ) {
-  struct styx2000_fid *f;
+  struct p9_fid *f;
   f = malloc(sizeof *f);
   if (f == 0) {
     return 0;
@@ -64,13 +63,13 @@ struct styx2000_fid* styx2000_allocfid(
   return f;
 }
 
-static void freefid(struct styx2000_fid* fid) {
+static void freefid(struct p9_fid* fid) {
   // TODO free qid
-  struct styx2000_qid *qid = fid->qid;
+  struct p9_qid *qid = fid->qid;
   if (qid != 0) {
     qid->dec(qid);
     if (!qid->is_referenced(qid)) {
-      qid = styx2000_removeqid(qid->qpool, qid->path);
+      qid = p9_removeqid(qid->qpool, qid->path);
       qid->qpool->destroy(qid);
     }
   }

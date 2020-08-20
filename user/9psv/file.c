@@ -1,15 +1,14 @@
 #include "user.h"
 #include "param.h"
-#include "styx2000.h"
+#include "p9.h"
 #include "net/byteorder.h"
-#include "fcall.h"
 
-struct styx2000_file* styx2000_allocfile(
+struct p9_file* p9_allocfile(
   char* path,
-  struct styx2000_filesystem* fs,
-  struct styx2000_qid* parent
+  struct p9_filesystem* fs,
+  struct p9_qid* parent
 ) {
-  struct styx2000_file* file;
+  struct p9_file* file;
   file = malloc(sizeof *file);
   file->fs = fs;
   file->path = path;
@@ -25,7 +24,7 @@ struct styx2000_file* styx2000_allocfile(
   return file;
 }
 
-void styx2000_freefile(struct styx2000_file* file) {
+void p9_freefile(struct p9_file* file) {
   if (file->fd != -1) {
     close(file->fd);
   }

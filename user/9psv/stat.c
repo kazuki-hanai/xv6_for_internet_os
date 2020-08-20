@@ -1,17 +1,16 @@
 #include "user.h"
 #include "stat.h"
 #include "fcntl.h"
-#include "styx2000.h"
+#include "p9.h"
 #include "net/byteorder.h"
-#include "fcall.h"
 
-uint8_t* styx2000_parse_tstat(struct styx2000_fcall *fcall, uint8_t* buf, int len) {
+uint8_t* p9_parse_tstat(struct p9_fcall *fcall, uint8_t* buf, int len) {
   fcall->fid = GBIT32(buf);
   buf += 4;
   return buf;
 }
 
-int styx2000_compose_rstat(struct styx2000_fcall *f, uint8_t* buf) {
+int p9_compose_rstat(struct p9_fcall *f, uint8_t* buf) {
   PBIT16(buf, f->parlen);
   buf += BIT16SZ;
   PBIT16(buf, f->nstat);
@@ -36,14 +35,14 @@ int styx2000_compose_rstat(struct styx2000_fcall *f, uint8_t* buf) {
   buf += BIT32SZ;
   PBIT64(buf, f->stat->length);
   buf += BIT64SZ;
-  buf = styx2000_pstring(buf, f->stat->name);
-  buf = styx2000_pstring(buf, f->stat->uid);
-  buf = styx2000_pstring(buf, f->stat->gid);
-  buf = styx2000_pstring(buf, f->stat->muid);
+  buf = p9_pstring(buf, f->stat->name);
+  buf = p9_pstring(buf, f->stat->uid);
+  buf = p9_pstring(buf, f->stat->gid);
+  buf = p9_pstring(buf, f->stat->muid);
   return 0;
 }
 
-int styx2000_compose_stat(char* data, struct styx2000_stat *stat, struct styx2000_qid *qid) {
+int p9_compose_stat(char* data, struct p9_stat *stat, struct p9_qid *qid) {
   int len = stat->size;
   uint8_t* p = (uint8_t*)data;
   PBIT16(p, len);
@@ -68,15 +67,15 @@ int styx2000_compose_stat(char* data, struct styx2000_stat *stat, struct styx200
   p += BIT32SZ;
   PBIT64(p, stat->length);
   p += BIT64SZ;
-  p = styx2000_pstring(p, stat->name);
-  p = styx2000_pstring(p, stat->uid);
-  p = styx2000_pstring(p, stat->gid);
-  p = styx2000_pstring(p, stat->muid);
+  p = p9_pstring(p, stat->name);
+  p = p9_pstring(p, stat->uid);
+  p = p9_pstring(p, stat->gid);
+  p = p9_pstring(p, stat->muid);
   return p - (uint8_t*)data;
 }
 
-struct styx2000_stat* styx2000_get_stat(char *path) {
-  struct styx2000_stat* stat;
+struct p9_stat* p9_get_stat(char *path) {
+  struct p9_stat* stat;
   struct stat st;
   int fd;
 
@@ -94,7 +93,7 @@ struct styx2000_stat* styx2000_get_stat(char *path) {
   // TODO time, uid, gid
   stat->type = 0;
   stat->dev = st.dev;
-  stat->mode = ((st.type & T_DIR) << 31) + STYX2000_DEFPERM;
+  stat->mode = ((st.type & T_DIR) << 31) + P9_DEFPERM;
   stat->atime = 0;
   stat->mtime = 0;
   stat->length = st.size;
@@ -106,7 +105,7 @@ struct styx2000_stat* styx2000_get_stat(char *path) {
   stat->uid = "guest";
   stat->gid = "guest";
   stat->muid = "";
-  stat->size = STYX2000_RSTAT_DEFLEN - 2 + strlen(stat->name) + 
+  stat->size = P9_RSTAT_DEFLEN - 2 + strlen(stat->name) + 
     strlen(stat->uid) + strlen(stat->gid) +
     strlen(stat->muid) + BIT16SZ * 4;
 

@@ -1,31 +1,30 @@
 #include "user.h"
 #include "stat.h"
 #include "fcntl.h"
-#include "styx2000.h"
+#include "p9.h"
 #include "net/byteorder.h"
-#include "fcall.h"
-#include "styx2000_file.h"
+#include "p9_file.h"
 
-static void freeqid(struct styx2000_qid* qid);
+static void freeqid(struct p9_qid* qid);
 
-static void incqidref(struct styx2000_qid *qid) {
+static void incqidref(struct p9_qid *qid) {
   qid->ref += 1;
 }
-static void decqidref(struct styx2000_qid *qid) {
+static void decqidref(struct p9_qid *qid) {
   qid->ref -= 1;
 }
-static int is_referenced(struct styx2000_qid *qid) {
+static int is_referenced(struct p9_qid *qid) {
   return qid->ref != 0;
 }
 static inline uint8_t to_qid_type(uint16_t t) {
   uint8_t res = 0;
   if (t & T_DIR) {
-    res |= STYX2000_ODIR;
+    res |= P9_ODIR;
   }
   return res;
 }
 
-uint64_t styx2000_getqidno(char* path) {
+uint64_t p9_getqidno(char* path) {
   int fd;
   struct stat st;
 
@@ -44,8 +43,8 @@ uint64_t styx2000_getqidno(char* path) {
   return (uint64_t)st.ino;
 }
 
-static struct styx2000_qid* get_qid(struct styx2000_qidpool* qpool, char* path) {
-  struct styx2000_qid *qid;
+static struct p9_qid* get_qid(struct p9_qidpool* qpool, char* path) {
+  struct p9_qid *qid;
   struct stat st;
   
   int fd;
@@ -77,8 +76,8 @@ static struct styx2000_qid* get_qid(struct styx2000_qidpool* qpool, char* path) 
   return qid;
 }
 
-struct styx2000_qidpool* styx2000_allocqidpool() {
-  struct styx2000_qidpool *qpool;
+struct p9_qidpool* p9_allocqidpool() {
+  struct p9_qidpool *qpool;
   qpool = malloc(sizeof *qpool);
   if (qpool == 0) {
     return 0;
@@ -91,26 +90,26 @@ struct styx2000_qidpool* styx2000_allocqidpool() {
   return qpool;
 }
 
-void styx2000_freeqidpool(struct styx2000_qidpool *qpool) {
+void p9_freeqidpool(struct p9_qidpool *qpool) {
   freemap(qpool->map, (void (*)(void *))qpool->destroy);
   free(qpool);
 }
 
-struct styx2000_qid* styx2000_lookupqid(struct styx2000_qidpool *qpool, uint64_t qid) {
+struct p9_qid* p9_lookupqid(struct p9_qidpool *qpool, uint64_t qid) {
   return lookupkey(qpool->map, qid);
 }
 
-struct styx2000_qid* styx2000_removeqid(struct styx2000_qidpool *qpool, uint64_t qid) {
+struct p9_qid* p9_removeqid(struct p9_qidpool *qpool, uint64_t qid) {
   return deletekey(qpool->map, qid);
 }
 
-struct styx2000_qid* styx2000_allocqid(
-  struct styx2000_qidpool* qpool,
-  struct styx2000_qid* parent,
-  struct styx2000_filesystem* fs,
+struct p9_qid* p9_allocqid(
+  struct p9_qidpool* qpool,
+  struct p9_qid* parent,
+  struct p9_filesystem* fs,
   char* path
 ) {
-  struct styx2000_qid *qid;
+  struct p9_qid *qid;
 
   char *pathname = malloc(strlen(path)+1);
   strcpy(pathname, path);
@@ -118,7 +117,7 @@ struct styx2000_qid* styx2000_allocqid(
 
   qid = get_qid(qpool, pathname);
   
-  qid->file = styx2000_allocfile(pathname, fs, parent);
+  qid->file = p9_allocfile(pathname, fs, parent);
   qid->ref = 1;
   qid->qpool = qpool;
   qid->inc = incqidref;
@@ -132,17 +131,17 @@ struct styx2000_qid* styx2000_allocqid(
   return qid;
 }
 
-static void freeqid(struct styx2000_qid* qid) {
-  styx2000_freefile(qid->file);
+static void freeqid(struct p9_qid* qid) {
+  p9_freefile(qid->file);
   if (qid->pathname != 0) {
     free(qid->pathname);
   }
   free(qid);
 }
 
-int styx2000_get_dir(struct styx2000_qid* qid, struct styx2000_filesystem* fs) {
+int p9_get_dir(struct p9_qid* qid, struct p9_filesystem* fs) {
   struct dirent de;
-  struct styx2000_file* file = qid->file;
+  struct p9_file* file = qid->file;
   char path[256], *p;
   int i = 0;
 
@@ -158,9 +157,9 @@ int styx2000_get_dir(struct styx2000_qid* qid, struct styx2000_filesystem* fs) {
       continue;
     
     strcpy(p, de.name);
-    struct styx2000_qid* nextq;
-    if ((nextq = styx2000_lookupqid(qid->qpool, styx2000_getqidno(path))) == 0) {
-      nextq = styx2000_allocqid(qid->qpool, qid, fs, path);
+    struct p9_qid* nextq;
+    if ((nextq = p9_lookupqid(qid->qpool, p9_getqidno(path))) == 0) {
+      nextq = p9_allocqid(qid->qpool, qid, fs, path);
     }
     file->childs[i] = nextq;
     i++;

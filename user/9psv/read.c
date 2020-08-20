@@ -1,9 +1,8 @@
 #include "user.h"
-#include "styx2000.h"
+#include "p9.h"
 #include "net/byteorder.h"
-#include "fcall.h"
 
-uint8_t* styx2000_parse_tread(struct styx2000_fcall *fcall, uint8_t* buf, int len) {
+uint8_t* p9_parse_tread(struct p9_fcall *fcall, uint8_t* buf, int len) {
   fcall->fid = GBIT32(buf);
   buf += BIT32SZ;
   fcall->offset = GBIT64(buf);
@@ -13,7 +12,7 @@ uint8_t* styx2000_parse_tread(struct styx2000_fcall *fcall, uint8_t* buf, int le
   return buf;
 }
 
-int styx2000_compose_rread(struct styx2000_fcall *f, uint8_t* buf) {
+int p9_compose_rread(struct p9_fcall *f, uint8_t* buf) {
   PBIT32(buf, f->count);
   buf += BIT32SZ;
   for (int i = 0; i < f->count; i++) {
