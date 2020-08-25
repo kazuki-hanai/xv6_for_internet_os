@@ -1,45 +1,80 @@
 #include "user.h"
 #include "stat.h"
 #include "fcntl.h"
-#include "net/byteorder.h"
-#include "net/socket.h"
 #include "p9.h"
 
-uint8_t* p9_pstring(uint8_t *p, const char *s) {
-	uint32_t n;
+int p9_composefcall(struct p9_fcall *f, uint8_t* buf, int size) {
+  PBIT32(buf, f->size);
+  buf += 4;
+  PBIT8(buf, f->type);
+  buf += 1;
+  PBIT16(buf, f->tag);
+  buf += 2;
 
-	if(s == 0){
-		PBIT16(p, 0);
-		p += BIT16SZ;
-		return p;
-	}
-
-	n = strlen(s);
-	PBIT16(p, n);
-	p += BIT16SZ;
-	memmove(p, s, n);
-	p += n;
-	return p;
-}
-uint8_t* p9_gstring(uint8_t* p, uint8_t* ep, char **s) {
-  int n;
-  if (p + 2 > ep)
+  switch (f->type) {
+  case P9_RVERSION:
+    if (p9_compose_rversion(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RAUTH:
     return 0;
-  n = GBIT16(p);
-  p += 1;
-  if (p + n + 1 > ep)
-    return 0;
-  memmove(p, p+1, n);
-  p[n] = '\0';
-  *s = (char *)p;
-  p += n+1;
-  return p;
-}
-
-uint16_t p9_stringsz(const char *s) {
-	if(s == 0)
-		return BIT16SZ;
-	return BIT16SZ+strlen(s);
+    break;
+  case P9_RATTACH:
+    if (p9_compose_rattach(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RERROR:
+    if (p9_compose_rerror(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RWALK:
+    if (p9_compose_rwalk(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_ROPEN:
+    if (p9_compose_ropen(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RFLUSH:
+    break;
+  case P9_RCREATE:
+    break;
+  case P9_RREAD:
+    if (p9_compose_rread(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RWRITE:
+    if (p9_compose_rwrite(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RCLUNK:
+    if (p9_compose_rclunk(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RREMOVE:
+    if (p9_compose_rremove(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RSTAT:
+    if (p9_compose_rstat(f, buf) == -1) {
+      return -1;
+    }
+    break;
+  case P9_RWSTAT:
+    break;
+  default:
+    return -1;
+  }
+  return 0;
 }
 
 uint32_t p9_getfcallsize(struct p9_fcall *f) {
@@ -152,80 +187,6 @@ uint32_t p9_getfcallsize(struct p9_fcall *f) {
 		break;
 	}
 	return n;
-}
-
-int p9_composefcall(struct p9_fcall *f, uint8_t* buf, int size) {
-  PBIT32(buf, f->size);
-  buf += 4;
-  PBIT8(buf, f->type);
-  buf += 1;
-  PBIT16(buf, f->tag);
-  buf += 2;
-
-  switch (f->type) {
-  case P9_RVERSION:
-    if (p9_compose_rversion(f, buf) == -1) {
-      return -1;
-    }
-    break;
-  case P9_RAUTH:
-    return 0;
-    break;
-  case P9_RATTACH:
-    if (p9_compose_rattach(f, buf) == -1) {
-      return -1;
-    }
-    break;
-  case P9_RERROR:
-    if (p9_compose_rerror(f, buf) == -1) {
-      return -1;
-    }
-    break;
-  case P9_RWALK:
-    if (p9_compose_rwalk(f, buf) == -1) {
-      return -1;
-    }
-    break;
-  case P9_ROPEN:
-    if (p9_compose_ropen(f, buf) == -1) {
-      return -1;
-    }
-    break;
-  case P9_RFLUSH:
-    break;
-  case P9_RCREATE:
-    break;
-  case P9_RREAD:
-    if (p9_compose_rread(f, buf) == -1) {
-      return -1;
-    }
-    break;
-  case P9_RWRITE:
-    if (p9_compose_rwrite(f, buf) == -1) {
-      return -1;
-    }
-    break;
-  case P9_RCLUNK:
-    if (p9_compose_rclunk(f, buf) == -1) {
-      return -1;
-    }
-    break;
-  case P9_RREMOVE:
-    if (p9_compose_rremove(f, buf) == -1) {
-      return -1;
-    }
-    break;
-  case P9_RSTAT:
-    if (p9_compose_rstat(f, buf) == -1) {
-      return -1;
-    }
-    break;
-  case P9_RWSTAT:
-    break;
-  default:
-    return -1;
-  }
-  return 0;
 }
 
 void p9_debugfcall(struct p9_fcall *f) {
