@@ -95,6 +95,7 @@ struct p9_req* p9_parsefcall(uint8_t* buf, int size) {
       buf = p9_parse_tread(ifcall, buf, mlen);
       break;
     case P9_TWRITE:
+      buf = p9_parse_twrite(ifcall, buf, mlen);
       break;
     case P9_TCLUNK:
       buf = p9_parse_tclunk(ifcall, buf, mlen);

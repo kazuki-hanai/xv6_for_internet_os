@@ -73,5 +73,6 @@ static void freefid(struct p9_fid* fid) {
       qid->qpool->destroy(qid);
     }
   }
+  p9_removefid(fid->fpool, fid->fid);
   free(fid);
 }
