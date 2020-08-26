@@ -1,7 +1,7 @@
 #include "user.h"
 #include "stat.h"
 #include "fcntl.h"
-#include "p9.h"
+#include "../p9.h"
 
 uint8_t* p9_pstring(uint8_t *p, const char *s) {
 	uint32_t n;

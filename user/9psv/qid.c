@@ -139,9 +139,10 @@ static void freeqid(struct p9_qid* qid) {
   free(qid);
 }
 
-int p9_get_dir(struct p9_qid* qid, struct p9_filesystem* fs) {
+int p9_get_dir(struct p9_qid* qid) {
   struct dirent de;
-  struct p9_file* file = qid->file;
+  struct p9_file* file      = qid->file;
+  struct p9_filesystem* fs  = file->fs;
   char path[256], *p;
   int i = 0;
 

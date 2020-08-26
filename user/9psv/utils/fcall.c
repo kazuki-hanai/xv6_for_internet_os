@@ -1,7 +1,7 @@
 #include "user.h"
 #include "stat.h"
 #include "fcntl.h"
-#include "p9.h"
+#include "../p9.h"
 
 int p9_composefcall(struct p9_fcall *f, uint8_t* buf, int size) {
   PBIT32(buf, f->size);
@@ -117,6 +117,7 @@ uint32_t p9_getfcallsize(struct p9_fcall *f) {
 		break;
   case P9_RERROR:
     n += p9_stringsz(f->ename);
+    break;
 	case P9_RATTACH:
 		n += P9_QIDSZ;
 		break;
@@ -212,7 +213,7 @@ void p9_debugfcall(struct p9_fcall *f) {
       f->qid->type, f->qid->vers, f->qid->path);
     break;
   case P9_RERROR:
-    printf("=> RATTACH: ename: %s\n", f->ename);
+    printf("=> RERROR: ename: %s\n", f->ename);
   case P9_TWALK:
     printf("<= TWALK: fid: %d, newfid: %d, nwname: %d\n",
       f->fid, f->newfid, f->nwname);

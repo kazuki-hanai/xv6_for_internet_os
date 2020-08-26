@@ -87,8 +87,7 @@
 // #define	P9_OLOCK	    0x2000	/* or'ed in, lock after opening */
 // #define	P9_OAPPEND	  0x4000	/* or'ed in, append only */
 
-
-#define P9_DEFPERM    0x0777
+#define P9_DEFPERM    0x1ff
 
 #define P9_NOFILE       0
 #define P9_NODIRENT     1
@@ -97,6 +96,8 @@
 #define P9_NOTDIR       4
 #define P9_UNKNOWNFID   5
 #define P9_PERM         6
+#define P9_BOTCH        7
+#define P9_BADOFFSET    8
 
 #define P9_IS_DIR(t) (t & P9_ODIR)
 
@@ -319,7 +320,7 @@ struct p9_qid*          p9_lookupqid(struct p9_qidpool *qpool, uint64_t qid);
 struct p9_qid*          p9_removeqid(struct p9_qidpool *qpool, uint64_t qid);
 struct p9_qid*          p9_allocqid(
   struct p9_qidpool* qpool, struct p9_qid* parent, struct p9_filesystem* fs, char* path);
-int                     p9_get_dir(struct p9_qid* qid, struct p9_filesystem* fs);
+int                     p9_get_dir(struct p9_qid* qid);
 
 // version
 uint8_t*                p9_parse_tversion(struct p9_fcall*, uint8_t*, int);

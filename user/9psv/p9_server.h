@@ -5,6 +5,7 @@
 #include "p9.h"
 
 struct p9_server {
+  int                   done;
   struct p9_conn        conn;
   int                   msize;
   struct p9_filesystem* fs;

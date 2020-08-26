@@ -8,8 +8,10 @@ static const char* errmap[] = {
 	[P9_FILEEXISTS]   "File exists",
 	[P9_NOTFOUND]     "file not found",
 	[P9_NOTDIR]       "Not a directory",
-  [P9_UNKNOWNFID]   "Unknown fid",
-  [P9_PERM]         "Permission denied"
+  [P9_UNKNOWNFID]   "fid unknown or out of range",
+  [P9_PERM]         "Permission denied",
+  [P9_BOTCH]        "9P protocol botch",
+  [P9_BADOFFSET]    "bad offset in directory read"
 };
 
 const char* p9_geterrstr(int key) {

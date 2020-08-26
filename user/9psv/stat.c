@@ -96,14 +96,14 @@ struct p9_stat* p9_get_stat(char *path) {
   stat->mode = ((st.type & T_DIR) << 31) + P9_DEFPERM;
   stat->atime = 0;
   stat->mtime = 0;
-  stat->length = st.size;
+  stat->length = (st.type & T_DIR) ? 0 : st.size;
   char *p = path+strlen(path);
   while(*p != '/') {
     p--;
   }
   stat->name = ++p;
-  stat->uid = "guest";
-  stat->gid = "guest";
+  stat->uid = "sugerme";
+  stat->gid = "sugerme";
   stat->muid = "";
   stat->size = P9_RSTAT_DEFLEN - 2 + strlen(stat->name) + 
     strlen(stat->uid) + strlen(stat->gid) +

@@ -30,10 +30,10 @@ static int rversion(struct p9_server *srv, struct p9_req *req) {
   if (strncmp(req->ifcall.version, VERSION9P, 6) != 0) {
     req->ofcall.version = "unknown";
     req->ofcall.msize = req->ifcall.msize;
-    return -1;
+    return 0;
   }
   req->ofcall.version = "9P2000";
-  req->ofcall.msize = req->ifcall.msize;
+  req->ofcall.msize = P9_MAXMSGLEN;
   return 0;
 }
 
@@ -155,6 +155,43 @@ static int rclunk(struct p9_server *srv, struct p9_req *req) {
   return 0;
 }
 
+static int read_dir(struct p9_qid* qid, struct p9_req* req, int count) {
+  if (req->ifcall.offset > 0) {
+    req->ofcall.count = 0;
+    return 0;
+  }
+  // TODO: offset
+  // TODO: dir update
+  p9_get_dir(qid);
+  char* dp = req->ofcall.data;
+  int sum = 0;
+  struct p9_file* file = qid->file;
+  for (int i = 0; i < file->child_num; i++) {
+    struct p9_qid*  chqid   = file->childs[i];
+    struct p9_stat* chstat  = p9_get_stat(chqid->pathname);
+    p9_compose_stat(dp, chstat, chqid);
+    dp += chstat->size+BIT16SZ;
+    sum += chstat->size+BIT16SZ;
+    free(chstat);
+  }
+  req->ofcall.count = sum;
+  return 0;
+}
+static int read_file(struct p9_qid* qid, struct p9_req* req, int count) {
+  // TODO: offset process
+  struct p9_file* file = qid->file;
+  if (file->fd == -1) {
+    req->error = 1;
+    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+    return 0;
+  }
+  if ((req->ofcall.count = read(file->fd, req->ofcall.data, count)) < 0) {
+    req->error = 1;
+    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+    return 0;
+  }
+  return 0;
+}
 static int rread(struct p9_server *srv, struct p9_req *req) {
   struct p9_fid *fid;
   struct p9_qid *qid;
@@ -163,50 +200,53 @@ static int rread(struct p9_server *srv, struct p9_req *req) {
     req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
     return 0;
   }
-  int count = req->ifcall.count >= P9_MAXMSGLEN ? 4000 : req->ifcall.count;
+  int count = req->ifcall.count >= (P9_MAXMSGLEN-P9_HDR_SIZE+4) ? P9_MAXMSGLEN-(P9_HDR_SIZE+4) : req->ifcall.count;
   req->ofcall.data = malloc(count);
 
   qid = fid->qid;
   if (P9_IS_DIR(qid->type)) {
-    if (req->ifcall.offset > 0) {
-      req->ofcall.count = 0;
-      return 0;
-    }
-    // TODO: offset
-    // TODO: dir update
-    p9_get_dir(qid, srv->fs);
-    char* dp = req->ofcall.data;
-    int sum = 0;
-    struct p9_file* file = qid->file;
-    for (int i = 0; i < file->child_num; i++) {
-      struct p9_qid*  chqid   = file->childs[i];
-      struct p9_stat* chstat    = p9_get_stat(chqid->pathname);
-      p9_compose_stat(dp, chstat, chqid);
-      dp += chstat->size+BIT16SZ;
-      sum += chstat->size+BIT16SZ;
-      free(chstat);
-    }
-    req->ofcall.count = sum;
-  // file
+    read_dir(qid, req, count);
   } else {
-    // TODO: offset process
-    struct p9_file* file = qid->file;
-    if (file->fd == -1) {
-      req->error = 1;
-      req->ofcall.ename = p9_geterrstr(P9_NOFILE);
-      return 0;
-    }
-    if ((req->ofcall.count = read(file->fd, req->ofcall.data, count)) < 0) {
-      req->error = 1;
-      req->ofcall.ename = p9_geterrstr(P9_NOFILE);
-      return 0;
-    }
+    read_file(qid, req, count);
+  }
+  return 0;
+}
+
+static int rcreate(struct p9_server *srv, struct p9_req *req) {
+  struct p9_fid *fid;
+  if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
+    req->error = 1;
+    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
+    return 0;
   }
 
   return 0;
 }
 
 static int rwrite(struct p9_server *srv, struct p9_req *req) {
+  return 0;
+}
+
+static int rremove(struct p9_server *srv, struct p9_req *req) {
+  struct p9_fid *fid;
+  struct p9_qid *qid;
+  if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
+    req->error = 1;
+    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
+    return 0;
+  }
+  qid = fid->qid;
+  if (unlink(qid->pathname) == -1) {
+    req->error = 1;
+    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+  }
+  srv->fpool->destroy(fid);
+  srv->qpool->destroy(qid);
+  return 0;
+}
+
+static int rflush(struct p9_server *srv, struct p9_req *req) {
+  srv->done = 1;
   return 0;
 }
 
@@ -235,21 +275,7 @@ static int rstat(struct p9_server *srv, struct p9_req *req) {
   return 0;
 }
 
-static int rremove(struct p9_server *srv, struct p9_req *req) {
-  struct p9_fid *fid;
-  struct p9_qid *qid;
-  if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
-    return 0;
-  }
-  qid = fid->qid;
-  if (unlink(qid->pathname) == -1) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
-  }
-  srv->fpool->destroy(fid);
-  srv->qpool->destroy(qid);
+static int rwstat(struct p9_server *srv, struct p9_req *req) {
   return 0;
 }
 
@@ -278,6 +304,7 @@ static void stop_server(struct p9_server *srv) {
 }
 
 static void initserver(struct p9_server *srv) {
+  srv->done = 0;
   srv->msize = P9_MAXMSGLEN;
   srv->conn.wbuf = malloc(srv->msize);
   srv->conn.rbuf = malloc(srv->msize);
@@ -330,8 +357,14 @@ int main(int argc, char **argv) {
         }
         break;
       case P9_TFLUSH:
+        if (rflush(&srv, req) == -1) {
+          goto fail;
+        }
         break;
       case P9_TCREATE:
+        if (rcreate(&srv, req) == -1) {
+          goto fail;
+        }
         break;
       case P9_TREAD:
         if (rread(&srv, req) == -1) {
@@ -359,6 +392,9 @@ int main(int argc, char **argv) {
         }
         break;
       case P9_TWSTAT:
+        if (rwstat(&srv, req) == -1) {
+          goto fail;
+        }
         break;
       default:
         goto fail;
@@ -367,6 +403,9 @@ int main(int argc, char **argv) {
     p9_debugfcall(&req->ofcall);
     p9_freereq(req);
     req = 0;
+
+    if (srv->done)
+      break;
   }
   srv.stop(&srv);
   exit(0);
