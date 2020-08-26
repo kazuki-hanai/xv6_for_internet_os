@@ -181,7 +181,6 @@ static int read_dir(struct p9_qid* qid, struct p9_req* req, int count) {
   }
   // TODO: offset
   // TODO: dir update
-  printf("qid: path: %s\n", qid->pathname);
   if (p9_get_dir(qid) == -1) {
     return -1;
   }

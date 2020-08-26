@@ -159,7 +159,7 @@ int p9_get_dir(struct p9_qid* qid) {
     return -1;
   }
   while(read(fd, &de, sizeof(de)) == sizeof(de)){
-    // TODO: current, parent directory
+    // TODO: fix to show current/parent directories properly
     if(de.inum == 0 || strcmp(de.name, ".") == 0 || strcmp(de.name, "..") == 0)
       continue;
     
