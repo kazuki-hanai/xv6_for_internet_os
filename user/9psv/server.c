@@ -26,6 +26,23 @@ static int respond(struct p9_server *srv, struct p9_req *req) {
   return 0;
 }
 
+static struct p9_qid* get_qid(char* path, struct p9_qid *par) {
+  struct p9_file* parfile;
+  struct p9_qid* qid;
+  parfile = par->file;
+  int qpath = p9_getqidno(path);
+  if (qpath == -1) {
+    return 0;
+  }
+  if ((qid = p9_lookupqid(par->qpool, qpath)) == 0) {
+    qid = p9_allocqid(par->qpool, par, parfile->fs, path);
+  }
+  if (qid == 0) {
+    return 0;
+  } 
+  return qid;
+}
+
 static int rversion(struct p9_server *srv, struct p9_req *req) {
   if (strncmp(req->ifcall.version, VERSION9P, 6) != 0) {
     req->ofcall.version = "unknown";
@@ -72,26 +89,28 @@ static int rwalk(struct p9_server *srv, struct p9_req *req) {
 
   strcpy(path, par->pathname);
   p = path+strlen(par->pathname);
+
+  if (*(p-1) != '/') {
+    *p = '/';
+    p++;
+  }
+
   for (uint32_t i = 0; i < req->ifcall.nwname; i++) {
     struct p9_qid *qid;
     strcpy(p, req->ifcall.wname[i]);
     p += strlen(req->ifcall.wname[i]);
-    int qpath = p9_getqidno(path);
-    if (qpath == -1) {
-      req->error = 1;
-      req->ofcall.ename = p9_geterrstr(P9_NOFILE);
-      return 0;
-    }
-    if ((qid = p9_lookupqid(srv->qpool, qpath)) == 0) {
-      qid = p9_allocqid(srv->qpool, par, srv->fs, path);
-    }
-    if (qid == 0) {
+    if ((qid = get_qid(path, par)) == 0) {
       req->error = 1;
       req->ofcall.ename = p9_geterrstr(P9_NOFILE);
       return 0;
     } 
     par = qid;
     req->ofcall.wqid[i] = qid;
+
+    if (*(p-1) != '/') {
+      *p = '/';
+      p++;
+    }
   }
   req->ofcall.nwqid = req->ifcall.nwname;
   if ((req->fid = p9_allocfid(
@@ -162,7 +181,10 @@ static int read_dir(struct p9_qid* qid, struct p9_req* req, int count) {
   }
   // TODO: offset
   // TODO: dir update
-  p9_get_dir(qid);
+  printf("qid: path: %s\n", qid->pathname);
+  if (p9_get_dir(qid) == -1) {
+    return -1;
+  }
   char* dp = req->ofcall.data;
   int sum = 0;
   struct p9_file* file = qid->file;
@@ -205,8 +227,10 @@ static int rread(struct p9_server *srv, struct p9_req *req) {
 
   qid = fid->qid;
   if (P9_IS_DIR(qid->type)) {
+    printf("dir\n");
     read_dir(qid, req, count);
   } else {
+    printf("file\n");
     read_file(qid, req, count);
   }
   return 0;
@@ -220,6 +244,31 @@ static int rcreate(struct p9_server *srv, struct p9_req *req) {
     return 0;
   }
 
+  char path[256], *p;
+  p = path;
+  strcpy(p, fid->qid->pathname);
+  p += strlen(fid->qid->pathname);
+  
+  if (*(p-1) != '/') {
+    *p = '/';
+    p++;
+  }
+
+  strcpy(p, req->ifcall.name);
+
+  if(mkdir(path) < 0){
+    req->error = 1;
+    req->ofcall.ename = p9_geterrstr(P9_PERM);
+    return 0;
+  }
+
+  struct p9_qid* qid;
+  if ((qid = get_qid(path, fid->qid)) == 0) {
+    req->error = 1;
+    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+    return 0;
+  }
+  req->ofcall.qid = qid;
   return 0;
 }
 
@@ -305,6 +354,7 @@ static void stop_server(struct p9_server *srv) {
 
 static void initserver(struct p9_server *srv) {
   srv->done = 0;
+  srv->debug = 1;
   srv->msize = P9_MAXMSGLEN;
   srv->conn.wbuf = malloc(srv->msize);
   srv->conn.rbuf = malloc(srv->msize);
@@ -331,7 +381,8 @@ int main(int argc, char **argv) {
 
   struct p9_req *req;
   while ((req = srv.recv(&srv.conn)) != 0) {
-    p9_debugfcall(&req->ifcall);
+    if (srv.debug)
+      p9_debugfcall(&req->ifcall);
     switch (req->ifcall.type) {
       case P9_TVERSION:
         if (rversion(&srv, req) == -1) {
@@ -400,11 +451,12 @@ int main(int argc, char **argv) {
         goto fail;
     }
     respond(&srv, req);
-    p9_debugfcall(&req->ofcall);
+    if (srv.debug)
+      p9_debugfcall(&req->ofcall);
     p9_freereq(req);
     req = 0;
 
-    if (srv->done)
+    if (srv.done)
       break;
   }
   srv.stop(&srv);

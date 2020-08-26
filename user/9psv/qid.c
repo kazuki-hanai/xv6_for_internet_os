@@ -124,7 +124,6 @@ struct p9_qid* p9_allocqid(
   qid->dec = decqidref;
   qid->is_referenced = is_referenced;
   if (caninsertkey(qpool->map, qid->path, qid) == 0) {
-  printf("kore\n");
     freeqid(qid);
     return 0;
   }
@@ -149,12 +148,19 @@ int p9_get_dir(struct p9_qid* qid) {
   strcpy(path, qid->pathname);
   p = path + strlen(qid->pathname);
 
+  if (*(p-1) != '/') {
+    *p = '/';
+    p++;
+  }
+  *p = '\0';
+
   int fd;
   if ((fd = open(path, O_RDONLY)) == -1) {
     return -1;
   }
   while(read(fd, &de, sizeof(de)) == sizeof(de)){
-    if(de.inum == 0 || de.inum == 1)
+    // TODO: current, parent directory
+    if(de.inum == 0 || strcmp(de.name, ".") == 0 || strcmp(de.name, "..") == 0)
       continue;
     
     strcpy(p, de.name);

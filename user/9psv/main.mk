@@ -13,6 +13,7 @@ P9_SRCS = \
 	$(P9_DIR)/attach.c \
 	$(P9_DIR)/walk.c \
 	$(P9_DIR)/open.c \
+	$(P9_DIR)/create.c \
 	$(P9_DIR)/read.c \
 	$(P9_DIR)/write.c \
 	$(P9_DIR)/clunk.c \

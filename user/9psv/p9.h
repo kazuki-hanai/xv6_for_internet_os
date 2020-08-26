@@ -356,6 +356,10 @@ int                     p9_compose_rread(struct p9_fcall*, uint8_t*);
 uint8_t*                p9_parse_twrite(struct p9_fcall*, uint8_t*, int);
 int                     p9_compose_rwrite(struct p9_fcall*, uint8_t*);
 
+// create
+uint8_t*                p9_parse_tcreate(struct p9_fcall*, uint8_t*, int);
+int                     p9_compose_rcreate(struct p9_fcall*, uint8_t*);
+
 // clunk
 uint8_t*                p9_parse_tclunk(struct p9_fcall*, uint8_t*, int);
 int                     p9_compose_rclunk(struct p9_fcall*, uint8_t*);

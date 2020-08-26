@@ -103,7 +103,7 @@ struct p9_stat* p9_get_stat(char *path) {
   }
   stat->name = ++p;
   stat->uid = "sugerme";
-  stat->gid = "sugerme";
+  stat->gid = "";
   stat->muid = "";
   stat->size = P9_RSTAT_DEFLEN - 2 + strlen(stat->name) + 
     strlen(stat->uid) + strlen(stat->gid) +

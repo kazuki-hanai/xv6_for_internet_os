@@ -89,6 +89,7 @@ struct p9_req* p9_parsefcall(uint8_t* buf, int size) {
     case P9_TFLUSH:
       break;
     case P9_TCREATE:
+      buf = p9_parse_tcreate(ifcall, buf, mlen);
       break;
     case P9_TREAD:
       buf = p9_parse_tread(ifcall, buf, mlen);

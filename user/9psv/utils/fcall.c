@@ -43,6 +43,9 @@ int p9_composefcall(struct p9_fcall *f, uint8_t* buf, int size) {
   case P9_RFLUSH:
     break;
   case P9_RCREATE:
+    if (p9_compose_rcreate(f, buf) == -1) {
+      return -1;
+    }
     break;
   case P9_RREAD:
     if (p9_compose_rread(f, buf) == -1) {
