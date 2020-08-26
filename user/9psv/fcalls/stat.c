@@ -1,7 +1,7 @@
 #include "user.h"
 #include "stat.h"
 #include "fcntl.h"
-#include "p9.h"
+#include "../p9.h"
 #include "net/byteorder.h"
 
 uint8_t* p9_parse_tstat(struct p9_fcall *fcall, uint8_t* buf, int len) {

@@ -1,5 +1,5 @@
 #include "user.h"
-#include "p9.h"
+#include "../p9.h"
 #include "net/byteorder.h"
 
 static const char* errmap[] = {

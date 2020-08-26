@@ -1,5 +1,5 @@
 #include "user.h"
-#include "p9.h"
+#include "../p9.h"
 #include "net/byteorder.h"
 
 uint8_t* p9_parse_topen(struct p9_fcall *fcall, uint8_t* buf, int len) {

@@ -8,17 +8,17 @@ P9_SRCS = \
 	$(P9_DIR)/file.c \
 	$(P9_DIR)/qid.c \
 	$(P9_DIR)/req.c \
-	$(P9_DIR)/version.c \
-	$(P9_DIR)/error.c \
-	$(P9_DIR)/attach.c \
-	$(P9_DIR)/walk.c \
-	$(P9_DIR)/open.c \
-	$(P9_DIR)/create.c \
-	$(P9_DIR)/read.c \
-	$(P9_DIR)/write.c \
-	$(P9_DIR)/clunk.c \
-	$(P9_DIR)/remove.c \
-	$(P9_DIR)/stat.c \
+	$(P9_DIR)/fcalls/version.c \
+	$(P9_DIR)/fcalls/error.c \
+	$(P9_DIR)/fcalls/attach.c \
+	$(P9_DIR)/fcalls/walk.c \
+	$(P9_DIR)/fcalls/open.c \
+	$(P9_DIR)/fcalls/create.c \
+	$(P9_DIR)/fcalls/read.c \
+	$(P9_DIR)/fcalls/write.c \
+	$(P9_DIR)/fcalls/clunk.c \
+	$(P9_DIR)/fcalls/remove.c \
+	$(P9_DIR)/fcalls/stat.c \
 
 P9_OBJS = $(addprefix $(BUILD_DIR)/, $(P9_SRCS:.c=.o))
 P9_DEPS = $(P9_OBJS:.o=.d)
