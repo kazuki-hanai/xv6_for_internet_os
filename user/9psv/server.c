@@ -14,8 +14,6 @@ static int respond(struct p9_server *srv, struct p9_req *req) {
   req->ofcall.size = p9_getfcallsize(&req->ofcall);
   req->ofcall.tag = req->ifcall.tag;
 
-  // TODO error processing
-
   if (p9_composefcall(&req->ofcall, srv->conn.wbuf, srv->msize) == -1 ) {
     return -1;
   }
@@ -244,10 +242,20 @@ static int rcreate(struct p9_server *srv, struct p9_req *req) {
 
   strcpy(p, req->ifcall.name);
 
-  if(mkdir(path) < 0){
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_PERM);
-    return 0;
+  if (req->ifcall.perm & P9_MODE_DIR) {
+    if (mkdir(path) < 0){
+      req->error = 1;
+      req->ofcall.ename = p9_geterrstr(P9_PERM);
+      return 0;
+    }
+  } else {
+    int fd;
+    if ((fd = open(path, O_CREATE)) < 0) {
+      req->error = 1;
+      req->ofcall.ename = p9_geterrstr(P9_PERM);
+      return 0;
+    }
+    close(fd);
   }
 
   struct p9_qid* qid;
@@ -261,6 +269,36 @@ static int rcreate(struct p9_server *srv, struct p9_req *req) {
 }
 
 static int rwrite(struct p9_server *srv, struct p9_req *req) {
+  struct p9_fid* fid;
+  struct p9_file* file;
+  // TODO: offset processing
+  if (req->ifcall.offset != 0) {
+    req->ofcall.count = req->ifcall.count;
+    return 0;
+  }
+
+  if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
+    req->error = 1;
+    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
+    return 0;
+  }
+
+  file = fid->qid->file;
+  if (file->fd == -1) {
+    if ((file->fd = open(file->path, O_WRONLY)) < 0) {
+      req->error = 1;
+      req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+      return 0;
+    }
+  }
+
+  if (write(file->fd, req->ifcall.data, req->ifcall.count) <= 0) {
+    req->error = 1;
+    req->ofcall.ename = p9_geterrstr(P9_BOTCH);
+    return 0;
+  }
+  req->ofcall.count = req->ifcall.count;
+
   return 0;
 }
 

@@ -87,6 +87,8 @@
 // #define	P9_OLOCK	    0x2000	/* or'ed in, lock after opening */
 // #define	P9_OAPPEND	  0x4000	/* or'ed in, append only */
 
+#define P9_MODE_DIR   0x80000000
+
 #define P9_DEFPERM    0x1ff
 
 #define P9_NOFILE       0
@@ -124,47 +126,6 @@ struct p9_stat {
   char*                 uid;   /* owner name */
   char*                 gid;   /* group name */
   char*                 muid;  /* last modifier name */
-};
-
-#define P9_GETATTR_MODE         0x00000001ULL
-#define P9_GETATTR_NLINK        0x00000002ULL
-#define P9_GETATTR_UID          0x00000004ULL
-#define P9_GETATTR_GID          0x00000008ULL
-#define P9_GETATTR_RDEV         0x00000010ULL
-#define P9_GETATTR_ATIME        0x00000020ULL
-#define P9_GETATTR_MTIME        0x00000040ULL
-#define P9_GETATTR_CTIME        0x00000080ULL
-#define P9_GETATTR_INO          0x00000100ULL
-#define P9_GETATTR_SIZE         0x00000200ULL
-#define P9_GETATTR_BLOCKS       0x00000400ULL
-
-#define P9_GETATTR_BTIME        0x00000800ULL
-#define P9_GETATTR_GEN          0x00001000ULL
-#define P9_GETATTR_DATA_VERSION 0x00002000ULL
-
-#define P9_GETATTR_BASIC        0x000007ffULL /* Mask for fields up to BLOCKS */
-#define P9_GETATTR_ALL          0x00003fffULL /* Mask for All fields above */
-
-struct p9_attr {
-  uint32_t              mode;       /* protection */
-  uint32_t              uid;        /* user ID of owner */
-  uint32_t              gid;        /* group ID of owner */
-  uint64_t              ulink;      /* number of hard links */
-  uint64_t              rdev;       /* device ID (if special file) */
-  uint64_t              size;       /* total size, in bytes */
-  uint64_t              blksize;    /* blocksize for file system I/O */
-  uint64_t              blocks;     /* number of 512B blocks allocated */
-  uint64_t              atime_sec;  /* time of last access */
-  uint64_t              atime_nsec;
-  uint64_t              mtime_sec;  /* time of last modification */
-  uint64_t              mtime_nsec;
-  uint64_t              ctime_sec;  /* time of last status change */
-  uint64_t              ctime_nsec;
-  /* reserved fields */
-  uint64_t              btime_sec;
-  uint64_t              btime_nsec;
-  uint64_t              gen;
-  uint64_t              data_ver;
 };
 
 struct p9_file {

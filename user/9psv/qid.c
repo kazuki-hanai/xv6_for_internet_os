@@ -23,26 +23,6 @@ static inline uint8_t to_qid_type(uint16_t t) {
   }
   return res;
 }
-
-uint64_t p9_getqidno(char* path) {
-  int fd;
-  struct stat st;
-
-  if ((fd = open(path, O_RDONLY)) == -1) {
-    printf("[getqidno] cannot open: %s\n", path);
-    return -1;
-  }
-
-  if (fstat(fd, &st) < 0) {
-    printf("[getqidno] cannot stat path: %s\n", path);
-    close(fd);
-    return -1;
-  }
-
-  close(fd);
-  return (uint64_t)st.ino;
-}
-
 static struct p9_qid* get_qid(struct p9_qidpool* qpool, char* path) {
   struct p9_qid *qid;
   struct stat st;
@@ -115,7 +95,9 @@ struct p9_qid* p9_allocqid(
   strcpy(pathname, path);
   pathname[strlen(path)] = 0;
 
-  qid = get_qid(qpool, pathname);
+  if ((qid = get_qid(qpool, pathname)) == 0) {
+    return 0;
+  }
   
   qid->file = p9_allocfile(pathname, fs, parent);
   qid->ref = 1;
@@ -136,6 +118,25 @@ static void freeqid(struct p9_qid* qid) {
     free(qid->pathname);
   }
   free(qid);
+}
+
+uint64_t p9_getqidno(char* path) {
+  int fd;
+  struct stat st;
+
+  if ((fd = open(path, O_RDONLY)) == -1) {
+    printf("[getqidno] cannot open: %s\n", path);
+    return -1;
+  }
+
+  if (fstat(fd, &st) < 0) {
+    printf("[getqidno] cannot stat path: %s\n", path);
+    close(fd);
+    return -1;
+  }
+
+  close(fd);
+  return (uint64_t)st.ino;
 }
 
 int p9_get_dir(struct p9_qid* qid) {
