@@ -4,6 +4,7 @@ P9_SRCS = \
 	$(P9_DIR)/server.c \
 	$(P9_DIR)/utils/string.c \
 	$(P9_DIR)/utils/fcall.c \
+	$(P9_DIR)/utils/util.c \
 	$(P9_DIR)/fid.c \
 	$(P9_DIR)/file.c \
 	$(P9_DIR)/qid.c \

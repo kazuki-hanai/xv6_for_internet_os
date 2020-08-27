@@ -14,10 +14,7 @@ static void incfidref(void *v) {
 
 struct p9_fidpool* p9_allocfidpool() {
   struct p9_fidpool *fpool;
-  fpool = malloc(sizeof *fpool);
-  if (fpool == 0) {
-    return 0;
-  }
+  fpool = p9malloc(sizeof *fpool);
   fpool->destroy = freefid;
   if ((fpool->map = allocmap(incfidref)) == 0) {
     free(fpool);
@@ -45,10 +42,7 @@ struct p9_fid* p9_allocfid(
   struct p9_qid* qid
 ) {
   struct p9_fid *f;
-  f = malloc(sizeof *f);
-  if (f == 0) {
-    return 0;
-  }
+  f = p9malloc(sizeof *f);
   f->fid = fid;
   f->qid = qid;
   if (qid != 0) {

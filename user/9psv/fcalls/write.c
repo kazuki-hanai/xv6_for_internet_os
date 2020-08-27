@@ -10,7 +10,7 @@ uint8_t* p9_parse_twrite(struct p9_fcall *f, uint8_t* buf, int len) {
   f->count = GBIT32(buf);
   buf += BIT32SZ;
   f->count = f->count >= P9_MAXMSGLEN ? 4000 : f->count;
-  f->data = malloc(f->count);
+  f->data = p9malloc(f->count);
   for (int i = 0; i < f->count; i++) {
     f->data[i] = GBIT8(buf);
     buf += 1;

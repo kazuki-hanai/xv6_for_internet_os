@@ -83,7 +83,7 @@ struct p9_stat* p9_get_stat(char *path) {
     return 0;
   }
 
-  stat = malloc(sizeof *stat);
+  stat = p9malloc(sizeof *stat);
 
   if (fstat(fd, &st) < 0) {
     fprintf(2, "[get_stat] cannot stat path: %s\n", path);

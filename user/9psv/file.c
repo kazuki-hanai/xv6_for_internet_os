@@ -9,7 +9,7 @@ struct p9_file* p9_allocfile(
   struct p9_qid* parent
 ) {
   struct p9_file* file;
-  file = malloc(sizeof *file);
+  file = p9malloc(sizeof *file);
   file->fs = fs;
   file->path = path;
   file->parent = 0;

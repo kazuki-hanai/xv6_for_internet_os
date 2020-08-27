@@ -5,11 +5,7 @@
 
 struct p9_req* p9_allocreq() {
   struct p9_req *req;
-  req = malloc(sizeof(*req));
-  if (req == 0) {
-    printf("[p9_allocreq] could not allocate");
-    return 0;
-  }
+  req = p9malloc(sizeof(*req));
   memset(req, 0, sizeof *req);
   return req;
 }

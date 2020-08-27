@@ -33,11 +33,7 @@ static struct p9_qid* get_qid(struct p9_qidpool* qpool, char* path) {
     return 0;
   }
 
-  qid = malloc(sizeof *qid);
-  if (qid == 0) {
-    printf("[get_qid] malloc failed\n");
-    return 0;
-  }
+  qid = p9malloc(sizeof *qid);
 
   if (fstat(fd, &st) < 0) {
     printf("[get_qid] cannot stat path: %s\n", path);
@@ -58,10 +54,7 @@ static struct p9_qid* get_qid(struct p9_qidpool* qpool, char* path) {
 
 struct p9_qidpool* p9_allocqidpool() {
   struct p9_qidpool *qpool;
-  qpool = malloc(sizeof *qpool);
-  if (qpool == 0) {
-    return 0;
-  }
+  qpool = p9malloc(sizeof *qpool);
   qpool->destroy = freeqid;
   if ((qpool->map = allocmap(0)) == 0) {
     free(qpool);
@@ -91,7 +84,7 @@ struct p9_qid* p9_allocqid(
 ) {
   struct p9_qid *qid;
 
-  char *pathname = malloc(strlen(path)+1);
+  char *pathname = p9malloc(strlen(path)+1);
   strcpy(pathname, path);
   pathname[strlen(path)] = 0;
 

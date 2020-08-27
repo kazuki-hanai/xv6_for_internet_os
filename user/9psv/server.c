@@ -102,7 +102,7 @@ static int rwalk(struct p9_server *srv, struct p9_req *req) {
       req->error = 1;
       req->ofcall.ename = p9_geterrstr(P9_NOFILE);
       return 0;
-    } 
+    }
     par = qid;
     req->ofcall.wqid[i] = qid;
 
@@ -211,7 +211,7 @@ static int rread(struct p9_server *srv, struct p9_req *req) {
 
   int count = (req->ifcall.count >= (P9_MAXMSGLEN-P9_HDR_SIZE+4)) ?
                 (P9_MAXMSGLEN-(P9_HDR_SIZE+4)) : (req->ifcall.count);
-  req->ofcall.data = malloc(count);
+  req->ofcall.data = p9malloc(count);
 
   qid = fid->qid;
   if (P9_IS_DIR(qid->type)) {
@@ -398,11 +398,11 @@ static void initserver(struct p9_server *srv) {
   srv->done = 0;
   srv->debug = 0;
   srv->msize = P9_MAXMSGLEN;
-  srv->conn.wbuf = malloc(srv->msize);
-  srv->conn.rbuf = malloc(srv->msize);
+  srv->conn.wbuf = p9malloc(srv->msize);
+  srv->conn.rbuf = p9malloc(srv->msize);
   srv->fpool = p9_allocfidpool();
   srv->qpool = p9_allocqidpool();
-  srv->fs = malloc(sizeof(struct p9_filesystem));
+  srv->fs = p9malloc(sizeof(struct p9_filesystem));
   srv->fs->rootpath = "/";
   srv->fs->rootpathlen = 1;
   srv->fs->root = p9_allocqid(srv->qpool, 0, srv->fs, srv->fs->rootpath);
