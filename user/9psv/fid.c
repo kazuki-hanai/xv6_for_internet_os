@@ -49,6 +49,8 @@ struct p9_fid* p9_allocfid(
     qid->inc(qid);
   }
   f->fpool = fpool;
+  f->offset = 0;
+  f->buf = p9malloc(P9_MAXMSGLEN);
   if (caninsertkey(fpool->map, fid, f) == 0) {
     freefid(f);
     return 0;
@@ -68,5 +70,6 @@ static void freefid(struct p9_fid* fid) {
     }
   }
   p9_removefid(fid->fpool, fid->fid);
+  free(fid->buf);
   free(fid);
 }

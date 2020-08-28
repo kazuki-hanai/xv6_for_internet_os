@@ -209,8 +209,7 @@ static int rread(struct p9_server *srv, struct p9_req *req) {
     return 0;
   }
 
-  int count = (req->ifcall.count >= (P9_MAXMSGLEN-P9_HDR_SIZE+4)) ?
-                (P9_MAXMSGLEN-(P9_HDR_SIZE+4)) : (req->ifcall.count);
+  int count = (req->ifcall.count >= P9_MAXDATALEN) ? P9_MAXDATALEN : req->ifcall.count;
   req->ofcall.data = p9malloc(count);
 
   qid = fid->qid;

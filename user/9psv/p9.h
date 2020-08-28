@@ -10,8 +10,9 @@
 #define P9_HDR_SIZE 7
 #define P9_TRVERSION_SIZE 6
 
-#define	P9_QIDSZ	(BIT8SZ+BIT32SZ+BIT64SZ)
-#define P9_MAXMSGLEN 4096
+#define	P9_QIDSZ	      (BIT8SZ+BIT32SZ+BIT64SZ)
+#define P9_MAXMSGLEN    4096
+#define P9_MAXDATALEN   (P9_MAXMSGLEN-(P9_MAXMSGLEN+4))
 
 #define	GBIT8(p)	((p)[0])
 #define	GBIT16(p)	((p)[0]|((p)[1]<<8))
@@ -156,6 +157,8 @@ struct p9_fid {
   uint64_t            fid;
   struct p9_qid*      qid;
   struct p9_fidpool*  fpool;
+  int                 offset;
+  void*               buf;
 };
 
 struct p9_fidpool {
