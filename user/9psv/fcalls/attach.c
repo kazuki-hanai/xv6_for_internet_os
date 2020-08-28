@@ -2,17 +2,17 @@
 #include "../p9.h"
 #include "net/byteorder.h"
 
-uint8_t* p9_parse_tattach(struct p9_fcall *fcall, uint8_t* buf, int len) {
+uint8_t* p9_parse_tattach(struct p9_fcall *f, uint8_t* buf, int len) {
   uint8_t *ep = buf + len;
-  fcall->fid = GBIT32(buf);
+  f->fid = GBIT32(buf);
   buf += 4;
-  fcall->afid = GBIT32(buf);
+  f->afid = GBIT32(buf);
   buf += 4;
-  buf = p9_gstring(buf, ep, &fcall->uname);
+  buf = p9_gstring(buf, ep, &f->uname);
   if (buf == 0) {
     return 0;
   }
-  buf = p9_gstring(buf, ep, &fcall->aname);
+  buf = p9_gstring(buf, ep, &f->aname);
   if (buf == 0) {
     return 0;
   }

@@ -1,5 +1,4 @@
 #include "user.h"
-#include "types.h"
 
 enum {
 	NHASH = 128

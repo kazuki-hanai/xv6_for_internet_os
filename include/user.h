@@ -4,6 +4,7 @@
 
 struct stat;
 struct rtcdate;
+struct intmap;
 
 // system calls
 int fork(void);
