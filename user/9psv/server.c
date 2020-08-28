@@ -146,7 +146,7 @@ static int ropen(struct p9_server *srv, struct p9_req *req) {
   }
 
   int mode = P9_IS_DIR(fid->qid->type) ? O_RDONLY : O_RDWR;
-  if ((file->fd = open(file->path, mode)) == -1) {
+  if ((file->fd = p9open(file->path, mode)) == -1) {
     req->error = 1;
     req->ofcall.ename = p9_geterrstr(P9_NOFILE);
     return 0;
@@ -184,6 +184,15 @@ static int read_dir(struct p9_qid* qid, struct p9_req* req, int count) {
 
   req->ofcall.count = sum;
   return 0;
+}
+static seek(struct p9_fid* fid, int offset) {
+  if (fid->offset > offset) {
+    close(fid->fd);
+  }
+  int diff = fid->offset;
+  while(diff > 0) {
+
+  }
 }
 static int read_file(struct p9_qid* qid, struct p9_req* req, int count) {
   // TODO: offset process
@@ -249,7 +258,7 @@ static int rcreate(struct p9_server *srv, struct p9_req *req) {
     }
   } else {
     int fd;
-    if ((fd = open(path, O_CREATE)) < 0) {
+    if ((fd = p9open(path, O_CREATE)) < 0) {
       req->error = 1;
       req->ofcall.ename = p9_geterrstr(P9_PERM);
       return 0;
@@ -284,7 +293,7 @@ static int rwrite(struct p9_server *srv, struct p9_req *req) {
 
   file = fid->qid->file;
   if (file->fd == -1) {
-    if ((file->fd = open(file->path, O_WRONLY)) < 0) {
+    if ((file->fd = p9open(file->path, O_WRONLY)) < 0) {
       req->error = 1;
       req->ofcall.ename = p9_geterrstr(P9_NOFILE);
       return 0;

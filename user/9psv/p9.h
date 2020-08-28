@@ -260,7 +260,10 @@ uint32_t                p9_getfcallsize(struct p9_fcall*);
 int                     p9_composefcall(struct p9_fcall*, uint8_t*, int);
 void                    p9_debugfcall(struct p9_fcall*);
 int                     p9_is_dir(uint8_t type);
+
+// syscall wrapper
 void*                   p9malloc(int);
+int                     p9open(char* path, int mode);
 
 // req
 struct p9_req*          p9_parsefcall(uint8_t*, int);

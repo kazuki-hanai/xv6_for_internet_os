@@ -8,3 +8,7 @@ void* p9malloc(int size) {
   }
   return a;
 }
+
+int p9open(char* path, int mode) {
+  return open(path, mode);
+}

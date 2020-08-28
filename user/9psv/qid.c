@@ -28,7 +28,7 @@ static struct p9_qid* get_qid(struct p9_qidpool* qpool, char* path) {
   struct stat st;
   
   int fd;
-  if ((fd = open(path, O_RDONLY)) == -1) {
+  if ((fd = p9open(path, O_RDONLY)) == -1) {
     printf("[allocqid] cannot open: %s\n", path);
     return 0;
   }
@@ -117,7 +117,7 @@ uint64_t p9_getqidno(char* path) {
   int fd;
   struct stat st;
 
-  if ((fd = open(path, O_RDONLY)) == -1) {
+  if ((fd = p9open(path, O_RDONLY)) == -1) {
     printf("[getqidno] cannot open: %s\n", path);
     return -1;
   }
@@ -149,7 +149,7 @@ int p9_get_dir(struct p9_qid* qid) {
   *p = '\0';
 
   int fd;
-  if ((fd = open(path, O_RDONLY)) == -1) {
+  if ((fd = p9open(path, O_RDONLY)) == -1) {
     return -1;
   }
   while(read(fd, &de, sizeof(de)) == sizeof(de)){

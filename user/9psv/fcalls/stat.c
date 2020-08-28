@@ -79,7 +79,7 @@ struct p9_stat* p9_get_stat(char *path) {
   struct stat st;
   int fd;
 
-  if ((fd = open(path, O_RDONLY)) == -1) {
+  if ((fd = p9open(path, O_RDONLY)) == -1) {
     return 0;
   }
 
