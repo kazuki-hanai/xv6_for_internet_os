@@ -165,20 +165,29 @@ static int read_dir(struct p9_fid* fid, struct p9_req* req, int count) {
   return 0;
 }
 
-static int lseek(struct p9_fid* fid, int offset) {
+static int to_offset(struct p9_fid* fid, int offset) {
+  if (fid->fd == -1) {
+    return -1;
+  }
   if (fid->offset > offset) {
     close(fid->fd);
-    if ((fid->fd = p9open(fid->qid->pathname, O_RDWR)) < 0) {
+    if ((fid->fd = p9open(fid->file->path, O_RDWR)) < 0) {
       return -1;
     }
     fid->offset = 0;
   }
-  int diff = fid->offset;
+  int diff = offset - fid->offset;
   while(diff > 0) {
-    int size = (diff > P9_MAXDATALEN) ? P9_MAXDATALEN : diff;
+    int bufsize = 256;
+    char buf[bufsize];
+    int size = (diff > bufsize) ? bufsize : diff;
     diff -= size;
-    break;
+    if (read(fid->fd, buf, size) < 0) {
+      return -1;
+    }
   }
+  fid->offset = offset;
+  return 0;
 }
 static int read_file(struct p9_fid* fid, struct p9_req* req, int count) {
   // TODO: offset process
@@ -187,11 +196,17 @@ static int read_file(struct p9_fid* fid, struct p9_req* req, int count) {
     req->ofcall.ename = p9_geterrstr(P9_NOFILE);
     return 0;
   }
+  if (to_offset(fid, req->ifcall.offset) < 0) {
+    req->error = 1;
+    req->ofcall.ename = p9_geterrstr(P9_BOTCH);
+    return 0;
+  }
   if ((req->ofcall.count = read(fid->fd, req->ofcall.data, count)) < 0) {
     req->error = 1;
     req->ofcall.ename = p9_geterrstr(P9_NOFILE);
     return 0;
   }
+  fid->offset += count;
   return 0;
 }
 static int rread(struct p9_server *srv, struct p9_req *req) {
