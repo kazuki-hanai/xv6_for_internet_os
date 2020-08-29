@@ -23,11 +23,11 @@ int p9_compose_rwalk(struct p9_fcall *f, uint8_t* buf) {
   PBIT16(buf, f->nwqid);
   buf += BIT16SZ;
   for (int i = 0; i < f->nwqid; i++) {
-    PBIT8(buf, f->wqid[i]->type);
+    PBIT8(buf, f->wqid[i].type);
     buf += BIT8SZ;
-    PBIT32(buf, f->wqid[i]->vers);
+    PBIT32(buf, f->wqid[i].vers);
     buf += BIT32SZ;
-    PBIT64(buf, f->wqid[i]->path);
+    PBIT64(buf, f->wqid[i].path);
     buf += BIT64SZ;
   }
   return 0;

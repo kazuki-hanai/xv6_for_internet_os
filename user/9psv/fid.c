@@ -36,21 +36,14 @@ struct p9_fid* p9_removefid(struct p9_fidpool *fpool, uint64_t fid) {
   return deletekey(fpool->map, fid);
 }
 
-struct p9_fid* p9_allocfid(
-  struct p9_fidpool* fpool,
-  uint64_t fid,
-  struct p9_qid* qid
-) {
+struct p9_fid* p9_allocfid(struct p9_fidpool* fpool, uint64_t fid, struct p9_file* file) {
   struct p9_fid *f;
   f = p9malloc(sizeof *f);
   f->fid = fid;
-  f->qid = qid;
-  if (qid != 0) {
-    qid->inc(qid);
-  }
+  f->fd = -1;
+  f->file = file;
   f->fpool = fpool;
   f->offset = 0;
-  f->buf = p9malloc(P9_MAXMSGLEN);
   if (caninsertkey(fpool->map, fid, f) == 0) {
     freefid(f);
     return 0;
@@ -60,16 +53,10 @@ struct p9_fid* p9_allocfid(
 }
 
 static void freefid(struct p9_fid* fid) {
-  // TODO free qid
-  struct p9_qid *qid = fid->qid;
-  if (qid != 0) {
-    qid->dec(qid);
-    if (!qid->is_referenced(qid)) {
-      qid = p9_removeqid(qid->qpool, qid->path);
-      qid->qpool->destroy(qid);
-    }
-  }
+  p9_freefile(fid->file);
   p9_removefid(fid->fpool, fid->fid);
-  free(fid->buf);
+  if (fid->fd != -1) {
+    close(fid->fd);
+  }
   free(fid);
 }

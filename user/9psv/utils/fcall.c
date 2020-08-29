@@ -3,6 +3,13 @@
 #include "fcntl.h"
 #include "../p9.h"
 
+uint8_t to_qid_type(uint16_t t) {
+  uint8_t res = 0;
+  if (t & T_DIR)
+    res |= P9_ODIR;
+  return res;
+}
+
 int p9_composefcall(struct p9_fcall *f, uint8_t* buf, int size) {
   PBIT32(buf, f->size);
   buf += 4;
@@ -213,7 +220,7 @@ void p9_debugfcall(struct p9_fcall *f) {
     break;
   case P9_RATTACH:
     printf("=> RATTACH: qid { type: %d, vers: %d, path: %d }\n",
-      f->qid->type, f->qid->vers, f->qid->path);
+      f->qid.type, f->qid.vers, f->qid.path);
     break;
   case P9_RERROR:
     printf("=> RERROR: ename: %s\n", f->ename);
@@ -228,7 +235,7 @@ void p9_debugfcall(struct p9_fcall *f) {
     printf("=> RWALK: nwqid: %d\n", f->nwqid);
     for (int i = 0; i < f->nwqid; i++) {
       printf("wqid[%d] { type: %d, vers: %d, path: %d }\n",
-        i, f->wqid[i]->type, f->wqid[i]->vers, f->wqid[i]->path);
+        i, f->wqid[i].type, f->wqid[i].vers, f->wqid[i].path);
     }
     break;
   case P9_TFLUSH:
@@ -242,7 +249,7 @@ void p9_debugfcall(struct p9_fcall *f) {
     break;
   case P9_ROPEN:
     printf("=> ROPEN: qid: { type: %d, vers: %d, path: %d }, iounit: %d\n", 
-      f->qid->type, f->qid->vers, f->qid->path, f->iounit);
+      f->qid.type, f->qid.vers, f->qid.path, f->iounit);
     break;
   case P9_TCREATE:
     printf("<= TCREATE: fid: %d, name: %s, perm: %d, mode: %d\n",
@@ -250,7 +257,7 @@ void p9_debugfcall(struct p9_fcall *f) {
     break;
   case P9_RCREATE:
     printf("=> RCREATE: qid: { type: %d, vers: %d, path: %d }, iounit: %d\n", 
-      f->qid->type, f->qid->vers, f->qid->path, f->iounit);
+      f->qid.type, f->qid.vers, f->qid.path, f->iounit);
     break;
   case P9_TREAD:
     printf("<= TREAD: fid: %d, offset: %d, count: %d\n",
@@ -286,7 +293,7 @@ void p9_debugfcall(struct p9_fcall *f) {
     printf("\ttype: %d\n", f->stat->type);
     printf("\tdev: %d\n", f->stat->dev);
     printf("\tqid: { type: %d, vers: %d, path: %d }\n", 
-      f->statqid->type, f->statqid->vers, f->statqid->path);
+      f->stat->qid.type, f->stat->qid.vers, f->stat->qid.path);
     printf("\tmode: %d\n", f->stat->mode);
     printf("\tatime: %d\n", f->stat->atime);
     printf("\tmtime: %d\n", f->stat->mtime);

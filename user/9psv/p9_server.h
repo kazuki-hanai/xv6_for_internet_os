@@ -11,7 +11,6 @@ struct p9_server {
   int                   msize;
   struct p9_filesystem* fs;
   struct p9_fidpool     *fpool;
-  struct p9_qidpool     *qpool;
   int                   (*start)(struct p9_server*);
   void                  (*stop)(struct p9_server*);
   int                   (*send)(struct p9_conn*, struct p9_req*);

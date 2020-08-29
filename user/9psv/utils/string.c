@@ -39,3 +39,11 @@ uint16_t p9_stringsz(const char *s) {
 		return BIT16SZ;
 	return BIT16SZ+strlen(s);
 }
+
+char* p9_getfilename(char* path) {
+  char *p = path+strlen(path);
+  while(*p != '/') {
+    p--;
+  }
+  return p+1;
+}

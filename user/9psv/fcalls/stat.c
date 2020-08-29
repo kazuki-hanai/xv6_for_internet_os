@@ -20,11 +20,11 @@ int p9_compose_rstat(struct p9_fcall *f, uint8_t* buf) {
   PBIT32(buf, f->stat->dev);
   buf += BIT32SZ;
   
-  PBIT8(buf, f->statqid->type);
+  PBIT8(buf, f->stat->qid.type);
   buf += BIT8SZ;
-  PBIT32(buf, f->statqid->vers);
+  PBIT32(buf, f->stat->qid.vers);
   buf += BIT32SZ;
-  PBIT64(buf, f->statqid->path);
+  PBIT64(buf, f->stat->qid.path);
   buf += BIT64SZ;
 
   PBIT32(buf, f->stat->mode);
@@ -42,7 +42,7 @@ int p9_compose_rstat(struct p9_fcall *f, uint8_t* buf) {
   return 0;
 }
 
-int p9_compose_stat(char* data, struct p9_stat *stat, struct p9_qid *qid) {
+int p9_compose_stat(char* data, struct p9_stat *stat) {
   int len = stat->size;
   uint8_t* p = (uint8_t*)data;
   PBIT16(p, len);
@@ -52,11 +52,11 @@ int p9_compose_stat(char* data, struct p9_stat *stat, struct p9_qid *qid) {
   PBIT32(p, stat->dev);
   p += BIT32SZ;
   
-  PBIT8(p, qid->type);
+  PBIT8(p, stat->qid.type);
   p += BIT8SZ;
-  PBIT32(p, qid->vers);
+  PBIT32(p, stat->qid.vers);
   p += BIT32SZ;
-  PBIT64(p, qid->path);
+  PBIT64(p, stat->qid.path);
   p += BIT64SZ;
 
   PBIT32(p, stat->mode);
@@ -74,34 +74,34 @@ int p9_compose_stat(char* data, struct p9_stat *stat, struct p9_qid *qid) {
   return p - (uint8_t*)data;
 }
 
-struct p9_stat* p9_get_stat(char *path) {
+struct p9_stat* p9_getstat(char *path) {
   struct p9_stat* stat;
   struct stat st;
   int fd;
 
   if ((fd = p9open(path, O_RDONLY)) == -1) {
+    printf("[getstat] cannot open: %s\n", path);
     return 0;
   }
 
   stat = p9malloc(sizeof *stat);
 
   if (fstat(fd, &st) < 0) {
-    fprintf(2, "[get_stat] cannot stat path: %s\n", path);
+    fprintf(2, "[getstat] cannot stat path: %s\n", path);
     return 0;
   }
 
   // TODO time, uid, gid
   stat->type = 0;
   stat->dev = st.dev;
+  stat->qid.path = (uint64_t)st.ino;
+  stat->qid.vers = 0;
+  stat->qid.type = to_qid_type(st.type);
   stat->mode = ((st.type & T_DIR) << 31) + P9_DEFPERM;
   stat->atime = 0;
   stat->mtime = 0;
   stat->length = (st.type & T_DIR) ? 0 : st.size;
-  char *p = path+strlen(path);
-  while(*p != '/') {
-    p--;
-  }
-  stat->name = ++p;
+  stat->name = p9_getfilename(path);
   stat->uid = "nobody";
   stat->gid = "";
   stat->muid = "";
@@ -111,4 +111,8 @@ struct p9_stat* p9_get_stat(char *path) {
 
   close(fd);
   return stat;
+}
+
+void p9_freestat(struct p9_stat* stat) {
+  free(stat);
 }

@@ -14,7 +14,7 @@ void p9_freereq(struct p9_req *req) {
   if (req->ofcall.type == P9_RREAD) {
     free(req->ofcall.data);
   } else if (req->ofcall.type == P9_RSTAT) {
-    free(req->ofcall.stat);
+    p9_freestat(req->ofcall.stat);
   } else if (req->ifcall.type == P9_TWRITE) {
     free(req->ifcall.data);
   }

@@ -105,12 +105,18 @@
 #define P9_IS_DIR(t) (t & P9_ODIR)
 
 struct intmap;
-struct p9_qid;
+
+struct p9_qid {
+  // qid fields
+	uint64_t              path;
+	uint32_t              vers;
+	uint8_t 	            type;
+};
 
 struct p9_filesystem {
-  struct p9_qid* root;
-  char*          rootpath;
-  int            rootpathlen;
+  struct p9_file* root;
+  char*           rootpath;
+  int             rootpathlen;
 };
 
 struct p9_stat {
@@ -119,6 +125,7 @@ struct p9_stat {
   uint16_t              type;   /* server type */
   uint32_t              dev;    /* server subtype */
   /* file data */
+  struct p9_qid         qid;
   uint32_t              mode;   /* permissions */
   uint32_t              atime;  /* last read time */
   uint32_t              mtime;  /* last write time */
@@ -130,35 +137,20 @@ struct p9_stat {
 };
 
 struct p9_file {
-  struct p9_filesystem* fs;
-  int                   fd;
-  char*                 path;
-  struct p9_qid*        parent;
-  int                   child_num;
-  struct p9_qid*        childs[32];
-  void*                 aux;
-};
-
-struct p9_qid {
-  // qid fields
-  char*                 pathname;
-	uint64_t              path;
-	uint32_t              vers;
-	uint8_t 	            type;
-  void*                 file;
   int                   ref;
-  struct p9_qidpool*    qpool;
-  void                  (*inc)(struct p9_qid*);
-  void                  (*dec)(struct p9_qid*);
-  int                   (*is_referenced)(struct p9_qid*);
+  struct p9_filesystem* fs;
+  char*                 path;
+  int                   child_num;
+  char*                 childs[32];
+  void*                 aux;
 };
 
 struct p9_fid {
   uint64_t            fid;
-  struct p9_qid*      qid;
+  int                 fd;
+  struct p9_file*     file;
   struct p9_fidpool*  fpool;
   int                 offset;
-  void*               buf;
 };
 
 struct p9_fidpool {
@@ -183,11 +175,6 @@ struct p9_fcall {
       uint64_t        req_mask;             /* Tgetattr */
     };
     struct {
-      uint64_t        valid;                /* Rgetattr */
-      struct p9_qid*  attrqid;              /* Rgetattr */
-      struct p9_attr* attr;                 /* Rgetattr */
-    };
-    struct {
       uint32_t        msize;                /* Tversion, Rversion */
       char            *version;             /* Tversion, Rversion */
     };
@@ -198,11 +185,11 @@ struct p9_fcall {
       const char*     ename;	              /* Rerror */
     };
     struct {
-      struct p9_qid*  qid;                  /* Rattach, Ropen, Rcreate */
+      struct p9_qid   qid;                  /* Rattach, Ropen, Rcreate */
       uint32_t        iounit;               /* Ropen, Rcreate */
     };
     struct {
-      struct p9_qid*  aqid;                 /* Rauth */
+      struct p9_qid   aqid;                 /* Rauth */
     };
     struct {
       uint32_t        afid;                 /* Tauth, Tattach */
@@ -223,7 +210,7 @@ struct p9_fcall {
     };
     struct {
       uint16_t        nwqid;                /* Rwalk */
-      struct p9_qid*  wqid[P9_MAXWELEM];    /* Rwalk */
+      struct p9_qid   wqid[P9_MAXWELEM];    /* Rwalk */
     };
     struct {
       uint64_t        offset;               /* Tread, Twrite */
@@ -234,7 +221,6 @@ struct p9_fcall {
       uint16_t        parlen;               /* Rstat */
       uint16_t        nstat;                /* Twstat, Rstat */
       struct p9_stat* stat;                 /* Twstat, Rstat */
-      struct p9_qid*  statqid;              /* Twstat, Rstat */
     };
   };
 };
@@ -253,9 +239,11 @@ struct p9_req {
 };
 
 // util
+uint8_t                 to_qid_type(uint16_t t);
 uint8_t*                p9_gstring(uint8_t*, uint8_t*, char **);
 uint8_t*                p9_pstring(uint8_t *, const char *);
 uint16_t                p9_stringsz(const char *);
+char*                   p9_getfilename(char* path);
 uint32_t                p9_getfcallsize(struct p9_fcall*);
 int                     p9_composefcall(struct p9_fcall*, uint8_t*, int);
 void                    p9_debugfcall(struct p9_fcall*);
@@ -275,20 +263,17 @@ struct p9_req*          p9_recvreq(struct p9_conn *conn);
 // fid
 struct p9_fidpool*      p9_allocfidpool();
 void                    p9_freefidpool(struct p9_fidpool*);
-struct p9_fid*          p9_allocfid(
-  struct p9_fidpool* fpool, uint64_t fid, struct p9_qid* qid);
+struct p9_fid*          p9_allocfid(struct p9_fidpool* fpool, uint64_t fid, struct p9_file* file);
 struct p9_fid*          p9_lookupfid(struct p9_fidpool *, uint64_t);
 struct p9_fid*          p9_removefid(struct p9_fidpool*, uint64_t);
 
 // qid
-uint64_t                p9_getqidno(char* path);
-struct p9_qidpool*      p9_allocqidpool();
-void                    p9_freeqidpool(struct p9_qidpool *qpool);
-struct p9_qid*          p9_lookupqid(struct p9_qidpool *qpool, uint64_t qid);
-struct p9_qid*          p9_removeqid(struct p9_qidpool *qpool, uint64_t qid);
-struct p9_qid*          p9_allocqid(
-  struct p9_qidpool* qpool, struct p9_qid* parent, struct p9_filesystem* fs, char* path);
-int                     p9_get_dir(struct p9_qid* qid);
+int                     p9_getqid(char* path, struct p9_qid* qid);
+
+// file
+struct p9_file*         p9_allocfile(char* path, struct p9_filesystem* fs);
+void                    p9_freefile(struct p9_file* file);
+int                     p9_getdir(struct p9_file* file);
 
 // version
 uint8_t*                p9_parse_tversion(struct p9_fcall*, uint8_t*, int);
@@ -313,8 +298,9 @@ int                     p9_compose_ropen(struct p9_fcall*, uint8_t*);
 // stat
 uint8_t*                p9_parse_tstat(struct p9_fcall*, uint8_t*, int);
 int                     p9_compose_rstat(struct p9_fcall*, uint8_t*);
-int                     p9_compose_stat(char* data, struct p9_stat *stat, struct p9_qid *qid);
-struct p9_stat*         p9_get_stat(char *path);
+int                     p9_compose_stat(char* data, struct p9_stat *stat);
+struct p9_stat*         p9_getstat(char *path);
+void                    p9_freestat(struct p9_stat* stat);
 
 // read
 uint8_t*                p9_parse_tread(struct p9_fcall*, uint8_t*, int);
