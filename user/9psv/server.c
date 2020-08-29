@@ -177,8 +177,9 @@ static int to_offset(struct p9_fid* fid, int offset) {
     fid->offset = 0;
   }
   int diff = offset - fid->offset;
+  printf("diff: %d\n", diff);
   while(diff > 0) {
-    int bufsize = 256;
+    int bufsize = 4096;
     char buf[bufsize];
     int size = (diff > bufsize) ? bufsize : diff;
     diff -= size;
