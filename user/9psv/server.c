@@ -75,12 +75,12 @@ static int rwalk(struct p9_server *srv, struct p9_req *req) {
   memset(path, 0, 256);
   strcpy(path, par->path);
   p = path+strlen(par->path);
-  if (*(p-1) != '/') {
-    *p = '/';
-    p++;
-  }
 
   for (uint32_t i = 0; i < req->ifcall.nwname; i++) {
+    if (*(p-1) != '/') {
+      *p = '/';
+      p++;
+    }
     strcpy(p, req->ifcall.wname[i]);
     p += strlen(req->ifcall.wname[i]);
 
@@ -88,11 +88,6 @@ static int rwalk(struct p9_server *srv, struct p9_req *req) {
       req->error = 1;
       req->ofcall.ename = p9_geterrstr(P9_NOFILE);
       return 0;
-    }
-
-    if (*(p-1) != '/') {
-      *p = '/';
-      p++;
     }
   }
 

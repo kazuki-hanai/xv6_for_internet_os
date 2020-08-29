@@ -97,6 +97,7 @@ struct p9_stat* p9_getstat(char *path) {
   stat->qid.path = (uint64_t)st.ino;
   stat->qid.vers = 0;
   stat->qid.type = to_qid_type(st.type);
+  // TODO: console fix
   stat->mode = ((st.type & T_DIR) << 31) + P9_DEFPERM;
   stat->atime = 0;
   stat->mtime = 0;
