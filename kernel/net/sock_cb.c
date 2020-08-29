@@ -2,14 +2,14 @@
 #include "net/mbuf.h"
 #include "net/netutil.h"
 #include "net/sock_cb.h"
-#include "sys/sysnet.h"
+#include "net/socket.h"
 #include "file.h"
 #include "lib/buddy.h"
 
 struct sock_cb_entry tcp_scb_table[SOCK_CB_LEN];
 struct sock_cb_entry udp_scb_table[SOCK_CB_LEN];
 
-struct sock_cb* alloc_sock_cb(struct file *f, uint32 raddr, uint16 sport, uint16 dport, int socktype) {
+struct sock_cb* alloc_sock_cb(struct file *f, uint32_t raddr, uint16_t sport, uint16_t dport, int socktype) {
   struct sock_cb *scb;
   scb = bd_alloc(sizeof(struct sock_cb));
   if (scb == 0)
@@ -111,7 +111,7 @@ void add_sock_cb(struct sock_cb *scb) {
   release(&entry->lock);
 }
 
-struct sock_cb* get_sock_cb(struct sock_cb_entry table[], uint16 sport) {
+struct sock_cb* get_sock_cb(struct sock_cb_entry table[], uint16_t sport) {
   struct sock_cb_entry* entry;
   struct sock_cb *scb;
 
@@ -153,7 +153,7 @@ struct mbuf *pop_from_scb_rxq(struct sock_cb *scb) {
 }
 
 int
-push_to_scb_txq(struct sock_cb *scb, struct mbuf *m, uint32 sndnxt, uint8 flg, uint16 datalen)
+push_to_scb_txq(struct sock_cb *scb, struct mbuf *m, uint32_t sndnxt, uint8_t flg, uint16_t datalen)
 {
   if (scb == 0) {
     return -1;

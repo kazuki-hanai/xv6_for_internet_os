@@ -8,7 +8,7 @@
 #include "sys/syscall.h"
 
 struct spinlock tickslock;
-uint ticks;
+uint32_t ticks;
 
 extern char trampoline[], uservec[], userret[];
 
@@ -17,7 +17,7 @@ void kernelvec();
 
 extern int devintr();
 
-static const char* scause_desc(uint64 stval);
+static const char* scause_desc(uint64_t stval);
 
 void
 trapinit(void)
@@ -29,7 +29,7 @@ trapinit(void)
 void
 trapinithart(void)
 {
-  w_stvec((uint64)kernelvec);
+  w_stvec((uint64_t)kernelvec);
 }
 
 //
@@ -46,7 +46,7 @@ usertrap(void)
 
   // send interrupts and exceptions to kerneltrap(),
   // since we're now in the kernel.
-  w_stvec((uint64)kernelvec);
+  w_stvec((uint64_t)kernelvec);
 
   struct proc *p = myproc();
   
@@ -105,7 +105,7 @@ usertrapret(void)
   // the process next re-enters the kernel.
   p->tf->kernel_satp = r_satp();         // kernel page table
   p->tf->kernel_sp = p->kstack + PGSIZE; // process's kernel stack
-  p->tf->kernel_trap = (uint64)usertrap;
+  p->tf->kernel_trap = (uint64_t)usertrap;
   p->tf->kernel_hartid = r_tp();         // hartid for cpuid()
 
   // set up the registers that trampoline.S's sret will use
@@ -121,13 +121,13 @@ usertrapret(void)
   w_sepc(p->tf->epc);
 
   // tell trampoline.S the user page table to switch to.
-  uint64 satp = MAKE_SATP(p->pagetable);
+  uint64_t satp = MAKE_SATP(p->pagetable);
 
   // jump to trampoline.S at the top of memory, which 
   // switches to the user page table, restores user registers,
   // and switches to user mode with sret.
-  uint64 fn = TRAMPOLINE + (userret - trampoline);
-  ((void (*)(uint64,uint64))fn)(TRAPFRAME, satp);
+  uint64_t fn = TRAMPOLINE + (userret - trampoline);
+  ((void (*)(uint64_t,uint64_t))fn)(TRAPFRAME, satp);
 }
 
 // interrupts and exceptions from kernel code go here via kernelvec,
@@ -137,9 +137,9 @@ void
 kerneltrap()
 {
   int which_dev = 0;
-  uint64 sepc = r_sepc();
-  uint64 sstatus = r_sstatus();
-  uint64 scause = r_scause();
+  uint64_t sepc = r_sepc();
+  uint64_t sstatus = r_sstatus();
+  uint64_t scause = r_scause();
   
   if((sstatus & SSTATUS_SPP) == 0)
     panic("kerneltrap: not from supervisor mode");
@@ -179,7 +179,7 @@ clockintr()
 int
 devintr()
 {
-  uint64 scause = r_scause();
+  uint64_t scause = r_scause();
 
   if((scause & 0x8000000000000000L) &&
      (scause & 0xff) == 9){
@@ -217,7 +217,7 @@ devintr()
 }
 
 static const char *
-scause_desc(uint64 stval)
+scause_desc(uint64_t stval)
 {
   static const char *intr_desc[16] = {
     [0] "user software interrupt",
@@ -255,8 +255,8 @@ scause_desc(uint64 stval)
     [14] "<reserved for future standard use>",
     [15] "store/AMO page fault",
   };
-  uint64 interrupt = stval & 0x8000000000000000L;
-  uint64 code = stval & ~0x8000000000000000L;
+  uint64_t interrupt = stval & 0x8000000000000000L;
+  uint64_t code = stval & ~0x8000000000000000L;
   if (interrupt) {
     if (code < NELEM(intr_desc)) {
       return intr_desc[code];

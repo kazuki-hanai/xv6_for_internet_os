@@ -52,16 +52,16 @@ struct {
   // input
 #define INPUT_BUF 128
   char buf[INPUT_BUF];
-  uint r;  // Read index
-  uint w;  // Write index
-  uint e;  // Edit index
+  uint32_t r;  // Read index
+  uint32_t w;  // Write index
+  uint32_t e;  // Edit index
 } cons;
 
 //
 // user write()s to the console go here.
 //
 int
-consolewrite(int user_src, uint64 src, int n)
+consolewrite(int user_src, uint64_t src, int n)
 {
   int i;
 
@@ -84,9 +84,9 @@ consolewrite(int user_src, uint64 src, int n)
 // or kernel address.
 //
 int
-consoleread(int user_dst, uint64 dst, int n)
+consoleread(int user_dst, uint64_t dst, int n)
 {
-  uint target;
+  uint32_t target;
   int c;
   char cbuf;
 

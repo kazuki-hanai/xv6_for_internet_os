@@ -18,7 +18,7 @@
 #include "virtio.h"
 
 // the address of virtio mmio register r.
-#define R(r) ((volatile uint32 *)(VIRTIO0 + (r)))
+#define R(r) ((volatile uint32_t *)(VIRTIO0 + (r)))
 
 static struct disk {
  // memory for virtio descriptors &c for queue 0.
@@ -27,12 +27,12 @@ static struct disk {
  // doesn't support, and page aligned.
   char pages[2*PGSIZE];
   struct VRingDesc *desc;
-  uint16 *avail;
+  uint16_t *avail;
   struct UsedArea *used;
 
   // our own book-keeping.
   char free[NUM];  // is a descriptor free?
-  uint16 used_idx; // we've looked this far in used[2..NUM].
+  uint16_t used_idx; // we've looked this far in used[2..NUM].
 
   // track info about in-flight operations,
   // for use when completion interrupt arrives.
@@ -49,7 +49,7 @@ static struct disk {
 void
 virtio_disk_init(void)
 {
-  uint32 status = 0;
+  uint32_t status = 0;
 
   initlock(&disk.vdisk_lock, "virtio_disk");
 
@@ -67,7 +67,7 @@ virtio_disk_init(void)
   *R(VIRTIO_MMIO_STATUS) = status;
 
   // negotiate features
-  uint64 features = *R(VIRTIO_MMIO_DEVICE_FEATURES);
+  uint64_t features = *R(VIRTIO_MMIO_DEVICE_FEATURES);
   features &= ~(1 << VIRTIO_BLK_F_RO);
   features &= ~(1 << VIRTIO_BLK_F_SCSI);
   features &= ~(1 << VIRTIO_BLK_F_CONFIG_WCE);
@@ -89,21 +89,21 @@ virtio_disk_init(void)
 
   // initialize queue 0.
   *R(VIRTIO_MMIO_QUEUE_SEL) = 0;
-  uint32 max = *R(VIRTIO_MMIO_QUEUE_NUM_MAX);
+  uint32_t max = *R(VIRTIO_MMIO_QUEUE_NUM_MAX);
   if(max == 0)
     panic("virtio disk has no queue 0");
   if(max < NUM)
     panic("virtio disk max queue too short");
   *R(VIRTIO_MMIO_QUEUE_NUM) = NUM;
   memset(disk.pages, 0, sizeof(disk.pages));
-  *R(VIRTIO_MMIO_QUEUE_PFN) = ((uint64)disk.pages) >> PGSHIFT;
+  *R(VIRTIO_MMIO_QUEUE_PFN) = ((uint64_t)disk.pages) >> PGSHIFT;
 
   // desc = pages -- num * VRingDesc
-  // avail = pages + 0x40 -- 2 * uint16, then num * uint16
-  // used = pages + 4096 -- 2 * uint16, then num * vRingUsedElem
+  // avail = pages + 0x40 -- 2 * uint16_t, then num * uint16
+  // used = pages + 4096 -- 2 * uint16_t, then num * vRingUsedElem
 
   disk.desc = (struct VRingDesc *) disk.pages;
-  disk.avail = (uint16*)(((char*)disk.desc) + NUM*sizeof(struct VRingDesc));
+  disk.avail = (uint16_t*)(((char*)disk.desc) + NUM*sizeof(struct VRingDesc));
   disk.used = (struct UsedArea *) (disk.pages + PGSIZE);
 
   for(int i = 0; i < NUM; i++)
@@ -168,7 +168,7 @@ alloc3_desc(int *idx)
 void
 virtio_disk_rw(struct buf *b, int write)
 {
-  uint64 sector = b->blockno * (BSIZE / 512);
+  uint64_t sector = b->blockno * (BSIZE / 512);
 
   acquire(&disk.vdisk_lock);
 
@@ -189,9 +189,9 @@ virtio_disk_rw(struct buf *b, int write)
   // qemu's virtio-blk.c reads them.
 
   struct virtio_blk_outhdr {
-    uint32 type;
-    uint32 reserved;
-    uint64 sector;
+    uint32_t type;
+    uint32_t reserved;
+    uint64_t sector;
   } buf0;
 
   if(write)
@@ -203,12 +203,12 @@ virtio_disk_rw(struct buf *b, int write)
 
   // buf0 is on a kernel stack, which is not direct mapped,
   // thus the call to kvmpa().
-  disk.desc[idx[0]].addr = (uint64) kvmpa((uint64) &buf0);
+  disk.desc[idx[0]].addr = (uint64_t) kvmpa((uint64_t) &buf0);
   disk.desc[idx[0]].len = sizeof(buf0);
   disk.desc[idx[0]].flags = VRING_DESC_F_NEXT;
   disk.desc[idx[0]].next = idx[1];
 
-  disk.desc[idx[1]].addr = (uint64) b->data;
+  disk.desc[idx[1]].addr = (uint64_t) b->data;
   disk.desc[idx[1]].len = BSIZE;
   if(write)
     disk.desc[idx[1]].flags = 0; // device reads b->data
@@ -218,7 +218,7 @@ virtio_disk_rw(struct buf *b, int write)
   disk.desc[idx[1]].next = idx[2];
 
   disk.info[idx[0]].status = 0;
-  disk.desc[idx[2]].addr = (uint64) &disk.info[idx[0]].status;
+  disk.desc[idx[2]].addr = (uint64_t) &disk.info[idx[0]].status;
   disk.desc[idx[2]].len = 1;
   disk.desc[idx[2]].flags = VRING_DESC_F_WRITE; // device writes the status
   disk.desc[idx[2]].next = 0;

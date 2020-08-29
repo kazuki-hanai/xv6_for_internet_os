@@ -25,7 +25,7 @@ void arp_cache_free(struct arp_cache *arpcache) {
   release(&entry->lock);
 }
 
-struct arp_cache* get_arp_cache(uint32 ip) {
+struct arp_cache* get_arp_cache(uint32_t ip) {
   struct arp_cache_entry *entry = &arptable[ip % ARP_DEFUALT_ENTRY_NUM];
   struct arp_cache *arpcache;
   struct arp_cache *prev;
@@ -72,7 +72,7 @@ void arptable_init() {
   }
 }
 
-void arptable_add(uint32 ip, uint8 *mac) {
+void arptable_add(uint32_t ip, uint8_t *mac) {
   struct arp_cache *arpcache;
 
   arpcache = get_arp_cache(ip);
@@ -80,7 +80,7 @@ void arptable_add(uint32 ip, uint8 *mac) {
   memmove(arpcache->mac, mac, ETH_ADDR_LEN);
 }
 
-int arptable_get_mac(uint32 ip, uint8 *mac) {
+int arptable_get_mac(uint32_t ip, uint8_t *mac) {
   struct arp_cache *arpcache = get_arp_cache(ip);
   if (arpcache->resolved) {
     memmove(mac, arpcache->mac, ETH_ADDR_LEN);
@@ -90,7 +90,7 @@ int arptable_get_mac(uint32 ip, uint8 *mac) {
   }
 }
 
-void arptable_del(uint32 ip) {
+void arptable_del(uint32_t ip) {
   struct arp_cache *arpcache;
 
   arpcache = get_arp_cache(ip);

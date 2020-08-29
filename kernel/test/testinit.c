@@ -3,6 +3,7 @@
 #include "memlayout.h"
 #include "arch/riscv.h"
 #include "defs.h"
+#include "net/socket.h"
 
 void test_start();
 
@@ -12,7 +13,7 @@ void timerinit();
 __attribute__ ((aligned (16))) char stack0[4096 * NCPU];
 
 // scratch area for timer interrupt, one per CPU.
-uint64 mscratch0[NCPU * 32];
+uint64_t mscratch0[NCPU * 32];
 
 // assembly code in kernelvec.S for machine-mode timer interrupt.
 extern void timervec();
@@ -45,7 +46,7 @@ test()
     pci_init();
     arpinit();
     tcpinit();
-    sysnet_init();
+    socket_init();
     userinit();      // first user process
     __sync_synchronize();
     started = 1;
@@ -75,7 +76,7 @@ start()
 
   // set M Exception Program Counter to main, for mret.
   // requires gcc -mcmodel=medany
-  w_mepc((uint64)test);
+  w_mepc((uint64_t)test);
 
   // disable paging for now.
   w_satp(0);
@@ -107,19 +108,19 @@ timerinit()
 
   // ask the CLINT for a timer interrupt.
   int interval = 1000000; // cycles; about 1/10th second in qemu.
-  *(uint64*)CLINT_MTIMECMP(id) = *(uint64*)CLINT_MTIME + interval;
+  *(uint64_t*)CLINT_MTIMECMP(id) = *(uint64_t*)CLINT_MTIME + interval;
 
   // prepare information in scratch[] for timervec.
   // scratch[0..3] : space for timervec to save registers.
   // scratch[4] : address of CLINT MTIMECMP register.
   // scratch[5] : desired interval (in cycles) between timer interrupts.
-  uint64 *scratch = &mscratch0[32 * id];
+  uint64_t *scratch = &mscratch0[32 * id];
   scratch[4] = CLINT_MTIMECMP(id);
   scratch[5] = interval;
-  w_mscratch((uint64)scratch);
+  w_mscratch((uint64_t)scratch);
 
   // set the machine-mode trap handler.
-  w_mtvec((uint64)timervec);
+  w_mtvec((uint64_t)timervec);
 
   // enable machine-mode interrupts.
   w_mstatus(r_mstatus() | MSTATUS_MIE);

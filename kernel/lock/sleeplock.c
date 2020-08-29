@@ -26,7 +26,12 @@ acquiresleep(struct sleeplock *lk)
     sleep(lk, &lk->lk);
   }
   lk->locked = 1;
-  lk->pid = myproc()->pid;
+  struct proc *proc = myproc();
+  if (proc == 0) {
+    lk->pid = -1;
+  } else {
+    lk->pid = proc->pid;
+  }
   release(&lk->lk);
 }
 
@@ -46,7 +51,11 @@ holdingsleep(struct sleeplock *lk)
   int r;
   
   acquire(&lk->lk);
-  r = lk->locked && (lk->pid == myproc()->pid);
+  // for kernel test
+  if (lk->pid == -1)
+    r = lk->locked && cpuid() == 0;
+  else
+    r = lk->locked && (lk->pid == myproc()->pid);
   release(&lk->lk);
   return r;
 }

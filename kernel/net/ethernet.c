@@ -14,17 +14,17 @@
 
 extern struct mbufq arp_q;
 
-uint8 local_mac[ETH_ADDR_LEN] = { 0x52, 0x54, 0x00, 0x12, 0x34, 0x56 };
-uint8 broadcast_mac[ETH_ADDR_LEN] = { 0xFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF };
+uint8_t local_mac[ETH_ADDR_LEN] = { 0x52, 0x54, 0x00, 0x12, 0x34, 0x56 };
+uint8_t broadcast_mac[ETH_ADDR_LEN] = { 0xFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF };
 
 // sends an ethernet packet
 void
-eth_send(struct mbuf *m, uint16 ethtype, uint32 dip)
+eth_send(struct mbuf *m, uint16_t ethtype, uint32_t dip)
 {
   struct eth *ethhdr;
 
-  uint8 dhost[ETH_ADDR_LEN] = {0, 0, 0, 0, 0, 0};
-  if (arptable_get_mac(dip, (uint8 *)dhost) == -1) {
+  uint8_t dhost[ETH_ADDR_LEN] = {0, 0, 0, 0, 0, 0};
+  if (arptable_get_mac(dip, (uint8_t *)dhost) == -1) {
     if (ethtype != ETH_TYPE_ARP) {
       arp_send(ARP_OP_REQUEST, broadcast_mac, dip);
       mbufq_pushtail(&arp_q, m);
@@ -48,7 +48,7 @@ eth_send(struct mbuf *m, uint16 ethtype, uint32 dip)
 void eth_recv(struct mbuf *m)
 {
   struct eth *ethhdr;
-  uint16 type;
+  uint16_t type;
 
   ethhdr = mbufpullhdr(m, *ethhdr);
   if (!ethhdr) {

@@ -1,6 +1,6 @@
-#include "kernel/include/types.h"
-#include "user/user.h"
-#include "kernel/include/fcntl.h"
+#include "types.h"
+#include "user.h"
+#include "fcntl.h"
 
 #define CMDSIZE 128
 #define MAXARGS 10

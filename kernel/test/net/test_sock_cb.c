@@ -22,15 +22,15 @@ void sock_cb_test() {
 
 void tcp_scb_table_test() {
   printf("\t\t[tcp_scb_table test] start...\n");
-  uint32 raddr1 = 0x01;
-  uint32 raddr2 = 0x02;
-  uint32 raddr3 = 0x03;
-  uint16 sport1 = 0x01;
-  uint16 sport2 = 0x02;
-  uint16 sport3 = 0x01 + SOCK_CB_LEN;
-  uint16 dport1 = 0x01;
-  uint16 dport2 = 0x02;
-  uint16 dport3 = 0x03;
+  uint32_t raddr1 = 0x01;
+  uint32_t raddr2 = 0x02;
+  uint32_t raddr3 = 0x03;
+  uint16_t sport1 = 0x01;
+  uint16_t sport2 = 0x02;
+  uint16_t sport3 = 0x01 + SOCK_CB_LEN;
+  uint16_t dport1 = 0x01;
+  uint16_t dport2 = 0x02;
+  uint16_t dport3 = 0x03;
 
   if (sport1 % SOCK_CB_LEN != sport3 % SOCK_CB_LEN)
     panic("two sports hash should equal!\n");
@@ -120,15 +120,15 @@ void tcp_scb_table_test() {
 
 void udp_scb_table_test() {
   printf("\t\t[udp_scb_table test] start...\n");
-  uint32 raddr1 = 0x01;
-  uint32 raddr2 = 0x02;
-  uint32 raddr3 = 0x03;
-  uint16 sport1 = 0x01;
-  uint16 sport2 = 0x02;
-  uint16 sport3 = 0x01 + SOCK_CB_LEN;
-  uint16 dport1 = 0x01;
-  uint16 dport2 = 0x02;
-  uint16 dport3 = 0x03;
+  uint32_t raddr1 = 0x01;
+  uint32_t raddr2 = 0x02;
+  uint32_t raddr3 = 0x03;
+  uint16_t sport1 = 0x01;
+  uint16_t sport2 = 0x02;
+  uint16_t sport3 = 0x01 + SOCK_CB_LEN;
+  uint16_t dport1 = 0x01;
+  uint16_t dport2 = 0x02;
+  uint16_t dport3 = 0x03;
 
   if (sport1 % SOCK_CB_LEN != sport3 % SOCK_CB_LEN)
     panic("two sports hash should equal!\n");

@@ -6,10 +6,10 @@
 #include <assert.h>
 
 #define stat xv6_stat  // avoid clash with host struct stat
-#include "kernel/include/types.h"
-#include "kernel/include/fs.h"
-#include "kernel/include/stat.h"
-#include "kernel/include/param.h"
+#include "include/types.h"
+#include "include/fs.h"
+#include "include/stat.h"
+#include "include/param.h"
 
 #ifndef static_assert
 #define static_assert(a, b) do { switch (0) case 0: case (a): ; } while (0)
@@ -46,17 +46,17 @@ ushort
 xshort(ushort x)
 {
   ushort y;
-  uchar *a = (uchar*)&y;
+  u_char *a = (u_char*)&y;
   a[0] = x;
   a[1] = x >> 8;
   return y;
 }
 
-uint
+uint32_t
 xint(uint x)
 {
   uint y;
-  uchar *a = (uchar*)&y;
+  u_char *a = (u_char*)&y;
   a[0] = x;
   a[1] = x >> 8;
   a[2] = x >> 16;
@@ -150,6 +150,8 @@ main(int argc, char *argv[])
     if(shortname[0] == '_')
       shortname += 1;
 
+    // printf("name: %s\n", shortname);
+
     inum = ialloc(T_FILE);
 
     bzero(&de, sizeof(de));
@@ -228,7 +230,7 @@ rsect(uint sec, void *buf)
   }
 }
 
-uint
+uint32_t
 ialloc(ushort type)
 {
   uint inum = freeinode++;
@@ -245,7 +247,7 @@ ialloc(ushort type)
 void
 balloc(int used)
 {
-  uchar buf[BSIZE];
+  u_char buf[BSIZE];
   int i;
 
   printf("balloc: first %d blocks have been allocated\n", used);

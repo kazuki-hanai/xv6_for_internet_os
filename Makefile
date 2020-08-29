@@ -22,7 +22,7 @@ CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb
 CFLAGS += -MD
 CFLAGS += -mcmodel=medany
 CFLAGS += -ffreestanding -fno-common -nostdlib -mno-relax
-CFLAGS += -I. -Ikernel/include -Iuser/include
+CFLAGS += -I. -Iinclude
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)
@@ -108,6 +108,7 @@ KSRCS += \
 	$K/net/udp.c \
 	$K/net/tcp.c \
 	$K/net/sock_cb.c \
+	$K/net/socket.c \
 
 # System call and OS Interface for user
 KSRCS += \
@@ -116,12 +117,20 @@ KSRCS += \
 	$K/sys/sysnet.c \
 	$K/sys/syscall.c \
 
-ULIBSRCS = $U/ulib.c $U/usys.S $U/printf.c $U/umalloc.c
+ULIBDIR = $U/ulib
+ULIBSRCS = \
+	$(ULIBDIR)/ulib.c \
+	$(ULIBDIR)/usys.S \
+	$(ULIBDIR)/printf.c \
+	$(ULIBDIR)/umalloc.c \
+	$(ULIBDIR)/intmap.c \
 
 
 KOBJS=$(patsubst %.S,%.o, $(addprefix $(BUILD_DIR)/, $(KSRCS:.c=.o)))
+KDEPS=$(KOBJS:.o=.d)
 
 ULIBOBJS = $(patsubst %.S,%.o, $(addprefix $(BUILD_DIR)/, $(ULIBSRCS:.c=.o)))
+ULIBDEPS=$(ULIBOBJS:.o=.d)
 
 UPROGS=\
   	_cat\
@@ -151,6 +160,9 @@ UPROGS=\
   	_udp\
   	_udplisten\
   	_tcp\
+	_9psv\
+
+USERMAK = $U/9psv/main.mk
 
 all: qemu
 
@@ -175,8 +187,10 @@ _%: $(BUILD_DIR)/$U/%.o $(ULIBOBJS)
 	$(OBJDUMP) -S $(BUILD_DIR)/$U/$@ > $(BUILD_DIR)/$U/$*.asm
 	$(OBJDUMP) -t $(BUILD_DIR)/$U/$@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $(BUILD_DIR)/$U/$*.sym
 
-$U/usys.S : $U/usys.pl
-	perl $U/usys.pl > $U/usys.S
+$(ULIBDIR)/usys.S : $(ULIBDIR)/usys.pl
+	perl $(ULIBDIR)/usys.pl > $(ULIBDIR)/usys.S
+
+-include $(KDEPS) $(ULIBDEPS) $(BUILD_DIR)/user/*.d $(USERMAK)
 
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
@@ -186,7 +200,7 @@ $(BUILD_DIR)/%.o: %.S
 	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-mkfs/mkfs: mkfs/mkfs.c $K/include/fs.h
+mkfs/mkfs: mkfs/mkfs.c include/fs.h
 	gcc -Werror -Wall -I. -o mkfs/mkfs mkfs/mkfs.c
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
@@ -198,14 +212,7 @@ mkfs/mkfs: mkfs/mkfs.c $K/include/fs.h
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(addprefix $(BUILD_DIR)/$U/, $(UPROGS))
 
--include $(BUILD_DIR)/kernel/*.d $(BUILD_DIR)/user/*.d
-
 clean: 
-	# -rm -r 	$U/initcode $U/initcode.out $K/kernel fs.img \
-	# 		$U/*.d $U/*.o $U/*.asm $U/*.sym $U/_*\
-	# 		.gdbinit \
-	# 		$U/usys.S \
-	# 		$(UPROGS)
 	-rm -rf build
 
 ###################################
