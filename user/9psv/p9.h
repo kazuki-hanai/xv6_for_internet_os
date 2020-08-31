@@ -11,7 +11,7 @@
 #define P9_TRVERSION_SIZE 6
 
 #define	P9_QIDSZ	      (BIT8SZ+BIT32SZ+BIT64SZ)
-#define P9_MAXMSGLEN    4096
+#define P9_MAXMSGLEN    8192
 #define P9_MAXDATALEN   (P9_MAXMSGLEN-(P9_MAXMSGLEN+4))
 
 #define	GBIT8(p)	((p)[0])
@@ -59,6 +59,8 @@
 #define P9_RSTAT    125
 #define P9_TWSTAT   126
 #define P9_RWSTAT   127
+
+#define P9_RFUNC_NUM 14
 
 #define P9_NOTAG     (uint16_t)~0U
 #define P9_NOFID     (uint32_t)~0U
