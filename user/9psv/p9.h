@@ -277,43 +277,9 @@ struct p9_file*         p9_allocfile(char* path, struct p9_filesystem* fs);
 void                    p9_freefile(struct p9_file* file);
 int                     p9_getdir(struct p9_file* file);
 
-// version
-int                     p9_compose_rversion(struct p9_fcall*, uint8_t*);
-
-// attach
-int                     p9_compose_rattach(struct p9_fcall*, uint8_t*);
-
 // error
-int                     p9_compose_rerror(struct p9_fcall*, uint8_t*);
 const char*             p9_geterrstr(int key);
-
-// flush
-int                     p9_compose_rflush(struct p9_fcall*, uint8_t*);
-
-// walk
-int                     p9_compose_rwalk(struct p9_fcall*, uint8_t*);
-
-
-// open
-int                     p9_compose_ropen(struct p9_fcall*, uint8_t*);
-
-// create
-int                     p9_compose_rcreate(struct p9_fcall*, uint8_t*);
-
-// read
-int                     p9_compose_rread(struct p9_fcall*, uint8_t*);
-
-// write
-int                     p9_compose_rwrite(struct p9_fcall*, uint8_t*);
-
-// clunk
-int                     p9_compose_rclunk(struct p9_fcall*, uint8_t*);
-
-// remove
-int                     p9_compose_rremove(struct p9_fcall*, uint8_t*);
-
 // stat
-int                     p9_compose_rstat(struct p9_fcall*, uint8_t*);
 int                     p9_compose_stat(char* data, struct p9_stat *stat);
 struct p9_stat*         p9_getstat(char *path);
 void                    p9_freestat(struct p9_stat* stat);
