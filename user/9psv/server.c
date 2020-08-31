@@ -24,6 +24,11 @@ static int respond(struct p9_server *srv, struct p9_req *req) {
   return 0;
 }
 
+static void err(struct p9_req* req, int errkey) {
+    req->error = 1;
+    req->ofcall.ename = p9_geterrstr(errkey);
+}
+
 static int rversion(struct p9_server *srv, struct p9_req *req) {
   if (strncmp(req->ifcall.version, VERSION9P, 6) != 0) {
     req->ofcall.version = "unknown";
@@ -38,22 +43,19 @@ static int rversion(struct p9_server *srv, struct p9_req *req) {
 static int rattach(struct p9_server *srv, struct p9_req *req) {
   struct p9_file* root = srv->fs->root;
   if ((req->fid = p9_allocfid(srv->fpool, req->ifcall.fid, root)) == 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_NOFID);
+    err(req, P9_NOFID);
     return 0;
   }
   // We don't support afid at present. Afid is a special fid provided to prove
   // service has a permission to attach.
   if (req->ifcall.afid != P9_NOFID) {
     // TODO: lookup afid and respond error when there is no afid
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_PERM);
+    err(req, P9_PERM);
     return 0;
   }
 
   if (p9_getqid(root->path, &req->ofcall.qid) < 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+    err(req, P9_NOFILE);
     return 0;
   }
 
@@ -66,8 +68,7 @@ static int rwalk(struct p9_server *srv, struct p9_req *req) {
   struct p9_fid* fid;
 
   if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
+    err(req, P9_UNKNOWNFID);
     return 0;
   }
   par = fid->file;
@@ -85,8 +86,7 @@ static int rwalk(struct p9_server *srv, struct p9_req *req) {
     p += strlen(req->ifcall.wname[i]);
 
     if (p9_getqid(path, &req->ofcall.wqid[i]) < 0) {
-      req->error = 1;
-      req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+      err(req, P9_NOFILE);
       return 0;
     }
   }
@@ -104,27 +104,23 @@ static int rwalk(struct p9_server *srv, struct p9_req *req) {
 static int ropen(struct p9_server *srv, struct p9_req *req) {
   struct p9_fid *fid;
   if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
+    err(req, P9_UNKNOWNFID);
     return 0;
   }
   
   if (fid->file == 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+    err(req, P9_NOFILE);
     return 0;
   }
 
   if (p9_getqid(fid->file->path, &req->ofcall.qid) < 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+    err(req, P9_NOFILE);
     return 0;
   }
 
   int mode = P9_IS_DIR(req->ofcall.qid.type) ? O_RDONLY : O_RDWR;
   if ((fid->fd = p9open(fid->file->path, mode)) == -1) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+    err(req, P9_NOFILE);
     return 0;
   }
 
@@ -207,8 +203,7 @@ static int read_file(struct p9_fid* fid, struct p9_req* req, int count) {
 static int rread(struct p9_server *srv, struct p9_req *req) {
   struct p9_fid *fid;
   if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
+    err(req, P9_UNKNOWNFID);
     return 0;
   }
 
@@ -217,8 +212,7 @@ static int rread(struct p9_server *srv, struct p9_req *req) {
 
   struct p9_qid qid;
   if (p9_getqid(fid->file->path, &qid) < 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+    err(req, P9_NOFILE);
     return 0;
   }
 
@@ -233,8 +227,7 @@ static int rread(struct p9_server *srv, struct p9_req *req) {
 static int rcreate(struct p9_server *srv, struct p9_req *req) {
   struct p9_fid *fid;
   if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
+    err(req, P9_UNKNOWNFID);
     return 0;
   }
 
@@ -252,23 +245,20 @@ static int rcreate(struct p9_server *srv, struct p9_req *req) {
 
   if (req->ifcall.perm & P9_MODE_DIR) {
     if (mkdir(path) < 0){
-      req->error = 1;
-      req->ofcall.ename = p9_geterrstr(P9_PERM);
+      err(req, P9_PERM);
       return 0;
     }
   } else {
     int fd;
     if ((fd = p9open(path, O_CREATE)) < 0) {
-      req->error = 1;
-      req->ofcall.ename = p9_geterrstr(P9_PERM);
+      err(req, P9_PERM);
       return 0;
     }
     close(fd);
   }
 
   if (p9_getqid(path, &req->ofcall.qid) < 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+    err(req, P9_NOFILE);
     return 0;
   }
 
@@ -277,29 +267,25 @@ static int rcreate(struct p9_server *srv, struct p9_req *req) {
 
 static int rwrite(struct p9_server *srv, struct p9_req *req) {
   struct p9_fid* fid;
-  // TODO: offset processing
-  if (req->ifcall.offset != 0) {
-    req->ofcall.count = req->ifcall.count;
-    return 0;
-  }
 
   if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
+    err(req, P9_UNKNOWNFID);
     return 0;
   }
-
+  
   if (fid->fd == -1) {
     if ((fid->fd = p9open(fid->file->path, O_WRONLY)) < 0) {
-      req->error = 1;
-      req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+      err(req, P9_NOFILE);
       return 0;
     }
   }
+  if (to_offset(fid) < 0) {
+      err(req, P9_NOFILE);
+      return 0;
+  }
 
   if (write(fid->fd, req->ifcall.data, req->ifcall.count) <= 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_BOTCH);
+    err(req, P9_BOTCH);
     return 0;
   }
   req->ofcall.count = req->ifcall.count;
@@ -310,13 +296,11 @@ static int rwrite(struct p9_server *srv, struct p9_req *req) {
 static int rremove(struct p9_server *srv, struct p9_req *req) {
   struct p9_fid *fid;
   if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
+    err(req, P9_UNKNOWNFID);
     return 0;
   }
   if (unlink(fid->file->path) == -1) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+    err(req, P9_NOFILE);
   }
   srv->fpool->destroy(fid);
   return 0;
@@ -325,8 +309,7 @@ static int rremove(struct p9_server *srv, struct p9_req *req) {
 static int rclunk(struct p9_server *srv, struct p9_req *req) {
   struct p9_fid *fid;
   if ((fid = p9_removefid(srv->fpool, req->ifcall.fid)) == 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
+    err(req, P9_UNKNOWNFID);
     return 0;
   }
 
@@ -343,16 +326,14 @@ static int rstat(struct p9_server *srv, struct p9_req *req) {
   struct p9_fid *fid;
 
   if ((fid = p9_lookupfid(srv->fpool, req->ifcall.fid)) == 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_UNKNOWNFID);
+    err(req, P9_UNKNOWNFID);
     return 0;
   }
 
   struct p9_stat* stat;
   
   if ((stat = p9_getstat(fid->file->path)) == 0) {
-    req->error = 1;
-    req->ofcall.ename = p9_geterrstr(P9_NOFILE);
+    err(req, P9_NOFILE);
     return 0;
   }
   

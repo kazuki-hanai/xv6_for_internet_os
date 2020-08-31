@@ -238,7 +238,7 @@ QEMUOPTS += -object filter-dump,id=net0,netdev=net0,file=packets.pcap
 QEMUOPTS += -device e1000,netdev=net0,bus=pcie.0
 
 qemu: $(BUILD_DIR) kernel fs.img
-	$(QEMU) $(QEMUOPTS)
+	sudo $(QEMU) $(QEMUOPTS)
 
 .gdbinit: .gdbinit.tmpl-riscv
 	sed "s/:1234/:$(GDBPORT)/" < $^ > $@
