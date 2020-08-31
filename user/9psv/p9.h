@@ -247,16 +247,17 @@ uint8_t*                p9_pstring(uint8_t *, const char *);
 uint16_t                p9_stringsz(const char *);
 char*                   p9_getfilename(char* path);
 uint32_t                p9_getfcallsize(struct p9_fcall*);
-int                     p9_composefcall(struct p9_fcall*, uint8_t*, int);
 void                    p9_debugfcall(struct p9_fcall*);
 int                     p9_is_dir(uint8_t type);
+
+struct p9_req*          parsefcall(uint8_t*, int);
+int                     composefcall(struct p9_fcall*, uint8_t*, int);
 
 // syscall wrapper
 void*                   p9malloc(int);
 int                     p9open(char* path, int mode);
 
 // req
-struct p9_req*          p9_parsefcall(uint8_t*, int);
 struct p9_req*          p9_allocreq();
 void                    p9_freereq(struct p9_req*);
 int                     p9_sendreq(struct p9_conn *conn, struct p9_req *req);
@@ -280,6 +281,6 @@ int                     p9_getdir(struct p9_file* file);
 // error
 const char*             p9_geterrstr(int key);
 // stat
-int                     p9_compose_stat(char* data, struct p9_stat *stat);
+int                     compose_stat(char* data, struct p9_stat *stat);
 struct p9_stat*         p9_getstat(char *path);
 void                    p9_freestat(struct p9_stat* stat);

@@ -2,7 +2,7 @@
 #include "../p9.h"
 #include "net/byteorder.h"
 
-uint8_t* p9_parse_tread(struct p9_fcall *f, uint8_t* buf, int len) {
+uint8_t* parse_tread(struct p9_fcall *f, uint8_t* buf, int len) {
   f->fid = GBIT32(buf);
   buf += BIT32SZ;
   f->offset = GBIT64(buf);
@@ -12,7 +12,7 @@ uint8_t* p9_parse_tread(struct p9_fcall *f, uint8_t* buf, int len) {
   return buf;
 }
 
-int p9_compose_rread(struct p9_fcall *f, uint8_t* buf) {
+int compose_rread(struct p9_fcall *f, uint8_t* buf) {
   PBIT32(buf, f->count);
   buf += BIT32SZ;
   for (int i = 0; i < f->count; i++) {
@@ -20,4 +20,28 @@ int p9_compose_rread(struct p9_fcall *f, uint8_t* buf) {
     buf += 1;
   }
   return 0;
+}
+
+int size_tread(struct p9_fcall *f) {
+  int n = 0;
+  n += BIT32SZ;
+  n += BIT64SZ;
+  n += BIT32SZ;
+  return n;
+}
+
+int size_rread(struct p9_fcall *f) {
+  int n = 0;
+  n += BIT32SZ;
+  n += f->count;
+  return n;
+}
+
+void debug_tread(struct p9_fcall* f) {
+  printf("<= TREAD: fid: %d, offset: %d, count: %d\n",
+    f->fid, f->offset, f->count);
+}
+
+void debug_rread(struct p9_fcall* f) {
+  printf("=> RREAD: count: %d, data: [...]\n", f->count);
 }

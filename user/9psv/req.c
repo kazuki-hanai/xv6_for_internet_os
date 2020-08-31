@@ -34,7 +34,7 @@ struct p9_req* p9_recvreq(struct p9_conn *conn) {
     return 0;
   }
   struct p9_req *req;
-  if ((req = p9_parsefcall(conn->rbuf, rsize)) == 0) {
+  if ((req = parsefcall(conn->rbuf, rsize)) == 0) {
     return 0;
   }
   return req;

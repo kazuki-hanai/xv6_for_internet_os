@@ -11,10 +11,11 @@ static int respond(struct p9_server *srv, struct p9_req *req) {
   } else {
     req->ofcall.type = P9_RERROR;
   }
+
   req->ofcall.size = p9_getfcallsize(&req->ofcall);
   req->ofcall.tag = req->ifcall.tag;
 
-  if (p9_composefcall(&req->ofcall, srv->conn.wbuf, srv->msize) == -1 ) {
+  if (composefcall(&req->ofcall, srv->conn.wbuf, srv->msize) == -1 ) {
     return -1;
   }
 
@@ -146,7 +147,7 @@ static int read_dir(struct p9_fid* fid, struct p9_req* req, int count) {
     char*  child   = file->childs[i];
     struct p9_stat* chstat  = p9_getstat(child);
 
-    p9_compose_stat(dp, chstat);
+    compose_stat(dp, chstat);
     dp += chstat->size+BIT16SZ;
     sum += chstat->size+BIT16SZ;
     free(chstat);

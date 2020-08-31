@@ -18,7 +18,17 @@ const char* p9_geterrstr(int key) {
   return errmap[key];
 }
 
-int p9_compose_rerror(struct p9_fcall *f, uint8_t* buf) {
+int compose_rerror(struct p9_fcall *f, uint8_t* buf) {
   buf = p9_pstring(buf, f->ename);
   return 0;
+}
+
+int size_rerror(struct p9_fcall *f) {
+  int n = 0;
+  n += p9_stringsz(f->ename);
+  return n;
+}
+
+void debug_rerror(struct p9_fcall* f) {
+  printf("=> RERROR: ename: %s\n", f->ename);
 }

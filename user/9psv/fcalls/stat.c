@@ -4,18 +4,18 @@
 #include "../p9.h"
 #include "net/byteorder.h"
 
-uint8_t* p9_parse_tstat(struct p9_fcall *f, uint8_t* buf, int len) {
+uint8_t* parse_tstat(struct p9_fcall *f, uint8_t* buf, int len) {
   f->fid = GBIT32(buf);
   buf += BIT32SZ;
   return buf;
 }
 
-uint8_t* p9_parse_twstat(struct p9_fcall *f, uint8_t* buf, int len) {
+uint8_t* parse_twstat(struct p9_fcall *f, uint8_t* buf, int len) {
   // TODO
   return buf;
 }
 
-int p9_compose_rstat(struct p9_fcall *f, uint8_t* buf) {
+int compose_rstat(struct p9_fcall *f, uint8_t* buf) {
   PBIT16(buf, f->parlen);
   buf += BIT16SZ;
   PBIT16(buf, f->nstat);
@@ -47,11 +47,66 @@ int p9_compose_rstat(struct p9_fcall *f, uint8_t* buf) {
   return 0;
 }
 
-int p9_compose_rwstat(struct p9_fcall *f, uint8_t* buf) {
+int compose_rwstat(struct p9_fcall *f, uint8_t* buf) {
   return 0;
 }
 
-int p9_compose_stat(char* data, struct p9_stat *stat) {
+int size_tstat(struct p9_fcall *f) {
+  int n = 0;
+  n += BIT32SZ;
+  return n;
+}
+
+int size_rstat(struct p9_fcall *f) {
+  int n = 0;
+  n += BIT16SZ;
+  n += f->parlen;
+  return n;
+}
+
+int size_twstat(struct p9_fcall *f) {
+  int n = 0;
+  n += BIT32SZ;
+  n += BIT16SZ;
+  n += f->nstat;
+  return n;
+}
+
+int size_rwstat(struct p9_fcall *f) {
+  int n = 0;
+  return n;
+}
+
+void debug_tstat(struct p9_fcall* f) {
+  printf("<= TSTAT: fid: %d\n", f->fid);
+}
+
+void debug_rstat(struct p9_fcall* f) {
+  printf("=> RSTAT: nstat: %d, stat: {\n", f->nstat);
+  printf("\ttype: %d\n", f->stat->type);
+  printf("\tdev: %d\n", f->stat->dev);
+  printf("\tqid: { type: %d, vers: %d, path: %d }\n", 
+    f->stat->qid.type, f->stat->qid.vers, f->stat->qid.path);
+  printf("\tmode: %d\n", f->stat->mode);
+  printf("\tatime: %d\n", f->stat->atime);
+  printf("\tmtime: %d\n", f->stat->mtime);
+  printf("\tlength: %d\n", f->stat->length);
+  printf("\tname: %s\n", f->stat->name);
+  printf("\tuid: %s\n", f->stat->uid);
+  printf("\tgid: %s\n", f->stat->gid);
+  printf("\tmuid: %s\n", f->stat->muid);
+  printf("}\n");
+}
+
+void debug_twstat(struct p9_fcall* f) {
+  printf("<= TWSTAT: \n");
+}
+
+void debug_rwstat(struct p9_fcall* f) {
+  printf("=> RWSTAT: \n");
+}
+
+int compose_stat(char* data, struct p9_stat *stat) {
   int len = stat->size;
   uint8_t* p = (uint8_t*)data;
   PBIT16(p, len);
