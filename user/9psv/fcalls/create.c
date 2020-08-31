@@ -5,10 +5,12 @@
 uint8_t* p9_parse_tcreate(struct p9_fcall *f, uint8_t* buf, int len) {
   uint8_t *ep = buf + len;
   f->fid = GBIT32(buf);
-  buf += 4;
+  buf += BIT32SZ;
   buf = p9_gstring(buf, ep, &f->name);
   f->perm = GBIT32(buf);
+  buf += BIT32SZ;
   f->mode = GBIT8(buf);
+  buf += BIT8SZ;
   return buf;
 }
 

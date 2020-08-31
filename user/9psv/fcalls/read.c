@@ -2,12 +2,12 @@
 #include "../p9.h"
 #include "net/byteorder.h"
 
-uint8_t* p9_parse_tread(struct p9_fcall *fcall, uint8_t* buf, int len) {
-  fcall->fid = GBIT32(buf);
+uint8_t* p9_parse_tread(struct p9_fcall *f, uint8_t* buf, int len) {
+  f->fid = GBIT32(buf);
   buf += BIT32SZ;
-  fcall->offset = GBIT64(buf);
+  f->offset = GBIT64(buf);
   buf += BIT64SZ;
-  fcall->count = GBIT32(buf);
+  f->count = GBIT32(buf);
   buf += BIT32SZ;
   return buf;
 }

@@ -4,9 +4,14 @@
 #include "../p9.h"
 #include "net/byteorder.h"
 
-uint8_t* p9_parse_tstat(struct p9_fcall *fcall, uint8_t* buf, int len) {
-  fcall->fid = GBIT32(buf);
-  buf += 4;
+uint8_t* p9_parse_tstat(struct p9_fcall *f, uint8_t* buf, int len) {
+  f->fid = GBIT32(buf);
+  buf += BIT32SZ;
+  return buf;
+}
+
+uint8_t* p9_parse_twstat(struct p9_fcall *f, uint8_t* buf, int len) {
+  // TODO
   return buf;
 }
 
@@ -39,6 +44,10 @@ int p9_compose_rstat(struct p9_fcall *f, uint8_t* buf) {
   buf = p9_pstring(buf, f->stat->uid);
   buf = p9_pstring(buf, f->stat->gid);
   buf = p9_pstring(buf, f->stat->muid);
+  return 0;
+}
+
+int p9_compose_rwstat(struct p9_fcall *f, uint8_t* buf) {
   return 0;
 }
 

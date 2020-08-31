@@ -359,7 +359,7 @@ static int rignore(struct p9_server* srv, struct p9_req* req) {
   return -1;
 }
 
-int (*rfuncs[]) (struct p9_server* srv, struct p9_req* req) = {
+static int (*rfuncs[]) (struct p9_server* srv, struct p9_req* req) = {
   [P9_TVERSION]     rversion,
   [P9_TAUTH]        rignore,
   [P9_TATTACH]      rattach,
@@ -398,8 +398,6 @@ static void stop_server(struct p9_server *srv) {
   free(srv->fs);
   p9_freefidpool(srv->fpool);
 }
-
-
 
 static void initserver(struct p9_server *srv) {
   srv->done = 0;

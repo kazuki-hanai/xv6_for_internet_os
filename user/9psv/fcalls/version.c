@@ -2,14 +2,14 @@
 #include "../p9.h"
 #include "net/byteorder.h"
 
-uint8_t* p9_parse_tversion(struct p9_fcall *fcall, uint8_t* buf, int len) {
-  if (fcall->tag != P9_NOTAG) {
+uint8_t* p9_parse_tversion(struct p9_fcall *f, uint8_t* buf, int len) {
+  if (f->tag != P9_NOTAG) {
     return 0;
   }
   uint8_t *ep = buf + len;
-  fcall->msize = GBIT32(buf);
-  buf += 4;
-  buf = p9_gstring(buf, ep, &fcall->version);
+  f->msize = GBIT32(buf);
+  buf += BIT32SZ;
+  buf = p9_gstring(buf, ep, &f->version);
   if (buf == 0) {
     return 0;
   }

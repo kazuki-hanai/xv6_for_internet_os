@@ -2,16 +2,16 @@
 #include "../p9.h"
 #include "net/byteorder.h"
 
-uint8_t* p9_parse_twalk(struct p9_fcall *fcall, uint8_t* buf, int len) {
+uint8_t* p9_parse_twalk(struct p9_fcall *f, uint8_t* buf, int len) {
   uint8_t *ep = buf + len;
-  fcall->fid = GBIT32(buf);
-  buf += 4;
-  fcall->newfid = GBIT32(buf);
-  buf += 4;
-  fcall->nwname = GBIT16(buf);
-  buf += 2;
-  for (int i = 0; i < fcall->nwname; i++) {
-    buf = p9_gstring(buf, ep, &fcall->wname[i]);
+  f->fid = GBIT32(buf);
+  buf += BIT32SZ;
+  f->newfid = GBIT32(buf);
+  buf += BIT32SZ;
+  f->nwname = GBIT16(buf);
+  buf += BIT16SZ;
+  for (int i = 0; i < f->nwname; i++) {
+    buf = p9_gstring(buf, ep, &f->wname[i]);
     if (buf == 0) {
       return 0;
     }

@@ -9,9 +9,11 @@ P9_SRCS = \
 	$(P9_DIR)/file.c \
 	$(P9_DIR)/qid.c \
 	$(P9_DIR)/req.c \
+	$(P9_DIR)/parse.c \
 	$(P9_DIR)/fcalls/version.c \
-	$(P9_DIR)/fcalls/error.c \
 	$(P9_DIR)/fcalls/attach.c \
+	$(P9_DIR)/fcalls/error.c \
+	$(P9_DIR)/fcalls/flush.c \
 	$(P9_DIR)/fcalls/walk.c \
 	$(P9_DIR)/fcalls/open.c \
 	$(P9_DIR)/fcalls/create.c \

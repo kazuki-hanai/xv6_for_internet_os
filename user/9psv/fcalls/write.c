@@ -13,7 +13,7 @@ uint8_t* p9_parse_twrite(struct p9_fcall *f, uint8_t* buf, int len) {
   f->data = p9malloc(f->count);
   for (int i = 0; i < f->count; i++) {
     f->data[i] = GBIT8(buf);
-    buf += 1;
+    buf += BIT8SZ;
   }
   return buf;
 }
