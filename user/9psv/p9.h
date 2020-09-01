@@ -237,7 +237,7 @@ struct p9_req {
   struct p9_fcall ifcall;
   struct p9_fcall ofcall;
   struct p9_fid   *fid;
-  int                   error;
+  int             error;
 };
 
 // util
