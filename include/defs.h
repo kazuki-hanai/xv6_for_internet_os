@@ -61,9 +61,9 @@ void            kfree(void *);
 void            kinit();
 
 // ufkalloc.c
-void		ufk_init();
-void*		ufk_alloc(int);
-void 		ufk_free(void*);
+void		ufkinit();
+void*		ufkalloc(int);
+void 		ufkfree(void*);
 
 // buddy.c
 void            bd_init();

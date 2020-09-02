@@ -9,13 +9,13 @@
 volatile static int started = 0;
 
 void test_alloc() {
-	void* p = ufk_alloc(32);
+	void* p = ufkalloc(32);
 	printf("p: %p\n", p);
 	if (p == 0) {
 		panic("naze...\n");
 	}
 	memset(p, 1, 32);
-	ufk_free(p);
+	ufkfree(p);
 	panic("test_ok\n");
 }
 
@@ -32,7 +32,7 @@ main()
 		kinit();         	// physical page allocator
 		kvminit();       	// create kernel page table
 		kvminithart();   	// turn on paging
-		ufk_init();		// initialize Useful Kernel Allocator
+		ufkinit();		// initialize Useful Kernel Allocator
 		bd_init();		// initialize Buddy Allocator
 
 		test_alloc();

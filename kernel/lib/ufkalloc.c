@@ -45,7 +45,7 @@ static void table_init(void* pa_start, void* pa_end) {
 	}
 }
 
-void ufk_init() {
+void ufkinit() {
 	table_init(kalloc(), (void*)PHYSTOP);
 	initlock(&ufk_table.lock, "ufk_table");
 }
@@ -93,7 +93,7 @@ static int blk_index(int k, void* p, void* base) {
 	return n / BLK_SIZE(k);
 }
 
-static void* _ufk_alloc(int nbytes) {
+static void* _ufkalloc(int nbytes) {
 	int fk = firstk(nbytes);
 	int k = fk;
 	for (; k < NSIZES; k++) {
@@ -121,12 +121,13 @@ static void* _ufk_alloc(int nbytes) {
 	return p;
 }
 
-void* ufk_alloc(int nbytes) {
+void* ufkalloc(int nbytes) {
 	void* p = 0;
 	if (nbytes < PGSIZE) {
 		p = bd_alloc(nbytes);
 		if (p == 0) {
-			void* p = ufk_alloc(PGSIZE);
+			// TODO: bit set
+			void* p = ufkalloc(PGSIZE);
 			bd_addpage(p);
 			p = bd_alloc(nbytes);
 			if (p == 0)
@@ -135,7 +136,7 @@ void* ufk_alloc(int nbytes) {
 		}
 	} else {
 		acquire(&ufk_table.lock);
-		p = _ufk_alloc(nbytes);
+		p = _ufkalloc(nbytes);
 		release(&ufk_table.lock);
 		if (p == 0)
 			panic("[ufk_alloc] could not allocate\n");
@@ -144,7 +145,8 @@ void* ufk_alloc(int nbytes) {
 	return p;
 }
 
-void ufk_free(void* p) {
+void ufkfree(void* p) {
+	return;
 	bit_clear(0, 0);
 	bit_isset(0, 0);
 	bit_set(0, 0);
