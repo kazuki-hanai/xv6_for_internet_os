@@ -21,7 +21,8 @@ void arp_cache_free(struct arp_cache *arpcache) {
     arpcache->next->prev = arpcache->prev;
   else
     entry->head = arpcache->next;
-  bd_free(arpcache);
+  // bd_free(arpcache);
+  kfree(arpcache);
   release(&entry->lock);
 }
 
@@ -42,7 +43,8 @@ struct arp_cache* get_arp_cache(uint32_t ip) {
 
   // new cache
   if (arpcache == 0) {
-    arpcache = bd_alloc(sizeof(struct arp_cache));
+    // arpcache = bd_alloc(sizeof(struct arp_cache));
+    arpcache = kalloc();
     if (arpcache == 0)
       panic("arp alloc failed!\n");
     arpcache->resolved = 0;

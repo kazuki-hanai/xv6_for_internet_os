@@ -38,8 +38,10 @@ filealloc(void)
   for(p = 0, f = ftable.file; f != 0; p = f, f = f->next)
     ;
   // alloc
-  f = bd_alloc(sizeof(struct file));
+  // f = bd_alloc(sizeof(struct file));
+  f = kalloc();
   f->next = 0;
+  f->ref = 0;
   if (p != 0) {
     f->prev = p;
     p->next = f;
@@ -87,7 +89,8 @@ void filefree(struct file *f)
     f->prev->next = f->next;
     f->next->prev = f->prev;
   }
-  bd_free(f);
+  // bd_free(f);
+  kfree(f);
   release(&ftable.lock);
 }
 

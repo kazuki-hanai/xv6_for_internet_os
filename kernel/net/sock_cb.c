@@ -11,7 +11,8 @@ struct sock_cb_entry udp_scb_table[SOCK_CB_LEN];
 
 struct sock_cb* alloc_sock_cb(struct file *f, uint32_t raddr, uint16_t sport, uint16_t dport, int socktype) {
   struct sock_cb *scb;
-  scb = bd_alloc(sizeof(struct sock_cb));
+  // scb = bd_alloc(sizeof(struct sock_cb));
+  scb = kalloc();
   if (scb == 0)
     panic("[alloc_sock_cb] could not allocate\n");
   memset(scb, 0, sizeof(*scb));
@@ -76,7 +77,8 @@ void free_sock_cb(struct sock_cb *scb) {
       scb->prev->next = scb->next;
     else
       entry->head = scb->next;
-    bd_free(scb);
+    // bd_free(scb);
+    kfree(scb);
     release(&entry->lock);
   }
 }

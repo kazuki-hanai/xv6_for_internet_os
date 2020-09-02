@@ -35,8 +35,10 @@ freerange(void *pa_start, void *pa_end)
 {
   char *p;
   p = (char*)PGROUNDUP((uint64_t)pa_start);
-  for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
+  int i = 0;
+  for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE,i+=1)
     kfree(p);
+  printf("page: %d\n", i);
 }
 
 // Free the page of physical memory pointed at by v,
@@ -76,7 +78,7 @@ kalloc(void)
     kmem.freelist = r->next;
   release(&kmem.lock);
 
-  if(r)
-    memset((char*)r, 5, PGSIZE); // fill with junk
+  // if(r)
+  //   memset((char*)r, 0, PGSIZE); // fill with junk
   return (void*)r;
 }

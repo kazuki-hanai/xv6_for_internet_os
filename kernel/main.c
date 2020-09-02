@@ -21,7 +21,7 @@ main()
     kinit();         // physical page allocator
     kvminit();       // create kernel page table
     kvminithart();   // turn on paging
-    bd_init();       // initialize Buddy Allocator 
+    //bd_init();       // initialize Buddy Allocator 
     procinit();      // process table
     trapinit();      // trap vectors
     trapinithart();  // install kernel trap vector

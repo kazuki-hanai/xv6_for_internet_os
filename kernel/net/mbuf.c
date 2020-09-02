@@ -58,7 +58,8 @@ mbufalloc(unsigned int headroom)
  
   if (headroom > MBUF_SIZE)
     return 0;
-  m = bd_alloc(sizeof(struct mbuf));
+  // m = bd_alloc(sizeof(struct mbuf));
+  m = kalloc();
   if (m == 0) {
     panic("[mbufalloc] cannot allocate memory");
   }
@@ -77,7 +78,8 @@ mbufalloc(unsigned int headroom)
 void
 mbuffree(struct mbuf *m)
 {
-  bd_free(m);
+  // bd_free(m);
+  kfree(m);
 }
 
 struct mbuf *
