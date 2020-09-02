@@ -60,6 +60,20 @@ uint64_t sys_socklisten() {
   return socklisten(scb, sport);
 }
 
+uint64_t sys_sockaccept() {
+  int fd;
+  struct file *f;
+  // struct sock_cb *scb;
+  uint32_t raddr;
+  uint16_t dport;
+
+  if (argaddr(2, (uint64_t *)&dport) < 0 || argaddr(1, (uint64_t *)&raddr) < 0 || argfd(0, &fd, &f) < 0) {
+    return -1;
+  }
+  // scb = f->scb;
+  return 0;
+}
+
 
 uint64_t sys_sockconnect() {
   struct file *f;

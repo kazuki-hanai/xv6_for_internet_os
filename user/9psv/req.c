@@ -33,6 +33,14 @@ struct p9_req* p9_recvreq(struct p9_conn *conn) {
   if ((rsize = read(conn->sockfd, conn->rbuf, P9_MAXMSGLEN)) == -1) {
     return 0;
   }
+
+  int size = GBIT32(conn->rbuf);
+  while(rsize != size) {
+    if ((rsize += read(conn->sockfd, conn->rbuf+rsize, P9_MAXMSGLEN-rsize)) <= 0) {
+      return 0;
+    }
+  }
+
   struct p9_req *req;
   if ((req = parsefcall(conn->rbuf, rsize)) == 0) {
     return 0;

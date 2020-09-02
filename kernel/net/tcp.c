@@ -66,7 +66,7 @@ int tcp_listen(struct sock_cb *scb) {
   }
   scb->state = SOCK_CB_LISTEN;
   // TODO SOCK_CB_LISTEN STATE
-  // -> chenge the connection from passive to active
+  // -> change the connection from passive to active
   // "error: connection already exists"
 
   if (tcp_acquiresleep(scb) == -1) {

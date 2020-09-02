@@ -173,10 +173,10 @@ static int to_offset(struct p9_fid* fid, int offset) {
     int bufsize = 8192;
     char buf[bufsize];
     int size = (diff > bufsize) ? bufsize : diff;
-    diff -= size;
-    if (read(fid->fd, buf, size) < 0) {
+    if ((size = read(fid->fd, buf, size)) < 0) {
       return -1;
     }
+    diff -= size;
   }
   fid->offset = offset;
   return 0;
@@ -281,21 +281,22 @@ static int rwrite(struct p9_server *srv, struct p9_req *req) {
     return 0;
   }
   
-  if (fid->fd == -1) {
-    if ((fid->fd = p9open(fid->file->path, O_WRONLY)) < 0) {
-      err(req, P9_NOFILE);
-      return 0;
-    }
-  }
-  if (to_offset(fid, req->ifcall.offset) < 0) {
-      err(req, P9_NOFILE);
-      return 0;
+  if (fid->fd == -1 && (fid->fd = p9open(fid->file->path, O_RDWR)) < 0) {
+    err(req, P9_NOFILE);
+    return 0;
   }
 
-  if (write(fid->fd, req->ifcall.data, req->ifcall.count) <= 0) {
+  if (to_offset(fid, req->ifcall.offset) == -1) {
+    err(req, P9_NOFILE);
+    return 0;
+  }
+
+  int wsize;
+  if ((wsize = write(fid->fd, req->ifcall.data, req->ifcall.count)) <= 0) {
     err(req, P9_BOTCH);
     return 0;
   }
+  fid->offset += wsize;
   req->ofcall.count = req->ifcall.count;
 
   return 0;

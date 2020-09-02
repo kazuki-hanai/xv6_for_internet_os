@@ -12,7 +12,7 @@ struct eth {
 #define ETH_TYPE_IP  0x0800 // Internet protocol
 #define ETH_TYPE_ARP 0x0806 // Address resolution protocol
 
-#define ETH_MAX_SIZE 1518
+#define ETH_MAX_SIZE 4000
 
 void eth_send(struct mbuf *, uint16_t, uint32_t dip);
 void eth_recv(struct mbuf *);
