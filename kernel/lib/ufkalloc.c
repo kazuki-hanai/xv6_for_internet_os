@@ -41,12 +41,13 @@ static void table_init(void* pa_start, void* pa_end) {
 	void* p = (void*)BIGPGROUNDUP((uint64_t)pa_start);
 	for(int i = 0; p + BIGPG_SIZE <= pa_end; p += BIGPG_SIZE, i++) {
 		ufk_table.plist[i].pageaddr = p;
+		lst_push(&ufk_table.freelist[MAX_SIZE], ufk_table.plist[i].pageaddr);
 	}
 }
 
 void ufk_init() {
-	initlock(&ufk_table.lock, "ufk_table");
 	table_init(kalloc(), (void*)PHYSTOP);
+	initlock(&ufk_table.lock, "ufk_table");
 }
 
 static int bit_isset(char *map, int index) {
@@ -77,9 +78,22 @@ static int firstk(int n) {
 	return k;
 }
 
+static int get_pageindex(void *p) {
+	for (int i = 0; i < NBIGPGS; i++) {
+		int offset = p - ufk_table.plist[i].pageaddr;
+		if (0 <= offset && offset < BIGPG_SIZE) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static int blk_index(int k, void* p, void* base) {
+	int n = p - base;
+	return n / BLK_SIZE(k);
+}
+
 static void* _ufk_alloc(int nbytes) {
-	acquire(&ufk_table.lock);
-	
 	int fk = firstk(nbytes);
 	int k = fk;
 	for (; k < NSIZES; k++) {
@@ -89,7 +103,22 @@ static void* _ufk_alloc(int nbytes) {
 	if (k >= NSIZES)
 		return 0;
 
-	return 0;
+	void* p = lst_pop(&ufk_table.freelist[k]);
+	if (p == 0)
+		panic("[_ufk_alloc] there are no rest memory");
+	int pindex;
+	if ((pindex = get_pageindex(p)) < 0)
+		panic("[_ufk_alloc] cannot get page index");
+	void* pbase = ufk_table.plist[pindex].pageaddr;	
+	bit_set(ufk_table.plist[pindex].alloc[k], blk_index(k, p, pbase));
+	for (; k > fk; k--) {
+		void *q = p + BLK_SIZE(k-1);
+		bit_set(ufk_table.plist[pindex].split[k], blk_index(k, p, pbase));
+		bit_set(ufk_table.plist[pindex].alloc[k-1], blk_index(k-1, p, pbase));
+		lst_push(&ufk_table.freelist[k-1], q);
+	}
+
+	return p;
 }
 
 void* ufk_alloc(int nbytes) {
@@ -97,12 +126,17 @@ void* ufk_alloc(int nbytes) {
 	if (nbytes < PGSIZE) {
 		p = bd_alloc(nbytes);
 		if (p == 0) {
-			void* p = ufk_alloc(4096);
+			void* p = ufk_alloc(PGSIZE);
 			bd_addpage(p);
 			p = bd_alloc(nbytes);
+			if (p == 0)
+				panic("[ufk_alloc] cannot alloc...");
+			return p;
 		}
 	} else {
+		acquire(&ufk_table.lock);
 		p = _ufk_alloc(nbytes);
+		release(&ufk_table.lock);
 		if (p == 0)
 			panic("[ufk_alloc] could not allocate\n");
 	}

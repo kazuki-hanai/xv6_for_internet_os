@@ -26,8 +26,6 @@ struct {
 	struct pagelist plist[MAX_PAGES];
 } bd_table;
 
-void *bd_base;
-
 int bit_isset(char *map, int index) {
 	char b = map[index/8];
 	char m = (1 << (index % 8));
@@ -106,9 +104,11 @@ void bd_addpage(void *p) {
 		if (bd_table.plist[i].pageaddr == 0) {
 			bd_table.plist[i].pageaddr = p;
 			lst_push(&bd_table.freelist[MAX_SIZE], bd_table.plist[i].pageaddr);
+			release(&bd_table.lock);
+			return;
 		}
 	}
-	release(&bd_table.lock);
+	panic("[bd_addpage] cannot add new page");
 }
 
 void
@@ -148,8 +148,10 @@ void* bd_alloc(int nbytes) {
 		if(!lst_empty(&bd_table.freelist[k]))
 			break;
 	}
-	if (k >= NSIZES)
+	if (k >= NSIZES) {
+		release(&bd_table.lock);
 		return 0;
+	}
 
 	char *p = lst_pop(&bd_table.freelist[k]);
 	if (p == 0) {
