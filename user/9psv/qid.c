@@ -3,7 +3,6 @@
 #include "fcntl.h"
 #include "p9.h"
 #include "net/byteorder.h"
-#include "p9_file.h"
 
 int p9_getqid(char* path, struct p9_qid* qid) {
   struct stat st;

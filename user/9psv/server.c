@@ -11,10 +11,11 @@ static int respond(struct p9_server *srv, struct p9_req *req) {
   } else {
     req->ofcall.type = P9_RERROR;
   }
+
   req->ofcall.size = p9_getfcallsize(&req->ofcall);
   req->ofcall.tag = req->ifcall.tag;
 
-  if (p9_composefcall(&req->ofcall, srv->conn.wbuf, srv->msize) == -1 ) {
+  if (composefcall(&req->ofcall, srv->conn.wbuf, srv->msize) == -1 ) {
     return -1;
   }
 
@@ -146,7 +147,7 @@ static int read_dir(struct p9_fid* fid, struct p9_req* req, int count) {
     char*  child   = file->childs[i];
     struct p9_stat* chstat  = p9_getstat(child);
 
-    p9_compose_stat(dp, chstat);
+    compose_stat(dp, chstat);
     dp += chstat->size+BIT16SZ;
     sum += chstat->size+BIT16SZ;
     free(chstat);
@@ -169,13 +170,13 @@ static int to_offset(struct p9_fid* fid, int offset) {
   }
   int diff = offset - fid->offset;
   while(diff > 0) {
-    int bufsize = 4096;
+    int bufsize = 8192;
     char buf[bufsize];
     int size = (diff > bufsize) ? bufsize : diff;
-    diff -= size;
-    if (read(fid->fd, buf, size) < 0) {
+    if ((size = read(fid->fd, buf, size)) < 0) {
       return -1;
     }
+    diff -= size;
   }
   fid->offset = offset;
   return 0;
@@ -262,6 +263,13 @@ static int rcreate(struct p9_server *srv, struct p9_req *req) {
     return 0;
   }
 
+  srv->fpool->destroy(fid);
+  if ((fid = p9_allocfid(srv->fpool, req->ifcall.fid, 0)) == 0) {
+    printf("[rcreate] cannot allocate newfid\n");
+    return -1;
+  }
+  fid->file = p9_allocfile(path, srv->fs);
+
   return 0;
 }
 
@@ -273,21 +281,22 @@ static int rwrite(struct p9_server *srv, struct p9_req *req) {
     return 0;
   }
   
-  if (fid->fd == -1) {
-    if ((fid->fd = p9open(fid->file->path, O_WRONLY)) < 0) {
-      err(req, P9_NOFILE);
-      return 0;
-    }
-  }
-  if (to_offset(fid) < 0) {
-      err(req, P9_NOFILE);
-      return 0;
+  if (fid->fd == -1 && (fid->fd = p9open(fid->file->path, O_RDWR)) < 0) {
+    err(req, P9_NOFILE);
+    return 0;
   }
 
-  if (write(fid->fd, req->ifcall.data, req->ifcall.count) <= 0) {
+  if (to_offset(fid, req->ifcall.offset) == -1) {
+    err(req, P9_NOFILE);
+    return 0;
+  }
+
+  int wsize;
+  if ((wsize = write(fid->fd, req->ifcall.data, req->ifcall.count)) <= 0) {
     err(req, P9_BOTCH);
     return 0;
   }
+  fid->offset += wsize;
   req->ofcall.count = req->ifcall.count;
 
   return 0;
@@ -344,9 +353,30 @@ static int rstat(struct p9_server *srv, struct p9_req *req) {
   return 0;
 }
 
-static int rwstat(struct p9_server *srv, struct p9_req *req) {
+static int rwstat(struct p9_server* srv, struct p9_req* req) {
   return 0;
 }
+
+static int rignore(struct p9_server* srv, struct p9_req* req) {
+  return -1;
+}
+
+static int (*rfuncs[]) (struct p9_server* srv, struct p9_req* req) = {
+  [P9_TVERSION]     rversion,
+  [P9_TAUTH]        rignore,
+  [P9_TATTACH]      rattach,
+  [P9_TERROR]       rignore,
+  [P9_TFLUSH]       rflush,
+  [P9_TWALK]        rwalk,
+  [P9_TOPEN]        ropen,
+  [P9_TCREATE]      rcreate,
+  [P9_TREAD]        rread,
+  [P9_TWRITE]       rwrite,
+  [P9_TCLUNK]       rclunk,
+  [P9_TREMOVE]      rremove,
+  [P9_TSTAT]        rstat,
+  [P9_TWSTAT]       rwstat
+};
 
 static int start_server(struct p9_server *srv) {
   srv->msize = P9_MAXMSGLEN;
@@ -386,6 +416,7 @@ static void initserver(struct p9_server *srv) {
   srv->stop = stop_server;
   srv->send = p9_sendreq;
   srv->recv = p9_recvreq;
+  srv->rfuncs = rfuncs;
 }
 
 int main(int argc, char **argv) {
@@ -401,72 +432,8 @@ int main(int argc, char **argv) {
   while ((req = srv.recv(&srv.conn)) != 0) {
     if (srv.debug)
       p9_debugfcall(&req->ifcall);
-    switch (req->ifcall.type) {
-      case P9_TVERSION:
-        if (rversion(&srv, req) == -1) {
-          goto fail;
-        }
-        break;
-      case P9_TAUTH:
-        goto fail;
-        break;
-      case P9_TATTACH:
-        if (rattach(&srv, req) == -1) {
-          goto fail;
-        }
-        break;
-      case P9_TWALK:
-        if (rwalk(&srv, req) == -1) {
-          goto fail;
-        }
-        break;
-      case P9_TOPEN:
-        if (ropen(&srv, req) == -1) {
-          goto fail;
-        }
-        break;
-      case P9_TFLUSH:
-        if (rflush(&srv, req) == -1) {
-          goto fail;
-        }
-        break;
-      case P9_TCREATE:
-        if (rcreate(&srv, req) == -1) {
-          goto fail;
-        }
-        break;
-      case P9_TREAD:
-        if (rread(&srv, req) == -1) {
-          goto fail;
-        }
-        break;
-      case P9_TWRITE:
-        if (rwrite(&srv, req) == -1) {
-          goto fail;
-        }
-        break;
-      case P9_TCLUNK:
-        if (rclunk(&srv, req) == -1) {
-          goto fail;
-        }
-        break;
-      case P9_TREMOVE:
-        if (rremove(&srv, req) == -1) {
-          goto fail;
-        }
-        break;
-      case P9_TSTAT:
-        if (rstat(&srv, req) == -1) {
-          goto fail;
-        }
-        break;
-      case P9_TWSTAT:
-        if (rwstat(&srv, req) == -1) {
-          goto fail;
-        }
-        break;
-      default:
-        goto fail;
+    if (srv.rfuncs[req->ifcall.type](&srv, req) == -1) {
+      goto fail;
     }
     respond(&srv, req);
     if (srv.debug)

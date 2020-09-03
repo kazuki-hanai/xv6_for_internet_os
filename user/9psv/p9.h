@@ -11,7 +11,7 @@
 #define P9_TRVERSION_SIZE 6
 
 #define	P9_QIDSZ	      (BIT8SZ+BIT32SZ+BIT64SZ)
-#define P9_MAXMSGLEN    4096
+#define P9_MAXMSGLEN    8192
 #define P9_MAXDATALEN   (P9_MAXMSGLEN-(P9_MAXMSGLEN+4))
 
 #define	GBIT8(p)	((p)[0])
@@ -59,6 +59,8 @@
 #define P9_RSTAT    125
 #define P9_TWSTAT   126
 #define P9_RWSTAT   127
+
+#define P9_RFUNC_NUM 14
 
 #define P9_NOTAG     (uint16_t)~0U
 #define P9_NOFID     (uint32_t)~0U
@@ -235,7 +237,7 @@ struct p9_req {
   struct p9_fcall ifcall;
   struct p9_fcall ofcall;
   struct p9_fid   *fid;
-  int                   error;
+  int             error;
 };
 
 // util
@@ -245,16 +247,17 @@ uint8_t*                p9_pstring(uint8_t *, const char *);
 uint16_t                p9_stringsz(const char *);
 char*                   p9_getfilename(char* path);
 uint32_t                p9_getfcallsize(struct p9_fcall*);
-int                     p9_composefcall(struct p9_fcall*, uint8_t*, int);
 void                    p9_debugfcall(struct p9_fcall*);
 int                     p9_is_dir(uint8_t type);
+
+struct p9_req*          parsefcall(uint8_t*, int);
+int                     composefcall(struct p9_fcall*, uint8_t*, int);
 
 // syscall wrapper
 void*                   p9malloc(int);
 int                     p9open(char* path, int mode);
 
 // req
-struct p9_req*          p9_parsefcall(uint8_t*, int);
 struct p9_req*          p9_allocreq();
 void                    p9_freereq(struct p9_req*);
 int                     p9_sendreq(struct p9_conn *conn, struct p9_req *req);
@@ -275,49 +278,9 @@ struct p9_file*         p9_allocfile(char* path, struct p9_filesystem* fs);
 void                    p9_freefile(struct p9_file* file);
 int                     p9_getdir(struct p9_file* file);
 
-// version
-uint8_t*                p9_parse_tversion(struct p9_fcall*, uint8_t*, int);
-int                     p9_compose_rversion(struct p9_fcall*, uint8_t*);
-
-// attach
-uint8_t*                p9_parse_tattach(struct p9_fcall*, uint8_t*, int);
-int                     p9_compose_rattach(struct p9_fcall*, uint8_t*);
-
-// walk
-uint8_t*                p9_parse_twalk(struct p9_fcall*, uint8_t*, int);
-int                     p9_compose_rwalk(struct p9_fcall*, uint8_t*);
-
 // error
-int                     p9_compose_rerror(struct p9_fcall*, uint8_t*);
 const char*             p9_geterrstr(int key);
-
-// open
-uint8_t*                p9_parse_topen(struct p9_fcall*, uint8_t*, int);
-int                     p9_compose_ropen(struct p9_fcall*, uint8_t*);
-
 // stat
-uint8_t*                p9_parse_tstat(struct p9_fcall*, uint8_t*, int);
-int                     p9_compose_rstat(struct p9_fcall*, uint8_t*);
-int                     p9_compose_stat(char* data, struct p9_stat *stat);
+int                     compose_stat(char* data, struct p9_stat *stat);
 struct p9_stat*         p9_getstat(char *path);
 void                    p9_freestat(struct p9_stat* stat);
-
-// read
-uint8_t*                p9_parse_tread(struct p9_fcall*, uint8_t*, int);
-int                     p9_compose_rread(struct p9_fcall*, uint8_t*);
-
-// write
-uint8_t*                p9_parse_twrite(struct p9_fcall*, uint8_t*, int);
-int                     p9_compose_rwrite(struct p9_fcall*, uint8_t*);
-
-// create
-uint8_t*                p9_parse_tcreate(struct p9_fcall*, uint8_t*, int);
-int                     p9_compose_rcreate(struct p9_fcall*, uint8_t*);
-
-// clunk
-uint8_t*                p9_parse_tclunk(struct p9_fcall*, uint8_t*, int);
-int                     p9_compose_rclunk(struct p9_fcall*, uint8_t*);
-
-// remove
-uint8_t*                p9_parse_tremove(struct p9_fcall*, uint8_t*, int);
-int                     p9_compose_rremove(struct p9_fcall*, uint8_t*);

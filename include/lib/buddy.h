@@ -1,10 +1,6 @@
 #pragma once
-#define LEAF_SIZE     32
-#define NSIZES        8
-#define MAX_SIZE     NSIZES-1
-#define BLK_SIZE(k)   ((1L << (k)) * LEAF_SIZE) 
-#define HEAP_SIZE     BLK_SIZE(MAX_SIZE) // 4096
-#define ROUNDUP(n,sz) (((((n)-1)/(sz))+1)*(sz))
-#define MAX_PAGES     128
 
-void buddy_show_map();
+void*	bd_alloc(int);
+void 	bd_free(void *plist);
+void 	bd_addpage(void *p);
+void 	buddy_show_map();

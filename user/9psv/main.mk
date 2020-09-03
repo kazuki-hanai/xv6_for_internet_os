@@ -3,15 +3,20 @@ P9_DIR = $U/$(PROGNAME)
 P9_SRCS = \
 	$(P9_DIR)/server.c \
 	$(P9_DIR)/utils/string.c \
-	$(P9_DIR)/utils/fcall.c \
 	$(P9_DIR)/utils/util.c \
+	$(P9_DIR)/utils/fparse.c \
+	$(P9_DIR)/utils/fcompose.c \
+	$(P9_DIR)/utils/fsize.c \
+	$(P9_DIR)/utils/fdebug.c \
 	$(P9_DIR)/fid.c \
 	$(P9_DIR)/file.c \
 	$(P9_DIR)/qid.c \
 	$(P9_DIR)/req.c \
 	$(P9_DIR)/fcalls/version.c \
-	$(P9_DIR)/fcalls/error.c \
+	$(P9_DIR)/fcalls/auth.c \
 	$(P9_DIR)/fcalls/attach.c \
+	$(P9_DIR)/fcalls/error.c \
+	$(P9_DIR)/fcalls/flush.c \
 	$(P9_DIR)/fcalls/walk.c \
 	$(P9_DIR)/fcalls/open.c \
 	$(P9_DIR)/fcalls/create.c \

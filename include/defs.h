@@ -60,9 +60,12 @@ void*           kalloc(void);
 void            kfree(void *);
 void            kinit();
 
+// ufkalloc.c
+void		ufkinit();
+void*		ufkalloc(int);
+void 		ufkfree(void*);
+
 // buddy.c
-void*           bd_alloc(int);
-void            bd_free(void *plist);
 void            bd_init();
 
 // log.c

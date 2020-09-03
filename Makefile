@@ -86,6 +86,8 @@ KSRCS += \
 	$K/lib/printf.c \
 	$K/lib/kalloc.c \
 	$K/lib/string.c \
+	$K/lib/list.c \
+	$K/lib/ufkalloc.c \
 	$K/lib/buddy.c \
 	
 # Device System

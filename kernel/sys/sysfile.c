@@ -309,6 +309,7 @@ sys_open(void)
       fileclose(f);
     iunlockput(ip);
     end_op();
+
     return -1;
   }
 
