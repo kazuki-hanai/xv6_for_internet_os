@@ -21,3 +21,4 @@ packets.pcap
 
 test_linux/**
 !test_linux/*.c
+9p-doc/
