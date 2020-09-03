@@ -8,17 +8,6 @@
 
 volatile static int started = 0;
 
-void test_alloc() {
-	void* p = ufkalloc(32);
-	printf("p: %p\n", p);
-	if (p == 0) {
-		panic("naze...\n");
-	}
-	memset(p, 1, 32);
-	ufkfree(p);
-	panic("test_ok\n");
-}
-
 // start() jumps here in supervisor mode on all CPUs.
 void
 main()
@@ -34,9 +23,6 @@ main()
 		kvminithart();   	// turn on paging
 		ufkinit();		// initialize Useful Kernel Allocator
 		bd_init();		// initialize Buddy Allocator
-
-		test_alloc();
-		
 		procinit();		// process table
 		trapinit();		// trap vectors
 		trapinithart();		// install kernel trap vector

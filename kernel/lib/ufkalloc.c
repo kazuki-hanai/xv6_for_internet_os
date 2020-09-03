@@ -80,6 +80,8 @@ static int firstk(int n) {
 
 static int get_pageindex(void *p) {
 	for (int i = 0; i < NBIGPGS; i++) {
+		if (ufk_table.plist[i].pageaddr == 0)
+			break;
 		int offset = p - ufk_table.plist[i].pageaddr;
 		if (0 <= offset && offset < BIGPG_SIZE) {
 			return i;
@@ -91,6 +93,21 @@ static int get_pageindex(void *p) {
 static int blk_index(int k, void* p, void* base) {
 	int n = p - base;
 	return n / BLK_SIZE(k);
+}
+
+static int blksize_index(void *p, int pindex, void* base) {
+	int k;
+	for (k = 0; k < NSIZES; k++) {
+		if (bit_isset(ufk_table.plist[pindex].split[k+1], blk_index(k+1, p, base))) {
+			return k;
+		}
+	}
+	return k-1;
+}
+
+static void* addr(int k, int bi, void* base) {
+	int n = bi * BLK_SIZE(k);
+	return base + n;
 }
 
 static void* _ufkalloc(int nbytes) {
@@ -128,10 +145,17 @@ void* ufkalloc(int nbytes) {
 		if (p == 0) {
 			// TODO: bit set
 			void* p = ufkalloc(PGSIZE);
+			int leafindex = 0;
+			int pindex;
+			if ((pindex = get_pageindex(p)) < 0)
+				panic("[ufkalloc] cannot get page index");
+			void *pbase = ufk_table.plist[pindex].pageaddr;
+			bit_set(ufk_table.plist[pindex].split[leafindex], blk_index(leafindex, p, pbase));
 			bd_addpage(p);
+			bd_addpage(p+PGSIZE);
 			p = bd_alloc(nbytes);
 			if (p == 0)
-				panic("[ufk_alloc] cannot alloc...");
+				panic("[ufkalloc] cannot alloc...");
 			return p;
 		}
 	} else {
@@ -139,15 +163,44 @@ void* ufkalloc(int nbytes) {
 		p = _ufkalloc(nbytes);
 		release(&ufk_table.lock);
 		if (p == 0)
-			panic("[ufk_alloc] could not allocate\n");
+			panic("[ufkalloc] could not allocate\n");
 	}
 
 	return p;
 }
 
+static void _ufkfree(void* p, int pindex, void* pbase) {
+	acquire(&ufk_table.lock);
+	
+	int k;
+	for (k = blksize_index(p, pindex, pbase); k < MAX_SIZE; k++) {
+		int bi = blk_index(k, p, pbase);
+		bit_clear(ufk_table.plist[pindex].alloc[k], bi);
+		int buddy = (bi % 2 == 0) ? bi+1 : bi-1;
+		if (bit_isset(ufk_table.plist[pindex].alloc[k], buddy)) {
+			break;
+		}
+		void* q = addr(k, buddy, pbase);
+		lst_remove(q);
+		if (buddy % 2 == 0) {
+			p = q;
+		}
+		bit_clear(ufk_table.plist[pindex].alloc[k+1], blk_index(k+1, p, pbase));
+		bit_clear(ufk_table.plist[pindex].split[k+1], blk_index(k+1, p, pbase));
+	}
+	lst_push(&ufk_table.freelist[k], p);
+	release(&ufk_table.lock);
+}
 void ufkfree(void* p) {
-	return;
-	bit_clear(0, 0);
-	bit_isset(0, 0);
-	bit_set(0, 0);
+	int leafindex = 0;
+	int pindex;
+	if ((pindex = get_pageindex(p)) < 0)
+		panic("[uffree] cannot get page index");
+	void *pbase = ufk_table.plist[pindex].pageaddr;
+	
+	if (bit_isset(ufk_table.plist[pindex].split[leafindex], blk_index(leafindex, p, pbase))) {
+		bd_free(p);
+	} else {
+		_ufkfree(p, pindex, pbase);
+	}
 }

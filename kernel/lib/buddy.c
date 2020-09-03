@@ -26,19 +26,19 @@ struct {
 	struct pagelist plist[MAX_PAGES];
 } bd_table;
 
-int bit_isset(char *map, int index) {
+static int bit_isset(char *map, int index) {
 	char b = map[index/8];
 	char m = (1 << (index % 8));
 	return (b & m) == m;
 }
 
-void bit_set(char *map, int index) {
+static void bit_set(char *map, int index) {
 	char b = map[index/8];
 	char m = (1 << (index % 8));
 	map[index/8] = (b | m);
 }
 
-void bit_clear(char *map, int index) {
+static void bit_clear(char *map, int index) {
 	char b = map[index/8];
 	char m = (1 << (index % 8));
 	map[index/8] = (b & ~m);
@@ -57,8 +57,7 @@ bd_init()
 	}
 }
 
-int
-firstk(int n) {
+static int firstk(int n) {
 	int k = 0;
 	int size = LEAF_SIZE;
 	while (size < n) {
@@ -68,7 +67,7 @@ firstk(int n) {
 	return k;
 }
 
-int get_page_index(void *addr) {
+static int get_page_index(void *addr) {
 	for (int i = 0; i < MAX_PAGES; i++) {
 		int offset = addr - bd_table.plist[i].pageaddr;
 		if (0 <= offset && offset < HEAP_SIZE) {
@@ -93,7 +92,7 @@ static int blk_size(void *p, int pindex, void* base_addr) {
 	return k-1;
 }
 
-void *addr(int k, int bi, void* base_addr) {
+static void *addr(int k, int bi, void* base_addr) {
 	int n = bi * BLK_SIZE(k);
 	return base_addr + n;
 }
