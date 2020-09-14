@@ -127,9 +127,7 @@ struct sock_cb* get_sock_cb(struct sock_cb_entry table[], uint16_t sport, uint16
 	return scb;
 }
 
-int
-push_to_scb_rxq(struct sock_cb *scb, struct mbuf *m)
-{
+int push_to_scb_rxq(struct sock_cb *scb, struct mbuf *m) {
 	if (scb == 0) {
 		printf("scb: %d\n", scb);
 		return -1;
@@ -151,9 +149,7 @@ struct mbuf *pop_from_scb_rxq(struct sock_cb *scb) {
 	return m;
 }
 
-int
-push_to_scb_txq(struct sock_cb *scb, struct mbuf *m, uint32_t sndnxt, uint8_t flg, uint16_t datalen)
-{
+int push_to_scb_txq(struct sock_cb *scb, struct mbuf *m, uint32_t sndnxt, uint8_t flg, uint16_t datalen) {
 	if (scb == 0) {
 		return -1;
 	}
