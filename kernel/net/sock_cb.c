@@ -119,7 +119,7 @@ struct sock_cb* get_sock_cb(struct sock_cb_entry table[], uint16_t sport, uint16
 	acquire(&entry->lock);
 	scb = entry->head;
 	while (scb != 0) {
-		if (scb->sport == sport && scb->dport != 0 && scb->dport == dport)
+		if (scb->sport == sport && (scb->dport == 0 || (scb->dport != 0 && scb->dport == dport)))
 			break;
 		scb = scb->next;
 	}
