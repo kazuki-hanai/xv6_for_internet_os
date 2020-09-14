@@ -13,7 +13,7 @@
 #include "net/udp.h"
 #include "defs.h"
 
-uint32_t local_ip = MAKE_IP_ADDR(192, 168, 22, 2); // qemu's idea of the guest IP
+uint32_t local_ip = MAKE_IP_ADDR(192, 168, 35, 2); // qemu's idea of the guest IP
 
 // sends an IP packet
 void
