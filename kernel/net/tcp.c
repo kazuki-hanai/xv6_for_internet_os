@@ -60,19 +60,22 @@ static int tcp_acquiresleep(struct sock_cb *scb) {
 }
 
 int tcp_listen(struct sock_cb *scb) {
-	if (scb->socktype != SOCK_TCP) {
-		printf("not tcp socket!\n");
-		return -1;
-	}
-	scb->state = SOCK_CB_LISTEN;
+	// scb->state = SOCK_CB_LISTEN;
 	// TODO SOCK_CB_LISTEN STATE
 	// -> change the connection from passive to active
 	// "error: connection already exists"
 
+	return 0;
+}
+
+int tcp_accept(struct sock_cb* scb, uint32_t* raddr, uint16_t* dport) {
+	scb->state = SOCK_CB_LISTEN;
 	if (tcp_acquiresleep(scb) == -1) {
 		return -1;
 	}
-	
+	*raddr = scb->raddr;
+	*dport = scb->dport;
+
 	return 0;
 }
 
@@ -637,7 +640,7 @@ void tcp_recv(struct mbuf *m, uint16_t len, struct ipv4 *iphdr) {
 	}
 
 	// get scb
-	scb = get_sock_cb(tcp_scb_table, sport, dport);
+	scb = get_sock_cb(tcp_scb_table, sport, raddr, dport);
 	if (scb == 0)
 		goto fail;
 

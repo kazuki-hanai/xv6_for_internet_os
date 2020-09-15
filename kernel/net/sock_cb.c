@@ -45,39 +45,42 @@ struct sock_cb* alloc_sock_cb(struct file *f, uint32_t raddr, uint16_t sport, ui
 }
 
 void free_sock_cb(struct sock_cb *scb) {
-	if (scb != 0) {
-		struct sock_cb_entry *entry;
-		if (scb->socktype == SOCK_TCP) {
-			entry = &tcp_scb_table[scb->sport % SOCK_CB_LEN];
-		} else {
-			entry = &udp_scb_table[scb->sport % SOCK_CB_LEN];
-		}
-
-		if (scb->f) {
-			filefree(scb->f);
-		}
-
-		kfree(scb->wnd);
-
-		struct mbuf *m;
-		while((m = pop_from_scb_rxq(scb)) != 0) {
-			mbuffree(m);
-		}
-		while((m = pop_from_scb_txq(scb)) != 0) {
-			mbuffree(m);
-		}
-
-		release_sport(scb->sport);
-		acquire(&entry->lock);
-		if (scb->next != 0)
-			scb->next->prev = scb->prev;
-		if (scb->prev != 0)
-			scb->prev->next = scb->next;
-		else
-			entry->head = scb->next;
-		ufkfree(scb);
-		release(&entry->lock);
+	if (scb == 0) {
+		return;
 	}
+
+	struct sock_cb_entry *entry;
+	if (scb->socktype == SOCK_TCP) {
+		entry = &tcp_scb_table[scb->sport % SOCK_CB_LEN];
+	} else {
+		entry = &udp_scb_table[scb->sport % SOCK_CB_LEN];
+	}
+
+	if (scb->f) {
+		filefree(scb->f);
+	}
+
+	kfree(scb->wnd);
+
+	struct mbuf *m;
+	while((m = pop_from_scb_rxq(scb)) != 0) {
+		mbuffree(m);
+	}
+	while((m = pop_from_scb_txq(scb)) != 0) {
+		mbuffree(m);
+	}
+
+	release_sport(scb->sport);
+	acquire(&entry->lock);
+	if (scb->next != 0)
+		scb->next->prev = scb->prev;
+	if (scb->prev != 0) {
+		scb->prev->next = scb->next;
+	} else {
+		entry->head = scb->next;
+	}
+	ufkfree(scb);
+	release(&entry->lock);
 }
 
 void add_sock_cb(struct sock_cb *scb) {
@@ -110,7 +113,7 @@ void add_sock_cb(struct sock_cb *scb) {
 	release(&entry->lock);
 }
 
-struct sock_cb* get_sock_cb(struct sock_cb_entry table[], uint16_t sport, uint16_t dport) {
+struct sock_cb* get_sock_cb(struct sock_cb_entry table[], uint16_t sport, uint32_t raddr, uint16_t dport) {
 	struct sock_cb_entry* entry;
 	struct sock_cb *scb;
 
@@ -119,7 +122,8 @@ struct sock_cb* get_sock_cb(struct sock_cb_entry table[], uint16_t sport, uint16
 	acquire(&entry->lock);
 	scb = entry->head;
 	while (scb != 0) {
-		if (scb->sport == sport && (scb->dport == 0 || (scb->dport != 0 && scb->dport == dport)))
+		// TODO: UDP match
+		if ((scb->sport == sport) && ((scb->dport == 0) || ((scb->dport != 0) && (scb->dport == dport))))
 			break;
 		scb = scb->next;
 	}

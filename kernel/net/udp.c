@@ -56,7 +56,7 @@ void udp_recv(struct mbuf *m, uint16_t len, struct ipv4 *iphdr) {
 	sport = ntohs(udphdr->dport);
 	dport = ntohs(udphdr->sport);
 
-	struct sock_cb *scb = get_sock_cb(udp_scb_table, sport, dport);
+	struct sock_cb *scb = get_sock_cb(udp_scb_table, sport, raddr, dport);
 	if (scb == 0)
 		goto fail;
 	if (scb->raddr == 0 && scb->dport == 0) {

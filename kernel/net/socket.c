@@ -82,8 +82,35 @@ void socket_init() {
 	}
 }
 
-struct sock_cb* sockalloc(int socktype) {
-	return alloc_sock_cb(0, 0, 0, 0, socktype);
+struct file* sockalloc(int socktype) {
+	struct file* f;
+	if ((f = filealloc()) == 0) {
+		return 0;
+	}
+	f->type = FD_SOCK;
+	f->readable = 1;
+	f->writable = 1;
+	if ((f->scb = alloc_sock_cb(f, 0, 0, 0, socktype)) == 0) {
+		fileclose(f);
+		return 0;
+	}
+	f->scb->f = f;
+	return f;
+}
+
+struct file* sockcopy(struct file* f) {
+	struct file* new_f;
+	if ((new_f = filealloc()) == 0) {
+		return 0;
+	}
+	new_f->type = f->type;
+	new_f->readable = f->readable;
+	new_f->writable = f->writable;
+	if ((new_f->scb = alloc_sock_cb(new_f, f->scb->raddr, f->scb->sport, f->scb->dport, f->scb->socktype)) == 0) {
+		fileclose(f);
+		return 0;
+	}
+	return new_f;
 }
 
 void sockfree(struct sock_cb *scb) {
@@ -92,21 +119,48 @@ void sockfree(struct sock_cb *scb) {
 
 uint64_t socklisten(struct sock_cb *scb, uint16_t sport) {
 	// port already used
-	if (get_specified_sport(sport) < 0) {
+	if ((sport = get_specified_sport(sport)) < 0) {
 		return -1;
 	}
 	scb->sport = sport;
 
 	if (scb->socktype == SOCK_TCP) {
-		add_sock_cb(scb);
 		if (tcp_listen(scb) < 0) {
 			return -1;
 		}
-	} else {
-		add_sock_cb(scb);
 	}
 
 	return 0;
+}
+
+uint64_t sockaccept(struct sock_cb *scb, uint32_t* raddr, uint16_t* dport) {
+	struct file* new_file;
+	struct sock_cb* new_scb;
+	int new_fd;
+	new_file = sockcopy(scb->f);
+	new_scb = new_file->scb;
+	
+	if ((new_fd = fdalloc(new_file)) < 0) {
+		goto bad;
+	}
+
+	add_sock_cb(new_scb);
+	if (new_scb->socktype == SOCK_TCP) {
+		if (tcp_accept(new_scb, raddr, dport) < 0) {
+			return -1;
+		}
+	} else {
+		// TODO: UDP accept
+	}
+
+	*raddr = new_scb->raddr;
+	*dport = new_scb->dport;
+
+	return new_fd;
+bad:
+	if (new_file)
+		fileclose(new_file);
+	return -1;
 }
 
 uint64_t sockconnect(struct sock_cb *scb, uint32_t raddr, uint16_t dport) {
@@ -114,13 +168,11 @@ uint64_t sockconnect(struct sock_cb *scb, uint32_t raddr, uint16_t dport) {
 	scb->sport = get_new_sport();
 	scb->dport = dport;
 
+	add_sock_cb(scb);
 	if (scb->socktype == SOCK_TCP) {
-		add_sock_cb(scb);
 		if (tcp_connect(scb) < 0) {
 			return -1;
 		}
-	} else {
-		add_sock_cb(scb);
 	}
 
 	return 0;
