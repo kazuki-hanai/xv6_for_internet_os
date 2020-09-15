@@ -186,6 +186,8 @@ int socksend(struct sock_cb *scb, uint64_t addr, int n, int is_copyin) {
 	int bufsize = 0;
 	int res = 0;
 	while (n > 0) {
+		if (scb == 0 || scb->state == SOCK_CB_CLOSE_WAIT)
+			return -1;
 		struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
 		if (m == 0) {
 			return -1;
