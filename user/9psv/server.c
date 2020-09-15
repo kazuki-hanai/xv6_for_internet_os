@@ -389,6 +389,14 @@ static int start_server(struct p9_server *srv) {
     printf("socket error!\n");
     return -1;
   }
+  // TODO multi client
+  uint32_t raddr;
+  uint16_t dport;
+  if ((srv->conn.sockfd = accept(srv->conn.sockfd, &raddr, &dport)) < 0) {
+    printf("socket error!\n");
+    return -1;
+  }
+  printf("accept: %x:%d\n", raddr, dport);
   return 0;
 }
 

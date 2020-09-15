@@ -5,12 +5,12 @@
 #include "defs.h"
 #include "file.h"
 #include "net/socket.h"
+#include "proc.h"
 
 uint64_t
 sys_socket(void)
 {
   struct file *f;
-  struct sock_cb *scb;
   int socktype;
 
   if(
@@ -18,14 +18,8 @@ sys_socket(void)
   )
     return -1;
 
-  if ((f = filealloc()) == 0)
+  if ((f = sockalloc(socktype)) == 0)
     goto bad;
-  if ((scb = sockalloc(socktype)) == 0)
-    goto bad;
-  f->type = FD_SOCK;
-  f->readable = 1;
-  f->writable = 1;
-  f->scb = scb;
 
   int fd;
   if((fd = fdalloc(f)) < 0)
@@ -36,8 +30,6 @@ sys_socket(void)
 bad:
   if (f)
     fileclose(f);
-  if (scb)
-    free_sock_cb(scb);
   return -1;
 }
 
@@ -61,17 +53,29 @@ uint64_t sys_socklisten() {
 }
 
 uint64_t sys_sockaccept() {
-  int fd;
-  struct file *f;
-  // struct sock_cb *scb;
-  uint32_t raddr;
-  uint16_t dport;
+	int fd;
+	struct file *f;
+	struct sock_cb *scb;
+	struct proc *p = myproc();
+	uint64_t raddrp;
+	uint64_t dportp;
+	uint32_t raddr;
+	uint16_t dport;
 
-  if (argaddr(2, (uint64_t *)&dport) < 0 || argaddr(1, (uint64_t *)&raddr) < 0 || argfd(0, &fd, &f) < 0) {
-    return -1;
-  }
-  // scb = f->scb;
-  return 0;
+	if (argaddr(2, (uint64_t *)&dportp) < 0 || argaddr(1, (uint64_t *)&raddrp) < 0 || argfd(0, &fd, &f) < 0) {
+		return -1;
+	}
+
+	scb = f->scb;
+	if (f->type !=  FD_SOCK || scb == 0) {
+		return -1;
+	}
+	int res = sockaccept(scb, &raddr, &dport);
+
+	copyout(p->pagetable, raddrp, (char*)&raddr, sizeof(uint32_t));
+	copyout(p->pagetable, dportp, (char*)&dport, sizeof(uint16_t));
+
+	return res;
 }
 
 

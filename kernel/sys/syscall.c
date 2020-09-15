@@ -127,6 +127,7 @@ extern uint64_t sys_uptime(void);
 extern uint64_t sys_socket(void);
 extern uint64_t sys_sockconnect(void);
 extern uint64_t sys_socklisten(void);
+extern uint64_t sys_sockaccept(void);
 
 static uint64_t (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -153,6 +154,7 @@ static uint64_t (*syscalls[])(void) = {
 [SYS_socket]  sys_socket,
 [SYS_connect]  sys_sockconnect,
 [SYS_listen]  sys_socklisten,
+[SYS_accept]  sys_sockaccept,
 };
 
 void

@@ -120,3 +120,8 @@ connect:
  li a7, SYS_connect
  ecall
  ret
+.global accept
+accept:
+ li a7, SYS_accept
+ ecall
+ ret
