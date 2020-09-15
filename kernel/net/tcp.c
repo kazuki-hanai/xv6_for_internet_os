@@ -688,9 +688,8 @@ void tcp_recv(struct mbuf *m, uint16_t len, struct ipv4 *iphdr) {
 
 	// TODO URG process
 	return;
-
-	fail:
-		if (m != 0)
-	mbuffree(m);
+fail:
+	if (m != 0)
+		mbuffree(m);
 	return;
 }

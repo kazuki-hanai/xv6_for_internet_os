@@ -110,6 +110,8 @@ struct file* sockcopy(struct file* f) {
 		fileclose(f);
 		return 0;
 	}
+	new_f->scb->f = f;
+
 	return new_f;
 }
 
