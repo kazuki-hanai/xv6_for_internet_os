@@ -159,10 +159,10 @@ UPROGS=\
   	_wc\
   	_xargs\
   	_zombie\
-  	_udp\
-  	_udplisten\
   	_tcp\
 	_9psv\
+  	# _udp\
+  	# _udplisten\
 
 USERMAK = $U/9psv/main.mk
 
