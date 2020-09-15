@@ -10,46 +10,46 @@
 uint64_t
 sys_socket(void)
 {
-  struct file *f;
-  int socktype;
+	struct file *f;
+	int socktype;
 
-  if(
-    argint(0, (int *)&socktype) < 0
-  )
-    return -1;
+	if(
+		argint(0, (int *)&socktype) < 0
+	)
+		return -1;
 
-  if ((f = sockalloc(socktype)) == 0)
-    goto bad;
+	if ((f = sockalloc(socktype)) == 0)
+		goto bad;
 
-  int fd;
-  if((fd = fdalloc(f)) < 0)
-    return -1;
+	int fd;
+	if((fd = fdalloc(f)) < 0)
+		return -1;
 
-  return fd;
+	return fd;
 
 bad:
-  if (f)
-    fileclose(f);
-  return -1;
+	if (f)
+		fileclose(f);
+	return -1;
 }
 
 uint64_t sys_socklisten() {
-  int fd;
-  struct file *f;
-  struct sock_cb *scb;
-  uint16_t sport;
+	int fd;
+	struct file *f;
+	struct sock_cb *scb;
+	uint16_t sport;
 
-  if (argint(1, (int *)&sport) < 0 || argfd(0, &fd, &f) < 0 ) {
-    return -1;
-  }
+	if (argint(1, (int *)&sport) < 0 || argfd(0, &fd, &f) < 0 ) {
+		return -1;
+	}
 
-  scb = f->scb;
-  // file doesn*t equal socket or socket close
-  if (f->type !=  FD_SOCK || scb == 0) {
-    return -1;
-  }
-  
-  return socklisten(scb, sport);
+	scb = f->scb;
+	// file doesn*t equal socket or socket close
+	if (f->type !=  FD_SOCK || scb == 0) {
+		return -1;
+	}
+	
+	return socklisten(scb, sport);
 }
 
 uint64_t sys_sockaccept() {
@@ -80,20 +80,20 @@ uint64_t sys_sockaccept() {
 
 
 uint64_t sys_sockconnect() {
-  struct file *f;
-  struct sock_cb *scb;
-  uint32_t raddr;
-  uint16_t dport;
+	struct file *f;
+	struct sock_cb *scb;
+	uint32_t raddr;
+	uint16_t dport;
 
-  if (argint(2, (int *)&dport) < 0 || argint(1, (int *)&raddr) < 0 || argfd(0, 0, &f) < 0) {
-    return -1;
-  }
+	if (argint(2, (int *)&dport) < 0 || argint(1, (int *)&raddr) < 0 || argfd(0, 0, &f) < 0) {
+		return -1;
+	}
 
-  scb = f->scb;
-  // file doesn*t equal socket or socket close
-  if (f->type !=  FD_SOCK || scb == 0) {
-    return -1;
-  }
+	scb = f->scb;
+	// file doesn*t equal socket or socket close
+	if (f->type !=  FD_SOCK || scb == 0) {
+		return -1;
+	}
 
-  return sockconnect(scb, raddr, dport); 
+	return sockconnect(scb, raddr, dport); 
 }

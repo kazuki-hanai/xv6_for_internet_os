@@ -36,9 +36,9 @@ allocmap(void (*inc)(void*))
 	struct intmap *m;
 
 	m = malloc(sizeof(*m));
-  if (m == 0) {
-    return 0;
-  }
+	if (m == 0) {
+		return 0;
+	}
 	if(inc == 0)
 		inc = nop;
 	m->inc = inc;

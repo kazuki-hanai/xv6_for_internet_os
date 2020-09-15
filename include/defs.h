@@ -200,7 +200,7 @@ int             e1000_transmit(struct mbuf *);
 // net.c
 void            net_rx(struct mbuf *);
 void            net_tx_udp(struct mbuf *, uint32_t,
-                            uint16_t, uint16_t);
+						                uint16_t, uint16_t);
 
 // arp.c
 void            arpinit();

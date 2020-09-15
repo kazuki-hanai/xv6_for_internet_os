@@ -22,24 +22,24 @@ ramdiskinit(void)
 void
 ramdiskrw(struct buf *b)
 {
-  if(!holdingsleep(&b->lock))
-    panic("ramdiskrw: buf not locked");
-  if((b->flags & (B_VALID|B_DIRTY)) == B_VALID)
-    panic("ramdiskrw: nothing to do");
+	if(!holdingsleep(&b->lock))
+		panic("ramdiskrw: buf not locked");
+	if((b->flags & (B_VALID|B_DIRTY)) == B_VALID)
+		panic("ramdiskrw: nothing to do");
 
-  if(b->blockno >= FSSIZE)
-    panic("ramdiskrw: blockno too big");
+	if(b->blockno >= FSSIZE)
+		panic("ramdiskrw: blockno too big");
 
-  uint64_t diskaddr = b->blockno * BSIZE;
-  char *addr = (char *)RAMDISK + diskaddr;
+	uint64_t diskaddr = b->blockno * BSIZE;
+	char *addr = (char *)RAMDISK + diskaddr;
 
-  if(b->flags & B_DIRTY){
-    // write
-    memmove(addr, b->data, BSIZE);
-    b->flags &= ~B_DIRTY;
-  } else {
-    // read
-    memmove(b->data, addr, BSIZE);
-    b->flags |= B_VALID;
-  }
+	if(b->flags & B_DIRTY){
+		// write
+		memmove(addr, b->data, BSIZE);
+		b->flags &= ~B_DIRTY;
+	} else {
+		// read
+		memmove(b->data, addr, BSIZE);
+		b->flags |= B_VALID;
+	}
 }

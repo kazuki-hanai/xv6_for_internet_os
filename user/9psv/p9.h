@@ -109,135 +109,135 @@
 struct intmap;
 
 struct p9_qid {
-  // qid fields
+	// qid fields
 	uint64_t              path;
 	uint32_t              vers;
 	uint8_t 	            type;
 };
 
 struct p9_filesystem {
-  struct p9_file* root;
-  char*           rootpath;
-  int             rootpathlen;
+	struct p9_file* root;
+	char*           rootpath;
+	int             rootpathlen;
 };
 
 struct p9_stat {
-  /* system-modified data */
-  int                   size;
-  uint16_t              type;   /* server type */
-  uint32_t              dev;    /* server subtype */
-  /* file data */
-  struct p9_qid         qid;
-  uint32_t              mode;   /* permissions */
-  uint32_t              atime;  /* last read time */
-  uint32_t              mtime;  /* last write time */
-  uint64_t              length; /* file length */
-  char*                 name;  /* last element of path */
-  char*                 uid;   /* owner name */
-  char*                 gid;   /* group name */
-  char*                 muid;  /* last modifier name */
+	/* system-modified data */
+	int                   size;
+	uint16_t              type;   /* server type */
+	uint32_t              dev;    /* server subtype */
+	/* file data */
+	struct p9_qid         qid;
+	uint32_t              mode;   /* permissions */
+	uint32_t              atime;  /* last read time */
+	uint32_t              mtime;  /* last write time */
+	uint64_t              length; /* file length */
+	char*                 name;  /* last element of path */
+	char*                 uid;   /* owner name */
+	char*                 gid;   /* group name */
+	char*                 muid;  /* last modifier name */
 };
 
 struct p9_file {
-  int                   ref;
-  struct p9_filesystem* fs;
-  char*                 path;
-  int                   child_num;
-  char*                 childs[32];
-  void*                 aux;
+	int                   ref;
+	struct p9_filesystem* fs;
+	char*                 path;
+	int                   child_num;
+	char*                 childs[32];
+	void*                 aux;
 };
 
 struct p9_fid {
-  uint64_t            fid;
-  int                 fd;
-  struct p9_file*     file;
-  struct p9_fidpool*  fpool;
-  int                 offset;
+	uint64_t            fid;
+	int                 fd;
+	struct p9_file*     file;
+	struct p9_fidpool*  fpool;
+	int                 offset;
 };
 
 struct p9_fidpool {
-  struct intmap     *map;
-  void              (*destroy)(struct p9_fid*);
-  struct p9_server  *srv;
+	struct intmap     *map;
+	void              (*destroy)(struct p9_fid*);
+	struct p9_server  *srv;
 };
 
 struct p9_qidpool {
-  struct intmap     *map;
-  void              (*destroy)(struct p9_qid*);
-  struct p9_server  *srv;
+	struct intmap     *map;
+	void              (*destroy)(struct p9_qid*);
+	struct p9_server  *srv;
 };
 
 struct p9_fcall {
-  uint32_t            size;
-  uint8_t             type;
-  uint16_t            tag;
-  uint32_t            fid;
-  union {
-    struct {
-      uint64_t        req_mask;             /* Tgetattr */
-    };
-    struct {
-      uint32_t        msize;                /* Tversion, Rversion */
-      char            *version;             /* Tversion, Rversion */
-    };
-    struct {
-      uint16_t        oldtag;               /* Tflush */
-    };
-    struct {
-      const char*     ename;	              /* Rerror */
-    };
-    struct {
-      struct p9_qid   qid;                  /* Rattach, Ropen, Rcreate */
-      uint32_t        iounit;               /* Ropen, Rcreate */
-    };
-    struct {
-      struct p9_qid   aqid;                 /* Rauth */
-    };
-    struct {
-      uint32_t        afid;                 /* Tauth, Tattach */
-      char            *uname;               /* Tauth, Tattach */
-      char            *aname;               /* Tauth, Tattach */
-      uint32_t        uidnum;		            /* Tauth, Tattach 9P2000.L extension */
-    };
-    struct {
-      uint32_t        perm;                 /* Tcreate */
-      char            *name;                /* Tcreate */
-      uint8_t         mode;                 /* Tcreate, Topen */
-      uint8_t         *extension;	          /* Tcreate 9P2000.L extension */
-    };
-    struct {
-      uint32_t        newfid;               /* Twalk */
-      uint16_t        nwname;               /* Twalk */
-      char            *wname[P9_MAXWELEM];  /* Twalk */
-    };
-    struct {
-      uint16_t        nwqid;                /* Rwalk */
-      struct p9_qid   wqid[P9_MAXWELEM];    /* Rwalk */
-    };
-    struct {
-      uint64_t        offset;               /* Tread, Twrite */
-      uint32_t        count;                /* Tread, Twrite, Rread */
-      char            *data;                /* Twrite, Rread */
-    };
-    struct {
-      uint16_t        parlen;               /* Rstat */
-      uint16_t        nstat;                /* Twstat, Rstat */
-      struct p9_stat* stat;                 /* Twstat, Rstat */
-    };
-  };
+	uint32_t            size;
+	uint8_t             type;
+	uint16_t            tag;
+	uint32_t            fid;
+	union {
+		struct {
+			uint64_t        req_mask;             /* Tgetattr */
+		};
+		struct {
+			uint32_t        msize;                /* Tversion, Rversion */
+			char            *version;             /* Tversion, Rversion */
+		};
+		struct {
+			uint16_t        oldtag;               /* Tflush */
+		};
+		struct {
+			const char*     ename;	              /* Rerror */
+		};
+		struct {
+			struct p9_qid   qid;                  /* Rattach, Ropen, Rcreate */
+			uint32_t        iounit;               /* Ropen, Rcreate */
+		};
+		struct {
+			struct p9_qid   aqid;                 /* Rauth */
+		};
+		struct {
+			uint32_t        afid;                 /* Tauth, Tattach */
+			char            *uname;               /* Tauth, Tattach */
+			char            *aname;               /* Tauth, Tattach */
+			uint32_t        uidnum;		            /* Tauth, Tattach 9P2000.L extension */
+		};
+		struct {
+			uint32_t        perm;                 /* Tcreate */
+			char            *name;                /* Tcreate */
+			uint8_t         mode;                 /* Tcreate, Topen */
+			uint8_t         *extension;	          /* Tcreate 9P2000.L extension */
+		};
+		struct {
+			uint32_t        newfid;               /* Twalk */
+			uint16_t        nwname;               /* Twalk */
+			char            *wname[P9_MAXWELEM];  /* Twalk */
+		};
+		struct {
+			uint16_t        nwqid;                /* Rwalk */
+			struct p9_qid   wqid[P9_MAXWELEM];    /* Rwalk */
+		};
+		struct {
+			uint64_t        offset;               /* Tread, Twrite */
+			uint32_t        count;                /* Tread, Twrite, Rread */
+			char            *data;                /* Twrite, Rread */
+		};
+		struct {
+			uint16_t        parlen;               /* Rstat */
+			uint16_t        nstat;                /* Twstat, Rstat */
+			struct p9_stat* stat;                 /* Twstat, Rstat */
+		};
+	};
 };
 
 struct p9_conn {
-  int sockfd;
-  uint8_t* wbuf;
-  uint8_t* rbuf;
+	int sockfd;
+	uint8_t* wbuf;
+	uint8_t* rbuf;
 };
 
 struct p9_req {
-  struct p9_fcall ifcall;
-  struct p9_fcall ofcall;
-  struct p9_fid   *fid;
-  int             error;
+	struct p9_fcall ifcall;
+	struct p9_fcall ofcall;
+	struct p9_fid   *fid;
+	int             error;
 };
 
 // util

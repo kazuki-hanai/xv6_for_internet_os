@@ -14,18 +14,18 @@ void sock_cb_test();
 volatile static int single_done = 0;
 
 void test_start() {
-  printf("start testing...\n\n");
+	printf("start testing...\n\n");
 
-  if (cpuid() == 0) {
-    // buddy_test();
-    arp_test();
-    sock_cb_test();
-    sysnet_test();
-    single_done = 1;
-  } else {
-    while (!single_done)
-      ;
-  }
-  tcp_test();
-  printf("test done!!!\n\n");
+	if (cpuid() == 0) {
+		// buddy_test();
+		arp_test();
+		sock_cb_test();
+		sysnet_test();
+		single_done = 1;
+	} else {
+		while (!single_done)
+			;
+	}
+	tcp_test();
+	printf("test done!!!\n\n");
 }

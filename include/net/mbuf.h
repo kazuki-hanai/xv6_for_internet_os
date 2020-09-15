@@ -43,8 +43,8 @@ void mbuffree(struct mbuf *m);
 struct mbuf *mbuf_copy(struct mbuf *m);
 
 struct mbufq {
-  struct mbuf *head;  // the first element in the queue
-  struct mbuf *tail;  // the last element in the queue
+	struct mbuf *head;  // the first element in the queue
+	struct mbuf *tail;  // the last element in the queue
 };
 
 void mbufq_pushtail(struct mbufq *q, struct mbuf *m);
