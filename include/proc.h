@@ -1,4 +1,7 @@
 #pragma once
+
+#include "param.h"
+
 // Saved registers for kernel context switches.
 struct context {
   uint64_t ra;

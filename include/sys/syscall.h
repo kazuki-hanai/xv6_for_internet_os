@@ -24,3 +24,4 @@
 #define SYS_socket 22
 #define SYS_connect 23
 #define SYS_listen 24
+#define SYS_accept 25

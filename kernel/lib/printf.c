@@ -88,7 +88,7 @@ printf(char *fmt, ...)
       printint(va_arg(ap, int), 10, 1);
       break;
     case 'x':
-      printint(va_arg(ap, int), 16, 1);
+      printint(va_arg(ap, int), 16, 0);
       break;
     case 'p':
       printptr(va_arg(ap, uint64_t));
