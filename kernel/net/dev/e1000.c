@@ -123,7 +123,7 @@ e1000_recv(void)
 
 	// init
 	int index = (regs[E1000_RDT]+1) % RX_RING_SIZE;
-	while(rx_ring[index].status & E1000_RXD_STAT_DD) {
+	while (rx_ring[index].status & E1000_RXD_STAT_DD) {
 		struct mbuf *m = &rx_mbuf[index];
 		uint16_t len = rx_ring[index].length;
 		rx_ring[index].status ^= E1000_RXD_STAT_DD;
@@ -140,9 +140,7 @@ e1000_recv(void)
 	}
 }
 
-void 
-e1000_intr() {
-	e1000_recv();
+void e1000_intr() {
 	regs[E1000_ICR]; // clear pending interrupts
+	e1000_recv();
 }
-
