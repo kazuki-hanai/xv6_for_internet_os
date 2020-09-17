@@ -262,7 +262,6 @@ int sockrecv(struct sock_cb *scb, uint64_t addr, int n, int is_copyout) {
 
 			if (n > m->len) {
 				int is_psh = TCP_FLG_ISSET(m->tcphdr->flg, TCP_FLG_PSH);
-				mbuffree(m);
 				if (is_psh) {
 					break;
 				}
@@ -291,7 +290,6 @@ int sockrecv(struct sock_cb *scb, uint64_t addr, int n, int is_copyout) {
 			mbufpull(m, n-1);
 			mbufq_pushhead(&scb->rxq, m);
 		} else {
-			mbuffree(m);
 		}
 		res = acceptable_size;
 	}

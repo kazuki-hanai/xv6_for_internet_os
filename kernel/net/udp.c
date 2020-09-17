@@ -66,6 +66,6 @@ void udp_recv(struct mbuf *m, uint16_t len, struct ipv4 *iphdr) {
 	// parse the necessary fields
 	push_to_scb_rxq(scb, m);
 	return;
-	fail:
-	mbuffree(m);
+fail:
+	return;
 }

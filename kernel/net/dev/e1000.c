@@ -15,6 +15,7 @@ static struct mbuf *tx_mbuf[TX_RING_SIZE];
 
 #define RX_RING_SIZE 16
 static struct rx_desc rx_ring[RX_RING_SIZE] __attribute__((aligned(16)));
+static struct mbuf rx_mbuf[RX_RING_SIZE];
 
 // remember where the e1000's registers live.
 static volatile uint32_t *regs;
@@ -51,7 +52,8 @@ e1000_init(uint32_t *xregs)
 	// [E1000 14.4] Receive initialization
 	memset(rx_ring, 0, sizeof(rx_ring));
 	for (i = 0; i < RX_RING_SIZE; i++) {
-		rx_ring[i].addr = (uint64_t) kalloc();
+		// rx_ring[i].addr = (uint64_t) kalloc();
+		rx_ring[i].addr = (uint64_t) rx_mbuf[i].buf;
 	}
 	regs[E1000_RDBAL] = (uint64_t) rx_ring;
 	if(sizeof(rx_ring) % 128 != 0)
@@ -122,10 +124,14 @@ e1000_recv(void)
 	// init
 	int index = (regs[E1000_RDT]+1) % RX_RING_SIZE;
 	while(rx_ring[index].status & E1000_RXD_STAT_DD) {
-		struct mbuf *m = mbufalloc(0);
+		struct mbuf *m = &rx_mbuf[index];
 		uint16_t len = rx_ring[index].length;
 		rx_ring[index].status ^= E1000_RXD_STAT_DD;
-		memmove((void *)m->buf, (void *)rx_ring[index].addr, len);
+
+		m->raddr = 0;
+		m->next = 0;
+		m->head = m->buf;
+		m->len = 0;
 		mbufput(m, len);
 
 		regs[E1000_RDT] = index;

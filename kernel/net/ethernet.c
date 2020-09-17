@@ -52,7 +52,6 @@ void eth_recv(struct mbuf *m)
 
 	ethhdr = mbufpullhdr(m, *ethhdr);
 	if (!ethhdr) {
-		mbuffree(m);
 		return;
 	}
 
@@ -61,6 +60,5 @@ void eth_recv(struct mbuf *m)
 		ip_recv(m);
 	} else if (type == ETH_TYPE_ARP) {
 		arp_recv(m);
-	} else
-		mbuffree(m);
+	}
 }

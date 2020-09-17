@@ -106,5 +106,5 @@ arp_recv(struct mbuf *m)
 	arp_send(ARP_OP_REPLY, smac, sip);
 
 done:
-	mbuffree(m);
+	return;
 }

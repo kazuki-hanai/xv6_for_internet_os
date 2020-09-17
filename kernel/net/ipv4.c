@@ -73,5 +73,5 @@ ip_recv(struct mbuf *m)
 	return;
 
 fail:
-	mbuffree(m);
+	return;
 }
