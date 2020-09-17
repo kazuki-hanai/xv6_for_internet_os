@@ -5,8 +5,8 @@
 #include "net/sock_cb.h"
 
 #define START_OF_SPORT 20000
-#define SPORT_NUM 3000
-#define MAX_SPORT SPORT_NUM * 8
+#define SPORT_NUM 65535
+#define SPORT_ELEM SPORT_NUM / 8
 
 #define SPORT_IS_USED(x) (sport_table[x/8] >> (x % 8) & 0x01)
 

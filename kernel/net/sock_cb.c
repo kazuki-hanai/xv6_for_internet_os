@@ -72,12 +72,14 @@ void free_sock_cb(struct sock_cb *scb) {
 
 	release_sport(scb->sport);
 	acquire(&entry->lock);
-	if (scb->next != 0)
-		scb->next->prev = scb->prev;
-	if (scb->prev != 0) {
-		scb->prev->next = scb->next;
-	} else {
-		entry->head = scb->next;
+	if (scb->dport != 0) {
+		if (scb->next != 0)
+			scb->next->prev = scb->prev;
+		if (scb->prev != 0) {
+			scb->prev->next = scb->next;
+		} else {
+			entry->head = scb->next;
+		}
 	}
 	ufkfree(scb);
 	release(&entry->lock);

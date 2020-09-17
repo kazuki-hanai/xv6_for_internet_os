@@ -19,7 +19,7 @@
 extern struct sock_cb_entry tcp_scb_table[SOCK_CB_LEN];
 extern struct sock_cb_entry udp_scb_table[SOCK_CB_LEN];
 
-uint8_t sport_table[SPORT_NUM];
+uint8_t sport_table[SPORT_ELEM];
 struct spinlock sport_lock;
 uint16_t current_sport = START_OF_SPORT;
 
@@ -36,7 +36,7 @@ uint16_t get_new_sport() {
 				}
 			}
 		}
-		if (current_sport+8 >= MAX_SPORT) {
+		if (current_sport+8 >= SPORT_NUM) {
 			current_sport = START_OF_SPORT;
 			islooped += 1;
 		} else {
@@ -60,17 +60,16 @@ uint16_t get_specified_sport(uint16_t sport) {
 }
 
 void release_sport(uint16_t sport) {
-	if (sport > MAX_SPORT)
+	if (sport > SPORT_NUM)
 		return;
 	acquire(&sport_lock);
-	if (((sport_table[(sport - START_OF_SPORT)/8]) & (1 << ((sport - START_OF_SPORT) % 8))) >= 1)
-		sport_table[(sport - START_OF_SPORT)/8] ^= 1 << ((sport - START_OF_SPORT) % 8);
+	if (((sport_table[sport/8]) & (1 << (sport % 8))) >= 1)
+		sport_table[sport/8] ^= 1 << (sport % 8);
 	release(&sport_lock);
 }
 
 void socket_init() {
 	initlock(&sport_lock, "sportlock");
-	printf("sport: %d\n", sport_table[(current_sport - START_OF_SPORT)/8]);
 	memset(sport_table, 0, sizeof(sport_table));
 	memset(tcp_scb_table, 0, sizeof(tcp_scb_table));
 	memset(udp_scb_table, 0, sizeof(udp_scb_table));
@@ -186,8 +185,6 @@ int socksend(struct sock_cb *scb, uint64_t addr, int n, int is_copyin) {
 	int bufsize = 0;
 	int res = 0;
 	while (n > 0) {
-		if (scb == 0 || scb->state == SOCK_CB_CLOSE_WAIT)
-			return -1;
 		struct mbuf *m = mbufalloc(ETH_MAX_SIZE);
 		if (m == 0) {
 			return -1;
@@ -235,7 +232,17 @@ int sockrecv(struct sock_cb *scb, uint64_t addr, int n, int is_copyout) {
 	// TODO tcp push check
 	
 	if (scb->socktype == SOCK_TCP) {
+		uint16_t sport = scb->sport;
+		uint16_t dport = scb->dport;
+		uint32_t raddr = scb->raddr;
 		while (1) {
+			scb = get_sock_cb(tcp_scb_table, sport, raddr, dport);
+			if (scb == 0 || scb->state == SOCK_CB_CLOSE_WAIT)
+				return -1;
+			sport = scb->sport;
+			dport = scb->dport;
+			raddr = scb->raddr;
+
 			m = pop_from_scb_rxq(scb);
 
 			if (m == 0) {
@@ -295,6 +302,7 @@ void sockclose(struct sock_cb *scb) {
 	if (!scb) {
 		panic("[sockclose] scb is already freed");
 	}
+
 	if (scb->socktype == SOCK_TCP) {
 		if (tcp_close(scb) == 0) {
 			free_sock_cb(scb);

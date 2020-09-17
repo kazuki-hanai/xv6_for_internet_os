@@ -64,7 +64,6 @@ int tcp_listen(struct sock_cb *scb) {
 	// TODO SOCK_CB_LISTEN STATE
 	// -> change the connection from passive to active
 	// "error: connection already exists"
-
 	return 0;
 }
 
@@ -140,11 +139,6 @@ int tcp_send(struct sock_cb *scb, struct mbuf *m, uint8_t flg) {
 	if (m == 0)
 		return -1;
 
-	if (scb->state == SOCK_CB_CLOSED) {
-		// "error: connection illegal for this process"
-		return -1;
-	}
-
 	switch(scb->state) {
 	case SOCK_CB_LISTEN:
 		if (scb->raddr) {
@@ -166,7 +160,7 @@ int tcp_send(struct sock_cb *scb, struct mbuf *m, uint8_t flg) {
 		push_to_scb_txq(scb, m, scb->snd.nxt_seq, flg, m->len);
 		break;
 	case SOCK_CB_ESTAB:
-	case SOCK_CB_CLOSE_WAIT:
+	// case SOCK_CB_CLOSE_WAIT:
 		// TODO windows processing
 		// send packet
 		push_to_scb_txq(scb, m, scb->snd.nxt_seq, flg, m->len);
@@ -181,11 +175,13 @@ int tcp_send(struct sock_cb *scb, struct mbuf *m, uint8_t flg) {
 			send_m = pop_from_scb_txq(scb);
 		}
 		break;
+	case SOCK_CB_CLOSE_WAIT:
 	case SOCK_CB_FIN_WAIT_1:
 	case SOCK_CB_FIN_WAIT_2:
 	case SOCK_CB_CLOSING:
 	case SOCK_CB_LAST_ACK:
 	case SOCK_CB_TIME_WAIT:
+	case SOCK_CB_CLOSED:
 		// "error:  connection closing" and do not service request.
 		return -1;
 	default:
@@ -631,7 +627,7 @@ void tcp_recv(struct mbuf *m, uint16_t len, struct ipv4 *iphdr) {
 	uint32_t raddr = ntohl(iphdr->ip_src);
 	uint16_t sport = ntohs(tcphdr->dport);
 	uint16_t dport = ntohs(tcphdr->sport);
-
+	
 	// checksum
 	uint16_t sum = tcp_checksum(iphdr->ip_src, iphdr->ip_dst, iphdr->ip_p, tcphdr, len);
 	if (sum) {
@@ -641,8 +637,9 @@ void tcp_recv(struct mbuf *m, uint16_t len, struct ipv4 *iphdr) {
 
 	// get scb
 	scb = get_sock_cb(tcp_scb_table, sport, raddr, dport);
-	if (scb == 0)
+	if (scb == 0) {
 		goto fail;
+	}
 
 	// early return
 	if (scb->state != SOCK_CB_LISTEN && scb->state != SOCK_CB_CLOSED && scb->dport != dport) {
@@ -658,12 +655,10 @@ void tcp_recv(struct mbuf *m, uint16_t len, struct ipv4 *iphdr) {
 	case SOCK_CB_LISTEN:
 		if (tcp_recv_listen(scb, m, raddr, dport, len) == TCP_OP_ERR)
 			goto fail;
-		mbuffree(m);
 		break;
 	case SOCK_CB_SYN_SENT:
 		if (tcp_recv_syn_sent(scb, m, len) == -1)
 			goto fail;
-		mbuffree(m);
 		break;
 	case SOCK_CB_SYN_RCVD:
 	case SOCK_CB_ESTAB:
@@ -689,7 +684,5 @@ void tcp_recv(struct mbuf *m, uint16_t len, struct ipv4 *iphdr) {
 	// TODO URG process
 	return;
 fail:
-	if (m != 0)
-		mbuffree(m);
 	return;
 }
