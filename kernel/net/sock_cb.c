@@ -63,9 +63,6 @@ void free_sock_cb(struct sock_cb *scb) {
 	kfree(scb->wnd);
 
 	struct mbuf *m;
-	while((m = pop_from_scb_rxq(scb)) != 0) {
-		mbuffree(m);
-	}
 	while((m = pop_from_scb_txq(scb)) != 0) {
 		mbuffree(m);
 	}
