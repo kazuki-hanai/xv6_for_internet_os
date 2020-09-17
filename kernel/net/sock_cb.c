@@ -123,11 +123,12 @@ struct sock_cb* get_sock_cb(struct sock_cb_entry table[], uint16_t sport, uint32
 	scb = entry->head;
 	while (scb != 0) {
 		// TODO: UDP match
-		if ((scb->sport == sport) && ((scb->dport == 0) || ((scb->dport != 0) && (scb->dport == dport))))
+		if ((scb->sport == sport) && ((scb->dport == 0) || ((scb->dport != 0) && (scb->dport == dport) && (scb->raddr == raddr))))
 			break;
 		scb = scb->next;
 	}
 	release(&entry->lock);
+
 	return scb;
 }
 
