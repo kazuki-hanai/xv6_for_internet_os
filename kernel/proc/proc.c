@@ -33,7 +33,7 @@ procinit(void)
 			// Allocate a page for the process's kernel stack.
 			// Map it high in memory, followed by an invalid
 			// guard page.
-			char *pa = kalloc();
+			char *pa = ufkalloc(PGSIZE);
 			if(pa == 0)
 				panic("kalloc");
 			uint64_t va = KSTACK((int) (p - proc));
@@ -107,7 +107,7 @@ found:
 	p->pid = allocpid();
 
 	// Allocate a trapframe page.
-	if((p->tf = (struct trapframe *)kalloc()) == 0){
+	if((p->tf = (struct trapframe *)ufkalloc(PGSIZE)) == 0){
 		release(&p->lock);
 		return 0;
 	}
@@ -131,7 +131,7 @@ static void
 freeproc(struct proc *p)
 {
 	if(p->tf)
-		kfree((void*)p->tf);
+		ufkfree((void*)p->tf);
 	p->tf = 0;
 	if(p->pagetable)
 		proc_freepagetable(p->pagetable, p->sz);

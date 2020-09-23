@@ -3,6 +3,7 @@
 #include "net/netutil.h"
 #include "net/sock_cb.h"
 #include "net/socket.h"
+#include "net/tcp.h"
 #include "file.h"
 #include "lib/buddy.h"
 
@@ -25,7 +26,7 @@ struct sock_cb* alloc_sock_cb(struct file *f, uint32_t raddr, uint16_t sport, ui
 	scb->dport = dport;
 	scb->prev = 0;
 	scb->next = 0;
-	scb->wnd = kalloc();
+	scb->wnd = ufkalloc(TCP_DEFAULT_WINDOW);
 	scb->wnd_idx = 0;
 	
 	scb->snd.init_seq = 0;
@@ -60,7 +61,7 @@ void free_sock_cb(struct sock_cb *scb) {
 		filefree(scb->f);
 	}
 
-	kfree(scb->wnd);
+	ufkfree(scb->wnd);
 
 	struct mbuf *m;
 	while((m = pop_from_scb_txq(scb)) != 0) {

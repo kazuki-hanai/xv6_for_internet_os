@@ -23,7 +23,7 @@ extern char trampoline[]; // trampoline.S
 void
 kvminit()
 {
-	kernel_pagetable = (pagetable_t) kalloc();
+	kernel_pagetable = (pagetable_t) ufkalloc(PGSIZE);
 	memset(kernel_pagetable, 0, PGSIZE);
 
 	// uart registers
@@ -86,7 +86,7 @@ walk(pagetable_t pagetable, uint64_t va, int alloc)
 		if(*pte & PTE_V) {
 			pagetable = (pagetable_t)PTE2PA(*pte);
 		} else {
-			if(!alloc || (pagetable = (pde_t*)kalloc()) == 0)
+			if(!alloc || (pagetable = (pde_t*)ufkalloc(PGSIZE)) == 0)
 				return 0;
 			memset(pagetable, 0, PGSIZE);
 			*pte = PA2PTE(pagetable) | PTE_V;
@@ -197,7 +197,7 @@ uvmunmap(pagetable_t pagetable, uint64_t va, uint64_t size, int do_free)
 			panic("uvmunmap: not a leaf");
 		if(do_free){
 			pa = PTE2PA(*pte);
-			kfree((void*)pa);
+			ufkfree((void*)pa);
 		}
 		*pte = 0;
 		if(a == last)
@@ -212,7 +212,7 @@ pagetable_t
 uvmcreate()
 {
 	pagetable_t pagetable;
-	pagetable = (pagetable_t) kalloc();
+	pagetable = (pagetable_t) ufkalloc(PGSIZE);
 	if(pagetable == 0)
 		panic("uvmcreate: out of memory");
 	memset(pagetable, 0, PGSIZE);
@@ -229,7 +229,7 @@ uvminit(pagetable_t pagetable, uint8_t *src, uint32_t sz)
 
 	if(sz >= PGSIZE)
 		panic("inituvm: more than a page");
-	mem = kalloc();
+	mem = ufkalloc(PGSIZE);
 	memset(mem, 0, PGSIZE);
 	mappages(pagetable, 0, PGSIZE, (uint64_t)mem, PTE_W|PTE_R|PTE_X|PTE_U);
 	memmove(mem, src, sz);
@@ -249,14 +249,14 @@ uvmalloc(pagetable_t pagetable, uint64_t oldsz, uint64_t newsz)
 	oldsz = PGROUNDUP(oldsz);
 	a = oldsz;
 	for(; a < newsz; a += PGSIZE){
-		mem = kalloc();
+		mem = ufkalloc(PGSIZE);
 		if(mem == 0){
 			uvmdealloc(pagetable, a, oldsz);
 			return 0;
 		}
 		memset(mem, 0, PGSIZE);
 		if(mappages(pagetable, a, PGSIZE, (uint64_t)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
-			kfree(mem);
+			ufkfree(mem);
 			uvmdealloc(pagetable, a, oldsz);
 			return 0;
 		}
@@ -298,7 +298,7 @@ freewalk(pagetable_t pagetable)
 			panic("freewalk: leaf");
 		}
 	}
-	kfree((void*)pagetable);
+	ufkfree((void*)pagetable);
 }
 
 // Free user memory pages,
@@ -331,11 +331,11 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64_t sz)
 			panic("uvmcopy: page not present");
 		pa = PTE2PA(*pte);
 		flags = PTE_FLAGS(*pte);
-		if((mem = kalloc()) == 0)
+		if((mem = ufkalloc(PGSIZE)) == 0)
 			goto err;
 		memmove(mem, (char*)pa, PGSIZE);
 		if(mappages(new, i, PGSIZE, (uint64_t)mem, flags) != 0){
-			kfree(mem);
+			ufkfree(mem);
 			goto err;
 		}
 	}

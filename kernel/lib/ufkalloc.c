@@ -7,16 +7,16 @@
 #include "lib/buddy.h"
 #include "lib/list.h"
 
-#define MAX(a, b)	((a > b) ? a : b)
+#define MAX(a, b)               ((a > b) ? a : b)
 
-#define LEAF_SIZE		8 * 1024
-#define NSIZES			7
-#define MAX_SIZE		NSIZES - 1
-#define BLK_SIZE(k)		(((1L << (k)) * LEAF_SIZE))
-#define BIGPG_SIZE		(BLK_SIZE(MAX_SIZE))
-#define NCHAR	 		((1 << NSIZES) / 8)
-#define BIGPGROUNDUP(sz)	(((sz)+BIGPG_SIZE-1) & ~(BIGPG_SIZE-1))
-#define NBIGPGS			128
+#define LEAF_SIZE               8 * 1024
+#define NSIZES                  7
+#define MAX_SIZE                NSIZES - 1
+#define BLK_SIZE(k)             (((1L << (k)) * LEAF_SIZE))
+#define BIGPG_SIZE              (BLK_SIZE(MAX_SIZE))
+#define NCHAR                   ((1 << NSIZES) / 8)
+#define BIGPGROUNDUP(sz)        (((sz)+BIGPG_SIZE-1) & ~(BIGPG_SIZE-1))
+#define NBIGPGS                 1024
 
 extern char end[]; // first address after kernel. defined by kernel.ld.
 
@@ -46,8 +46,8 @@ static void table_init(void* pa_start, void* pa_end) {
 }
 
 void ufkinit() {
-	table_init(kalloc(), (void*)PHYSTOP);
 	initlock(&ufk_table.lock, "ufk_table");
+	table_init(end, (void*)PHYSTOP);
 }
 
 static int bit_isset(char *map, int index) {

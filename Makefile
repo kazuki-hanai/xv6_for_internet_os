@@ -84,7 +84,6 @@ KSRCS += \
 # Kernel Useful Library
 KSRCS += \
 	$K/lib/printf.c \
-	$K/lib/kalloc.c \
 	$K/lib/string.c \
 	$K/lib/list.c \
 	$K/lib/ufkalloc.c \

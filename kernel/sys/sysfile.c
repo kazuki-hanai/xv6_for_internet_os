@@ -413,7 +413,7 @@ sys_exec(void)
 			argv[i] = 0;
 			break;
 		}
-		argv[i] = kalloc();
+		argv[i] = ufkalloc(PGSIZE);
 		if(argv[i] == 0)
 			panic("sys_exec kalloc");
 		if(fetchstr(uarg, argv[i], PGSIZE) < 0){
@@ -424,13 +424,13 @@ sys_exec(void)
 	int ret = exec(path, argv);
 
 	for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)
-		kfree(argv[i]);
+		ufkfree(argv[i]);
 
 	return ret;
 
  bad:
 	for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)
-		kfree(argv[i]);
+		ufkfree(argv[i]);
 	return -1;
 }
 

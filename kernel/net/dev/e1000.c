@@ -52,7 +52,6 @@ e1000_init(uint32_t *xregs)
 	// [E1000 14.4] Receive initialization
 	memset(rx_ring, 0, sizeof(rx_ring));
 	for (i = 0; i < RX_RING_SIZE; i++) {
-		// rx_ring[i].addr = (uint64_t) kalloc();
 		rx_ring[i].addr = (uint64_t) rx_mbuf[i].buf;
 	}
 	regs[E1000_RDBAL] = (uint64_t) rx_ring;
