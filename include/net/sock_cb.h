@@ -54,7 +54,6 @@ struct sock_cb {
   } rcv;
   struct mbufq txq;
   struct mbufq rxq;
-  // uint8_t window[TCP_DEFAULT_WINDOW];
   struct sock_cb *prev;
   struct sock_cb *next;
   uint8_t *wnd;
