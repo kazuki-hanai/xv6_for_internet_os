@@ -18,7 +18,6 @@ main()
 		printf("\n");
 		printf("xv6 kernel is booting\n");
 		printf("\n");
-		// kinit();         	// physical page allocator
 		ufkinit();		// initialize Useful Kernel Allocator
 		bd_init();		// initialize Buddy Allocator
 		kvminit();       	// create kernel page table

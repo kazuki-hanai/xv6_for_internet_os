@@ -48,6 +48,7 @@ static void table_init(void* pa_start, void* pa_end) {
 void ufkinit() {
 	initlock(&ufk_table.lock, "ufk_table");
 	table_init(end, (void*)PHYSTOP);
+	bd_init();
 }
 
 static int bit_isset(char *map, int index) {
