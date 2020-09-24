@@ -26,7 +26,8 @@ struct sock_cb* alloc_sock_cb(struct file *f, uint32_t raddr, uint16_t sport, ui
 	scb->dport = dport;
 	scb->prev = 0;
 	scb->next = 0;
-	scb->wnd = ufkalloc(TCP_DEFAULT_WINDOW);
+	// scb->wnd = ufkalloc(TCP_DEFAULT_WINDOW);
+	scb->wnd = ufkalloc(PGSIZE);
 	scb->wnd_idx = 0;
 	
 	scb->snd.init_seq = 0;
@@ -61,7 +62,7 @@ void free_sock_cb(struct sock_cb *scb) {
 		filefree(scb->f);
 	}
 
-	ufkfree(scb->wnd);
+	ufkfree((void*)scb->wnd);
 
 	struct mbuf *m;
 	while((m = pop_from_scb_txq(scb)) != 0) {
@@ -79,7 +80,7 @@ void free_sock_cb(struct sock_cb *scb) {
 			entry->head = scb->next;
 		}
 	}
-	ufkfree(scb);
+	ufkfree((void*)scb);
 	release(&entry->lock);
 }
 

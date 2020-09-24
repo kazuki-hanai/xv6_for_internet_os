@@ -4,8 +4,8 @@
 #include "arch/riscv.h"
 #include "spinlock.h"
 #include "proc.h"
-#include "defs.h"
 #include "file.h"
+#include "defs.h"
 
 struct cpu cpus[NCPU];
 
@@ -668,7 +668,7 @@ procdump(void)
 			state = states[p->state];
 		else
 			state = "???";
-		printf("%d %s %s", p->pid, state, p->name);
+		printf("%d %s %s %x", p->pid, state, p->name, p->tf->epc);
 		printf("\n");
 	}
 }

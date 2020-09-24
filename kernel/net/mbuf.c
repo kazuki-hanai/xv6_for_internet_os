@@ -77,7 +77,7 @@ mbufalloc(unsigned int headroom)
 void
 mbuffree(struct mbuf *m)
 {
-	ufkfree(m);
+	ufkfree((void*)m);
 }
 
 struct mbuf *

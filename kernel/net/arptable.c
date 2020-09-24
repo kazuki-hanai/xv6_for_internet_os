@@ -21,7 +21,7 @@ void arp_cache_free(struct arp_cache *arpcache) {
 		arpcache->next->prev = arpcache->prev;
 	else
 		entry->head = arpcache->next;
-	ufkfree(arpcache);
+	ufkfree((void*)arpcache);
 	release(&entry->lock);
 }
 

@@ -32,6 +32,8 @@ struct {
 	struct pagelist plist[NBIGPGS];
 } ufk_table;
 
+static int allocated = 0;
+
 static void table_init(void* pa_start, void* pa_end) {
 	memset(ufk_table.plist, 0, sizeof(ufk_table.plist));
 	for (int i = 0; i < NSIZES; i++) {
@@ -140,6 +142,7 @@ static void* _ufkalloc(int nbytes) {
 }
 
 void* ufkalloc(int nbytes) {
+	allocated += 1;
 	void* p = 0;
 	if (nbytes < PGSIZE) {
 		p = bd_alloc(nbytes);
@@ -193,6 +196,7 @@ static void _ufkfree(void* p, int pindex, void* pbase) {
 	release(&ufk_table.lock);
 }
 void ufkfree(void* p) {
+	allocated -= 1;
 	int leafindex = 0;
 	int pindex;
 	if ((pindex = get_pageindex(p)) < 0)

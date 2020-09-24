@@ -19,7 +19,6 @@ main()
 		printf("xv6 kernel is booting\n");
 		printf("\n");
 		ufkinit();		// initialize Useful Kernel Allocator
-		bd_init();		// initialize Buddy Allocator
 		kvminit();       	// create kernel page table
 		kvminithart();   	// turn on paging
 		procinit();		// process table
@@ -31,10 +30,10 @@ main()
 		iinit();		// inode cache
 		fileinit();		// file table
 		virtio_disk_init(); 	// emulated hard disk
-		pci_init();
-		arpinit();
-		tcpinit();
-		socket_init();
+		// pci_init();
+		// arpinit();
+		// tcpinit();
+		// socket_init();
 		userinit();      	// first user process
 		__sync_synchronize();
 		started = 1;

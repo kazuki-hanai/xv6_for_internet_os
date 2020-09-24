@@ -88,7 +88,7 @@ void filefree(struct file *f)
 		f->prev->next = f->next;
 		f->next->prev = f->prev;
 	}
-	ufkfree(f);
+	ufkfree((void*)f);
 	release(&ftable.lock);
 }
 

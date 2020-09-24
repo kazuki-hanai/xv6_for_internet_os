@@ -256,7 +256,7 @@ uvmalloc(pagetable_t pagetable, uint64_t oldsz, uint64_t newsz)
 		}
 		memset(mem, 0, PGSIZE);
 		if(mappages(pagetable, a, PGSIZE, (uint64_t)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
-			ufkfree(mem);
+			ufkfree((void*)mem);
 			uvmdealloc(pagetable, a, oldsz);
 			return 0;
 		}
@@ -335,7 +335,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64_t sz)
 			goto err;
 		memmove(mem, (char*)pa, PGSIZE);
 		if(mappages(new, i, PGSIZE, (uint64_t)mem, flags) != 0){
-			ufkfree(mem);
+			ufkfree((void*)mem);
 			goto err;
 		}
 	}
