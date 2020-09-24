@@ -211,8 +211,8 @@ mkfs/mkfs: mkfs/mkfs.c include/fs.h
 # http://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
 .PRECIOUS: %.o
 
-fs.img: mkfs/mkfs README $(UPROGS)
-	mkfs/mkfs fs.img README $(addprefix $(BUILD_DIR)/$U/, $(UPROGS))
+fs.img: mkfs/mkfs README.md $(UPROGS)
+	mkfs/mkfs fs.img README.md $(addprefix $(BUILD_DIR)/$U/, $(UPROGS))
 
 clean: 
 	-rm -rf build
