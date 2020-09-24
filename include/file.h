@@ -49,7 +49,7 @@ extern struct devsw devsw[];
 #define CONSOLE 1
 
 struct file*    filealloc(void);
-void            filefree(struct file*);
+int             filefree(struct file*);
 void            fileclose(struct file*);
 struct file*    filedup(struct file*);
 void            fileinit(void);

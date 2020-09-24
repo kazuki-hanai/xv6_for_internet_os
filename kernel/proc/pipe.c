@@ -28,7 +28,7 @@ pipealloc(struct file **f0, struct file **f1)
 	*f0 = *f1 = 0;
 	if((*f0 = filealloc()) == 0 || (*f1 = filealloc()) == 0)
 		goto bad;
-	if((pi = (struct pipe*)ufkalloc(PGSIZE)) == 0)
+	if((pi = (struct pipe*)ufkalloc(sizeof(struct pipe))) == 0)
 		goto bad;
 	pi->readopen = 1;
 	pi->writeopen = 1;
@@ -58,6 +58,7 @@ pipealloc(struct file **f0, struct file **f1)
 void
 pipeclose(struct pipe *pi, int writable)
 {
+	printf("lock: %x %s %x\n", pi->lock.locked, pi->lock.name, pi);
 	acquire(&pi->lock);
 	if(writable){
 		pi->writeopen = 0;

@@ -246,7 +246,7 @@ qemu: $(BUILD_DIR) kernel fs.img
 
 qemu-gdb: $(BUILD_DIR) kernel .gdbinit fs.img
 	@echo "*** Now run 'gdb' in another window." 1>&2
-	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
+	sudo $(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
 tags:
 	ctags -R -f .tags --exclude=build
