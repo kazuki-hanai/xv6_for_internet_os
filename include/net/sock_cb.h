@@ -31,34 +31,33 @@ enum sock_cb_state {
  * Struct connecting Socket and Tcb
  **/
 struct sock_cb {
-	struct file *f;
-	struct sleeplock slock;
-	struct spinlock lock;
-	int socktype;
-	enum sock_cb_state state;
-	uint16_t sport;
-	uint32_t raddr;
-	uint16_t dport;
-	struct {
-		uint32_t init_seq; // initial send sequence number
-		uint32_t unack; // oldest unacknowledged sequence number
-		uint32_t nxt_seq; // next sequence number to be sent
-		uint32_t wnd;
-		uint32_t wl1;
-		uint32_t wl2;
-	} snd;
-	struct {
-		uint32_t init_seq; // initial receive sequence number
-		uint32_t nxt_seq; // next sequence number to be sent
-		uint32_t wnd;
-	} rcv;
-	struct mbufq txq;
-	struct mbufq rxq;
-	// uint8_t window[TCP_DEFAULT_WINDOW];
-	struct sock_cb *prev;
-	struct sock_cb *next;
-	uint8_t *wnd;
-	int wnd_idx;
+  struct file *f;
+  struct sleeplock slock;
+  struct spinlock lock;
+  int socktype;
+  enum sock_cb_state state;
+  uint16_t sport;
+  uint32_t raddr;
+  uint16_t dport;
+  struct {
+    uint32_t init_seq; // initial send sequence number
+    uint32_t unack; // oldest unacknowledged sequence number
+    uint32_t nxt_seq; // next sequence number to be sent
+    uint32_t wnd;
+    uint32_t wl1;
+    uint32_t wl2;
+  } snd;
+  struct {
+    uint32_t init_seq; // initial receive sequence number
+    uint32_t nxt_seq; // next sequence number to be sent
+    uint32_t wnd;
+  } rcv;
+  struct mbufq txq;
+  struct mbufq rxq;
+  struct sock_cb *prev;
+  struct sock_cb *next;
+  uint8_t *wnd;
+  int wnd_idx;
 };
 
 struct sock_cb_entry {
