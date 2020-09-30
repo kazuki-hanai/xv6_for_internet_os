@@ -123,3 +123,6 @@ struct rx_desc
 	uint8_t errors;      /* Descriptor Errors */
 	uint16_t special;
 };
+
+// 82540EM Gigabit Ethernet Controller
+#define ID_82540EM 0x100e8086

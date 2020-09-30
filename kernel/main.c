@@ -31,6 +31,7 @@ main()
 		fileinit();		// file table
 		virtio_disk_init(); 	// emulated hard disk
 		pci_init();
+		pci_register_e1000();
 		arpinit();
 		tcpinit();
 		socket_init();

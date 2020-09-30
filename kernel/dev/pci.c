@@ -6,11 +6,31 @@
 #include "proc.h"
 #include "defs.h"
 #include "memlayout.h"
+#include "pci.h"
+
+#define MAX_PCI_DEVICE_NUM 32
+
+struct pci_dev_raw {
+	uint32_t           id;
+	volatile uint32_t* base;
+};
+
+static int dev_num = 0;
+static struct pci_dev_raw pci_dev_raws[MAX_PCI_DEVICE_NUM];
+static struct pci_dev pci_devs[MAX_PCI_DEVICE_NUM];
+
+static void pci_scan_bus();
 
 void pci_init()
 {
+	memset(pci_dev_raws, 0, sizeof(pci_dev_raws));
+	memset(pci_devs, 0, sizeof(pci_devs));
+	pci_scan_bus();
+}
 
-	for(int dev = 0; dev < 32; dev++) {
+static void pci_scan_bus() {
+	int raw_dev_num = 0;
+	for(int dev = 0; dev < MAX_PCI_DEVICE_NUM; dev++) {
 		int bus = 0;
 		int func = 0;
 		int offset = 0;
@@ -18,22 +38,28 @@ void pci_init()
 		volatile uint32_t *base = (uint32_t *)ECAM + off;
 		uint32_t id = base[0];
 
-		if (id != -1) 
-			printf("pci id: %x\n", id);
+		if (id == -1)
+			continue;
 
-		if(id == 0x100e8086) {
-			base[1] = 7;
-			__sync_synchronize();
+		pci_dev_raws[raw_dev_num].base = base;
+		printf("id: %x, base: %p\n", id, base);
+		pci_dev_raws[raw_dev_num].id = id;
+		raw_dev_num += 1;
+	}
+}
 
-			// for(int i = 0; i < 6; i++) {
-			//   uint32_t old = base[4+i];
-			//   base[4+i] = 0xffffffff;
-			//   __sync_synchronize();
-			//   base[4+i] = old;
-			// }
-
-			base[4+0] = (uint32_t) E1000_REG;
-			e1000_init((uint32_t *)E1000_REG);
+int pci_register_device(struct pci_dev *dev) {
+	for (int i = 0; i < MAX_PCI_DEVICE_NUM; i++) {
+		if (pci_dev_raws[i].id == dev->id) {
+			pci_devs[dev_num].name = dev->name;
+			pci_devs[dev_num].id = dev->id;
+			pci_devs[dev_num].base = pci_dev_raws[i].base;
+			pci_devs[dev_num].driver = dev->driver;
+			if (pci_devs[dev_num].driver->init(pci_devs) < 0) {
+				return -1;
+			}
+			return 0;
 		}
 	}
+	return -1;
 }
