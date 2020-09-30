@@ -48,9 +48,7 @@ void
 bd_init()
 {
 	initlock(&bd_table.lock, "buddytable");
-	for (int i = 0; i < MAX_PAGES; i++) {
-		memset(&bd_table.plist[i], 0, sizeof(bd_table.plist[i]));
-	}
+	memset(&bd_table.plist, 0, sizeof(bd_table.plist));
 
 	for (int i = 0; i < NSIZES; i++) {
 		lst_init(&bd_table.freelist[i]);

@@ -12,12 +12,12 @@
 int
 fetchaddr(uint64_t addr, uint64_t *ip)
 {
-  struct proc *p = myproc();
-  if(addr >= p->sz || addr+sizeof(uint64_t) > p->sz)
-    return -1;
-  if(copyin(p->pagetable, (char *)ip, addr, sizeof(*ip)) != 0)
-    return -1;
-  return 0;
+	struct proc *p = myproc();
+	if(addr >= p->sz || addr+sizeof(uint64_t) > p->sz)
+		return -1;
+	if(copyin(p->pagetable, (char *)ip, addr, sizeof(*ip)) != 0)
+		return -1;
+	return 0;
 }
 
 // Fetch the nul-terminated string at addr from the current process.
@@ -25,41 +25,41 @@ fetchaddr(uint64_t addr, uint64_t *ip)
 int
 fetchstr(uint64_t addr, char *buf, int max)
 {
-  struct proc *p = myproc();
-  int err = copyinstr(p->pagetable, buf, addr, max);
-  if(err < 0)
-    return err;
-  return strlen(buf);
+	struct proc *p = myproc();
+	int err = copyinstr(p->pagetable, buf, addr, max);
+	if(err < 0)
+		return err;
+	return strlen(buf);
 }
 
 static uint64_t
 argraw(int n)
 {
-  struct proc *p = myproc();
-  switch (n) {
-  case 0:
-    return p->tf->a0;
-  case 1:
-    return p->tf->a1;
-  case 2:
-    return p->tf->a2;
-  case 3:
-    return p->tf->a3;
-  case 4:
-    return p->tf->a4;
-  case 5:
-    return p->tf->a5;
-  }
-  panic("argraw");
-  return -1;
+	struct proc *p = myproc();
+	switch (n) {
+	case 0:
+		return p->tf->a0;
+	case 1:
+		return p->tf->a1;
+	case 2:
+		return p->tf->a2;
+	case 3:
+		return p->tf->a3;
+	case 4:
+		return p->tf->a4;
+	case 5:
+		return p->tf->a5;
+	}
+	panic("argraw");
+	return -1;
 }
 
 // Fetch the nth 32-bit system call argument.
 int
 argint(int n, int *ip)
 {
-  *ip = argraw(n);
-  return 0;
+	*ip = argraw(n);
+	return 0;
 }
 
 // Retrieve an argument as a pointer.
@@ -68,8 +68,8 @@ argint(int n, int *ip)
 int
 argaddr(int n, uint64_t *ip)
 {
-  *ip = argraw(n);
-  return 0;
+	*ip = argraw(n);
+	return 0;
 }
 
 // Fetch the nth word-sized system call argument as a null-terminated string.
@@ -78,10 +78,10 @@ argaddr(int n, uint64_t *ip)
 int
 argstr(int n, char *buf, int max)
 {
-  uint64_t addr;
-  if(argaddr(n, &addr) < 0)
-    return -1;
-  return fetchstr(addr, buf, max);
+	uint64_t addr;
+	if(argaddr(n, &addr) < 0)
+		return -1;
+	return fetchstr(addr, buf, max);
 }
 
 // Fetch the nth word-sized system call argument as a file descriptor
@@ -89,18 +89,18 @@ argstr(int n, char *buf, int max)
 int
 argfd(int n, int *pfd, struct file **pf)
 {
-  int fd;
-  struct file *f;
-  
-  if(argint(n, &fd) < 0)
-    return -1;
-  if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
-    return -1;
-  if(pfd)
-    *pfd = fd;
-  if(pf)
-    *pf = f;
-  return 0;
+	int fd;
+	struct file *f;
+	
+	if(argint(n, &fd) < 0)
+		return -1;
+	if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
+		return -1;
+	if(pfd)
+		*pfd = fd;
+	if(pf)
+		*pf = f;
+	return 0;
 }
 
 extern uint64_t sys_chdir(void);
@@ -127,6 +127,7 @@ extern uint64_t sys_uptime(void);
 extern uint64_t sys_socket(void);
 extern uint64_t sys_sockconnect(void);
 extern uint64_t sys_socklisten(void);
+extern uint64_t sys_sockaccept(void);
 
 static uint64_t (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -153,20 +154,21 @@ static uint64_t (*syscalls[])(void) = {
 [SYS_socket]  sys_socket,
 [SYS_connect]  sys_sockconnect,
 [SYS_listen]  sys_socklisten,
+[SYS_accept]  sys_sockaccept,
 };
 
 void
 syscall(void)
 {
-  int num;
-  struct proc *p = myproc();
+	int num;
+	struct proc *p = myproc();
 
-  num = p->tf->a7;
-  if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    p->tf->a0 = syscalls[num]();
-  } else {
-    printf("%d %s: unknown sys call %d\n",
-            p->pid, p->name, num);
-    p->tf->a0 = -1;
-  }
+	num = p->tf->a7;
+	if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+		p->tf->a0 = syscalls[num]();
+	} else {
+		printf("%d %s: unknown sys call %d\n",
+						p->pid, p->name, num);
+		p->tf->a0 = -1;
+	}
 }

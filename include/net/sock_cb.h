@@ -8,17 +8,17 @@
 #define SOCK_CB_LEN 128
 
 enum sock_cb_state {
-  SOCK_CB_CLOSED,
-  SOCK_CB_LISTEN,
-  SOCK_CB_SYN_SENT,
-  SOCK_CB_SYN_RCVD,
-  SOCK_CB_ESTAB,
-  SOCK_CB_FIN_WAIT_1,
-  SOCK_CB_FIN_WAIT_2,
-  SOCK_CB_CLOSING, 
-  SOCK_CB_TIME_WAIT,
-  SOCK_CB_CLOSE_WAIT,
-  SOCK_CB_LAST_ACK
+	SOCK_CB_CLOSED,
+	SOCK_CB_LISTEN,
+	SOCK_CB_SYN_SENT,
+	SOCK_CB_SYN_RCVD,
+	SOCK_CB_ESTAB,
+	SOCK_CB_FIN_WAIT_1,
+	SOCK_CB_FIN_WAIT_2,
+	SOCK_CB_CLOSING, 
+	SOCK_CB_TIME_WAIT,
+	SOCK_CB_CLOSE_WAIT,
+	SOCK_CB_LAST_ACK
 };
 
 #define SOCK_UNKNOWN 0
@@ -61,14 +61,14 @@ struct sock_cb {
 };
 
 struct sock_cb_entry {
-  struct spinlock lock;
-  struct sock_cb *head;
+	struct spinlock lock;
+	struct sock_cb *head;
 };
 
 struct sock_cb* alloc_sock_cb(struct file *, uint32_t, uint16_t, uint16_t, int);
 void free_sock_cb(struct sock_cb *);
 void add_sock_cb(struct sock_cb *);
-struct sock_cb* get_sock_cb(struct sock_cb_entry [], uint16_t);
+struct sock_cb* get_sock_cb(struct sock_cb_entry [], uint16_t, uint32_t, uint16_t);
 int push_to_scb_rxq(struct sock_cb *, struct mbuf *);
 struct mbuf *pop_from_scb_rxq(struct sock_cb *scb);
 int push_to_scb_txq(struct sock_cb *, struct mbuf *, uint32_t sndnxt, uint8_t flg, uint16_t datalen);

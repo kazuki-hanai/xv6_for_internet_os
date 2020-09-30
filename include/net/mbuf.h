@@ -4,19 +4,19 @@
 #define MBUF_DEFAULT_HEADROOM   128
 
 struct mbuf {
-  uint32_t raddr;
-  struct mbuf *next;
-  char *head;
-  unsigned int len;
-  char buf[MBUF_SIZE];
-  union {
-    struct {
-      uint32_t sndnxt;
-      uint8_t flg;
-      uint16_t datalen;
-    } tcp;
-  } params;
-  struct tcp *tcphdr;
+	uint32_t raddr;
+	struct mbuf *next;
+	char *head;
+	unsigned int len;
+	char buf[MBUF_SIZE];
+	union {
+		struct {
+			uint32_t sndnxt;
+			uint8_t flg;
+			uint16_t datalen;
+		} tcp;
+	} params;
+	struct tcp *tcphdr;
 };
 
 char *mbufpull(struct mbuf *m, unsigned int len);
@@ -43,8 +43,8 @@ void mbuffree(struct mbuf *m);
 struct mbuf *mbuf_copy(struct mbuf *m);
 
 struct mbufq {
-  struct mbuf *head;  // the first element in the queue
-  struct mbuf *tail;  // the last element in the queue
+	struct mbuf *head;  // the first element in the queue
+	struct mbuf *tail;  // the last element in the queue
 };
 
 void mbufq_pushtail(struct mbufq *q, struct mbuf *m);

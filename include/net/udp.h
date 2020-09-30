@@ -5,10 +5,10 @@
 
 // a UDP packet header (comes after an IP header).
 struct udp {
-  uint16_t sport; // source port
-  uint16_t dport; // destination port
-  uint16_t ulen;  // length, including udp header, not including IP header
-  uint16_t sum;   // checksum
+	uint16_t sport; // source port
+	uint16_t dport; // destination port
+	uint16_t ulen;  // length, including udp header, not including IP header
+	uint16_t sum;   // checksum
 };
 
 #define UDP_MAX_DATA (ETH_MAX_SIZE - sizeof(struct eth) - sizeof(struct ipv4) - sizeof(struct udp))

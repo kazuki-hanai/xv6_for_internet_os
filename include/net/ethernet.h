@@ -4,9 +4,9 @@
 
 // an Ethernet packet header (start of the packet).
 struct eth {
-  uint8_t  dhost[ETH_ADDR_LEN];
-  uint8_t  shost[ETH_ADDR_LEN];
-  uint16_t type;
+	uint8_t  dhost[ETH_ADDR_LEN];
+	uint8_t  shost[ETH_ADDR_LEN];
+	uint16_t type;
 } __attribute__((packed));
 
 #define ETH_TYPE_IP  0x0800 // Internet protocol

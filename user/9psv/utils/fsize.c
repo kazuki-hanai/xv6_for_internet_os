@@ -30,43 +30,43 @@ int size_twstat(struct p9_fcall *f);
 int size_rwstat(struct p9_fcall *f);
 
 static int (*sizefunc[]) (struct p9_fcall* f) = {
-  [P9_TVERSION]     size_tversion,
-  [P9_RVERSION]     size_rversion,
-  [P9_TAUTH]        size_tauth,
-  [P9_RAUTH]        size_rauth,
-  [P9_TATTACH]      size_tattach,
-  [P9_RATTACH]      size_rattach,
-  [P9_RERROR]       size_rerror,
-  [P9_TFLUSH]       size_tflush,
-  [P9_RFLUSH]       size_rflush,
-  [P9_TWALK]        size_twalk,
-  [P9_RWALK]        size_rwalk,
-  [P9_TOPEN]        size_topen,
-  [P9_ROPEN]        size_ropen,
-  [P9_TCREATE]      size_tcreate,
-  [P9_RCREATE]      size_rcreate,
-  [P9_TREAD]        size_tread,
-  [P9_RREAD]        size_rread,
-  [P9_TWRITE]       size_twrite,
-  [P9_RWRITE]       size_rwrite,
-  [P9_TCLUNK]       size_tclunk,
-  [P9_RCLUNK]       size_rclunk,
-  [P9_TREMOVE]      size_tremove,
-  [P9_RREMOVE]      size_rremove,
-  [P9_TSTAT]        size_tstat,
-  [P9_RSTAT]        size_rstat,
-  [P9_TWSTAT]       size_twstat,
-  [P9_RWSTAT]       size_rwstat,
+	[P9_TVERSION]     size_tversion,
+	[P9_RVERSION]     size_rversion,
+	[P9_TAUTH]        size_tauth,
+	[P9_RAUTH]        size_rauth,
+	[P9_TATTACH]      size_tattach,
+	[P9_RATTACH]      size_rattach,
+	[P9_RERROR]       size_rerror,
+	[P9_TFLUSH]       size_tflush,
+	[P9_RFLUSH]       size_rflush,
+	[P9_TWALK]        size_twalk,
+	[P9_RWALK]        size_rwalk,
+	[P9_TOPEN]        size_topen,
+	[P9_ROPEN]        size_ropen,
+	[P9_TCREATE]      size_tcreate,
+	[P9_RCREATE]      size_rcreate,
+	[P9_TREAD]        size_tread,
+	[P9_RREAD]        size_rread,
+	[P9_TWRITE]       size_twrite,
+	[P9_RWRITE]       size_rwrite,
+	[P9_TCLUNK]       size_tclunk,
+	[P9_RCLUNK]       size_rclunk,
+	[P9_TREMOVE]      size_tremove,
+	[P9_RREMOVE]      size_rremove,
+	[P9_TSTAT]        size_tstat,
+	[P9_RSTAT]        size_rstat,
+	[P9_TWSTAT]       size_twstat,
+	[P9_RWSTAT]       size_rwstat,
 };
 
 uint32_t p9_getfcallsize(struct p9_fcall *f) {
-  uint32_t n;
+	uint32_t n;
 
 	n = 0;
 	n += BIT32SZ;	/* size */
 	n += BIT8SZ;	/* type */
 	n += BIT16SZ;	/* tag */
 
-  n += sizefunc[f->type](f);
-  return n;
+	n += sizefunc[f->type](f);
+	return n;
 }

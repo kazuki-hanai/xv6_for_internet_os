@@ -39,3 +39,4 @@ entry("uptime");
 entry("socket");
 entry("listen");
 entry("connect");
+entry("accept");

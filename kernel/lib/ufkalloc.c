@@ -7,16 +7,16 @@
 #include "lib/buddy.h"
 #include "lib/list.h"
 
-#define MAX(a, b)	((a > b) ? a : b)
+#define MAX(a, b)               ((a > b) ? a : b)
 
-#define LEAF_SIZE		8 * 1024
-#define NSIZES			7
-#define MAX_SIZE		NSIZES - 1
-#define BLK_SIZE(k)		(((1L << (k)) * LEAF_SIZE))
-#define BIGPG_SIZE		(BLK_SIZE(MAX_SIZE))
-#define NCHAR	 		((1 << NSIZES) / 8)
-#define BIGPGROUNDUP(sz)	(((sz)+BIGPG_SIZE-1) & ~(BIGPG_SIZE-1))
-#define NBIGPGS			128
+#define LEAF_SIZE               8 * 1024
+#define NSIZES                  7
+#define MAX_SIZE                NSIZES - 1
+#define BLK_SIZE(k)             (((1L << (k)) * LEAF_SIZE))
+#define BIGPG_SIZE              (BLK_SIZE(MAX_SIZE))
+#define NCHAR                   ((1 << NSIZES) / 8)
+#define BIGPGROUNDUP(sz)        (((sz)+BIGPG_SIZE-1) & ~(BIGPG_SIZE-1))
+#define NBIGPGS                 1024
 
 extern char end[]; // first address after kernel. defined by kernel.ld.
 
@@ -32,6 +32,8 @@ struct {
 	struct pagelist plist[NBIGPGS];
 } ufk_table;
 
+static int allocated = 0;
+
 static void table_init(void* pa_start, void* pa_end) {
 	memset(ufk_table.plist, 0, sizeof(ufk_table.plist));
 	for (int i = 0; i < NSIZES; i++) {
@@ -46,8 +48,9 @@ static void table_init(void* pa_start, void* pa_end) {
 }
 
 void ufkinit() {
-	table_init(kalloc(), (void*)PHYSTOP);
 	initlock(&ufk_table.lock, "ufk_table");
+	table_init(end, (void*)PHYSTOP);
+	bd_init();
 }
 
 static int bit_isset(char *map, int index) {
@@ -139,6 +142,7 @@ static void* _ufkalloc(int nbytes) {
 }
 
 void* ufkalloc(int nbytes) {
+	allocated += 1;
 	void* p = 0;
 	if (nbytes < PGSIZE) {
 		p = bd_alloc(nbytes);
@@ -192,6 +196,7 @@ static void _ufkfree(void* p, int pindex, void* pbase) {
 	release(&ufk_table.lock);
 }
 void ufkfree(void* p) {
+	allocated -= 1;
 	int leafindex = 0;
 	int pindex;
 	if ((pindex = get_pageindex(p)) < 0)

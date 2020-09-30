@@ -20,18 +20,18 @@ uint8_t* p9_pstring(uint8_t *p, const char *s) {
 	return p;
 }
 uint8_t* p9_gstring(uint8_t* p, uint8_t* ep, char **s) {
-  int n;
-  if (p + 2 > ep)
-    return 0;
-  n = GBIT16(p);
-  p += 1;
-  if (p + n + 1 > ep)
-    return 0;
-  memmove(p, p+1, n);
-  p[n] = '\0';
-  *s = (char *)p;
-  p += n+1;
-  return p;
+	int n;
+	if (p + 2 > ep)
+		return 0;
+	n = GBIT16(p);
+	p += 1;
+	if (p + n + 1 > ep)
+		return 0;
+	memmove(p, p+1, n);
+	p[n] = '\0';
+	*s = (char *)p;
+	p += n+1;
+	return p;
 }
 
 uint16_t p9_stringsz(const char *s) {
@@ -41,9 +41,9 @@ uint16_t p9_stringsz(const char *s) {
 }
 
 char* p9_getfilename(char* path) {
-  char *p = path+strlen(path);
-  while(*p != '/') {
-    p--;
-  }
-  return p+1;
+	char *p = path+strlen(path);
+	while(*p != '/') {
+		p--;
+	}
+	return p+1;
 }

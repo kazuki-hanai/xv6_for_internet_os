@@ -5,16 +5,16 @@
 
 static inline uint16_t bswaps(uint16_t val)
 {
-  return (((val & 0x00ffU) << 8) |
-          ((val & 0xff00U) >> 8));
+	return (((val & 0x00ffU) << 8) |
+					((val & 0xff00U) >> 8));
 }
 
 static inline uint32_t bswapl(uint32_t val)
 {
-  return (((val & 0x000000ffUL) << 24) |
-          ((val & 0x0000ff00UL) << 8) |
-          ((val & 0x00ff0000UL) >> 8) |
-          ((val & 0xff000000UL) >> 24));
+	return (((val & 0x000000ffUL) << 24) |
+					((val & 0x0000ff00UL) << 8) |
+					((val & 0x00ff0000UL) >> 8) |
+					((val & 0xff000000UL) >> 24));
 }
 
 // Use these macros to convert network bytes to the native byte order.

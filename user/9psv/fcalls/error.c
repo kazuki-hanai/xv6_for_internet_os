@@ -8,27 +8,27 @@ static const char* errmap[] = {
 	[P9_FILEEXISTS] = "File exists",
 	[P9_NOTFOUND]   = "file not found",
 	[P9_NOTDIR]     = "Not a directory",
-  [P9_UNKNOWNFID] = "fid unknown or out of range",
-  [P9_PERM]       = "Permission denied",
-  [P9_BOTCH]      = "9P protocol botch",
-  [P9_BADOFFSET]  = "bad offset in directory read"
+	[P9_UNKNOWNFID] = "fid unknown or out of range",
+	[P9_PERM]       = "Permission denied",
+	[P9_BOTCH]      = "9P protocol botch",
+	[P9_BADOFFSET]  = "bad offset in directory read"
 };
 
 const char* p9_geterrstr(int key) {
-  return errmap[key];
+	return errmap[key];
 }
 
 int compose_rerror(struct p9_fcall *f, uint8_t* buf) {
-  buf = p9_pstring(buf, f->ename);
-  return 0;
+	buf = p9_pstring(buf, f->ename);
+	return 0;
 }
 
 int size_rerror(struct p9_fcall *f) {
-  int n = 0;
-  n += p9_stringsz(f->ename);
-  return n;
+	int n = 0;
+	n += p9_stringsz(f->ename);
+	return n;
 }
 
 void debug_rerror(struct p9_fcall* f) {
-  printf("=> RERROR: ename: %s\n", f->ename);
+	printf("=> RERROR: ename: %s\n", f->ename);
 }

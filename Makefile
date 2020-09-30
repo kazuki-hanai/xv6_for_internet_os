@@ -84,7 +84,6 @@ KSRCS += \
 # Kernel Useful Library
 KSRCS += \
 	$K/lib/printf.c \
-	$K/lib/kalloc.c \
 	$K/lib/string.c \
 	$K/lib/list.c \
 	$K/lib/ufkalloc.c \
@@ -159,10 +158,10 @@ UPROGS=\
   	_wc\
   	_xargs\
   	_zombie\
-  	_udp\
-  	_udplisten\
   	_tcp\
 	_9psv\
+  	# _udp\
+  	# _udplisten\
 
 USERMAK = $U/9psv/main.mk
 
@@ -247,7 +246,7 @@ qemu: $(BUILD_DIR) kernel fs.img
 
 qemu-gdb: $(BUILD_DIR) kernel .gdbinit fs.img
 	@echo "*** Now run 'gdb' in another window." 1>&2
-	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
+	sudo $(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
 tags:
 	ctags -R -f .tags --exclude=build
