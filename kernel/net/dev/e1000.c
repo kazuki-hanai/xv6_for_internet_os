@@ -5,26 +5,57 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "pci.h"
 #include "net/dev/e1000_dev.h"
 #include "net/mbuf.h"
 #include "net/ethernet.h"
 
-#define TX_RING_SIZE 16
-static struct tx_desc tx_ring[TX_RING_SIZE] __attribute__((aligned(16)));
-static struct mbuf *tx_mbuf[TX_RING_SIZE];
-
-#define RX_RING_SIZE 16
-static struct rx_desc rx_ring[RX_RING_SIZE] __attribute__((aligned(16)));
-static struct mbuf rx_mbuf[RX_RING_SIZE];
-
 // remember where the e1000's registers live.
 static volatile uint32_t *regs;
 
-struct spinlock e1000_lock;
+static void e1000_init_core(uint32_t* xregs);
 
-void
-e1000_init(uint32_t *xregs)
-{
+static int e1000_pci_init(struct pci_dev* dev) {
+	dev->base[1] = 7;
+	__sync_synchronize();
+
+	for(int i = 0; i < 6; i++) {
+		uint32_t old = dev->base[4+i];
+		dev->base[4+i] = 0xffffffff;
+		__sync_synchronize();
+		dev->base[4+i] = old;
+	}
+
+	dev->base[4+0] = (uint32_t) E1000_REG;
+
+	printf("e1000_init start\n");
+	e1000_init_core((uint32_t *)E1000_REG);
+
+	return 0;
+}
+
+static struct pci_driver e1000_driver = {
+	.name   = "82540EM Gigabit Ethernet Controller driver",
+	.init = e1000_pci_init
+};
+static struct pci_dev e1000_dev = {
+	.name  = "82540EM Gigabit Ethernet Controller",
+	.id    = ID_82540EM,
+	.base  = 0,
+	.driver = &e1000_driver
+};
+
+void pci_register_e1000() {
+	pci_register_device(&e1000_dev);
+}
+
+static struct netdev* alloc_netdev(uint32_t* xregs) {
+	struct netdev* ndev;
+	ndev = ufkalloc(sizeof(*ndev));
+	for (int i = 0; i < j)
+}
+
+static void e1000_init_core(uint32_t* xregs) {
 	int i;
 
 	initlock(&e1000_lock, "e1000");
@@ -87,9 +118,7 @@ e1000_init(uint32_t *xregs)
 	regs[E1000_IMS] = (1 << 7); // RXDW -- Receiver Descriptor Write Back
 }
 
-int
-e1000_transmit(struct mbuf *m)
-{
+int e1000_transmit(struct mbuf *m) {
 	int index = regs[E1000_TDT];
 	
 	if(!tx_ring[index].status & E1000_TXD_STAT_DD) {
@@ -116,13 +145,10 @@ e1000_transmit(struct mbuf *m)
 	return 0;
 }
 
-static void
-e1000_recv(void)
-{
-
+static void e1000_recv(void) {
 	// init
 	int index = (regs[E1000_RDT]+1) % RX_RING_SIZE;
-	while (rx_ring[index].status & E1000_RXD_STAT_DD) {
+	if (rx_ring[index].status & E1000_RXD_STAT_DD) {
 		struct mbuf *m = &rx_mbuf[index];
 		uint16_t len = rx_ring[index].length;
 		rx_ring[index].status ^= E1000_RXD_STAT_DD;
