@@ -49,15 +49,12 @@ void pci_register_e1000() {
 	pci_register_device(&e1000_dev);
 }
 
-<<<<<<< HEAD
 static struct netdev* alloc_netdev(uint32_t* xregs) {
 	struct netdev* ndev;
 	ndev = ufkalloc(sizeof(*ndev));
 	for (int i = 0; i < j)
 }
 
-=======
->>>>>>> cd681140f3e5ff92308e724a8148f89a009989d6
 static void e1000_init_core(uint32_t* xregs) {
 	int i;
 
