@@ -188,7 +188,7 @@ void            virtio_disk_intr();
 void            pci_init();
 
 // e1000.c
-void            e1000_init(uint32_t *);
+void            pci_register_e1000();
 void            e1000_intr();
 int             e1000_transmit(struct mbuf *);
 
