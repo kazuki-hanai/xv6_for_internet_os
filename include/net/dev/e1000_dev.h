@@ -1,6 +1,6 @@
 #pragma once
 
-#include "netdev.h"
+#include "net/netdev.h"
 
 //
 // E1000 hardware definitions: registers and DMA ring format.
@@ -137,3 +137,6 @@ struct e1000_dev {
 	struct mbuf*    tx_mbuf[TX_RING_SIZE];
 	struct mbuf*    rx_mbuf[RX_RING_SIZE];
 };
+
+// 82540EM Gigabit Ethernet Controller
+#define ID_82540EM 0x100e8086
