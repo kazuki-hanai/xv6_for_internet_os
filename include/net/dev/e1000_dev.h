@@ -130,6 +130,7 @@ struct rx_desc {
 
 struct e1000_dev {
 	struct spinlock lock;
+	volatile uint32_t*       regs;
 	struct pci_dev* pdev;
 	struct netdev*  ndev;
 	struct tx_desc  tx_ring[TX_RING_SIZE] __attribute__((aligned(16)));

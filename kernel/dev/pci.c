@@ -53,7 +53,7 @@ int pci_register_device(struct pci_dev *dev) {
 		if (pci_dev_raws[i].id == dev->id) {
 			pci_devs[dev_num] = dev;
 			dev->base = pci_dev_raws[i].base;
-			if (dev->driver->init(pci_devs) < 0) {
+			if (dev->driver->init(dev) < 0) {
 				return -1;
 			}
 			dev_num += 1;

@@ -7,11 +7,9 @@
 
 struct netdev {
 	const char*     name;
-	struct spinlock lock;
 	uint8_t         macaddr[ETH_ADDR_LEN];
-	uint32_t*       regs;
-	void*           rawdev;
 };
 
-#define NETDEV_ALIGNMENT 32;
+#define NETDEV_ALIGNMENT 32
 #define NETDEV_ALIGN(a) (sizeof(a) + ALIGN(sizeof(struct netdev), NETDEV_ALIGNMENT))
+#define GET_RAWDEV(a) (((void*)(a) + ALIGN(sizeof(struct netdev), NETDEV_ALIGNMENT)))
