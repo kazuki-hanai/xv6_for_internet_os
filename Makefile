@@ -88,6 +88,7 @@ KSRCS += \
 	$K/lib/list.c \
 	$K/lib/ufkalloc.c \
 	$K/lib/buddy.c \
+	$K/lib/hashmap.c \
 	
 # Device System
 KSRCS += \

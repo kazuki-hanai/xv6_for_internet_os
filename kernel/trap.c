@@ -6,9 +6,11 @@
 #include "proc.h"
 #include "defs.h"
 #include "sys/syscall.h"
+#include "lib/hashmap.h"
 
 struct spinlock tickslock;
 uint32_t ticks;
+
 
 extern char trampoline[], uservec[], userret[];
 
@@ -19,10 +21,30 @@ extern int devintr();
 
 static const char* scause_desc(uint64_t stval);
 
+struct hashmap *devintr_callbacks;
+typedef void (*devintr_callback)();
+struct devintr_map {
+	int irq;
+	devintr_callback callback;
+};
+static uint64_t devintr_hash(const void *item, uint64_t seed0, uint64_t seed1);
+static int      devintr_compare(const void* a, const void* b, void* udata);
+static struct devintr_map* devintr_register_callback(int irq, devintr_callback callback);
+
 void
 trapinit(void)
 {
 	initlock(&tickslock, "time");
+	hashmap_set_allocator(ufkalloc, ufkfree);
+	if ((devintr_callbacks = hashmap_new(
+		sizeof(struct devintr_map),
+		0, 0, 0, devintr_hash, devintr_compare, 0)) == NULL)
+	{
+		panic("cannot init devintr_callbacks hashmap\n");
+	}
+	devintr_register_callback(UART0_IRQ, uartintr);
+	devintr_register_callback(VIRTIO0_IRQ, virtio_disk_intr);
+	devintr_register_callback(E1000_IRQ, e1000_intr);
 }
 
 // set up to take exceptions and traps while in the kernel.
@@ -171,6 +193,21 @@ clockintr()
 	release(&tickslock);
 }
 
+static uint64_t devintr_hash(const void *item, uint64_t seed0, uint64_t seed1) {
+	const struct devintr_map* m = item;
+	return hashmap_sip(&m->irq, sizeof(m->irq), 0, 0);
+}
+static int devintr_compare(const void* a, const void* b, void* udata) {
+	const struct devintr_map* ma = a;
+	const struct devintr_map* mb = b;
+	return ma->irq != mb->irq;
+}
+static struct devintr_map* devintr_register_callback(int irq, devintr_callback callback) {
+	return (struct devintr_map*)hashmap_set(
+		devintr_callbacks,
+		&(struct devintr_map){ .irq = irq, .callback = callback});
+}
+
 // check if it's an external interrupt or software interrupt,
 // and handle it.
 // returns 2 if timer interrupt,
@@ -188,12 +225,11 @@ devintr()
 		// irq indicates which device interrupted.
 		int irq = plic_claim();
 
-		if(irq == UART0_IRQ){
-			uartintr();
-		} else if(irq == VIRTIO0_IRQ){
-			virtio_disk_intr();
-		} else if(irq == E1000_IRQ) {
-			e1000_intr();
+		struct devintr_map* map = hashmap_get(
+			devintr_callbacks,
+			&(struct devintr_map){ .irq = irq });
+		if (map != NULL) {
+			map->callback();
 		}
 
 		plic_complete(irq);
