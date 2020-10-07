@@ -11,3 +11,6 @@ struct netdev {
 	uint8_t         macaddr[ETH_ADDR_LEN];
 	uint32_t*       regs;
 };
+
+#define NETDEV_ALIGNMENT 32;
+#define NETDEV_ALIGN(a) (sizeof(a) + ALIGN(sizeof(struct netdev), NETDEV_ALIGNMENT))

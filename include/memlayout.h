@@ -73,3 +73,5 @@
 //   TRAPFRAME (p->tf, used by the trampoline)
 //   TRAMPOLINE (the same page as in the kernel)
 #define TRAPFRAME (TRAMPOLINE - PGSIZE)
+
+#define ALIGN(x, a) (((x) + (a)) & ~(a))

@@ -17,7 +17,7 @@ struct pci_dev_raw {
 
 static int dev_num = 0;
 static struct pci_dev_raw pci_dev_raws[MAX_PCI_DEVICE_NUM];
-static struct pci_dev pci_devs[MAX_PCI_DEVICE_NUM];
+static struct pci_dev* pci_devs[MAX_PCI_DEVICE_NUM];
 
 static void pci_scan_bus();
 
@@ -51,13 +51,12 @@ static void pci_scan_bus() {
 int pci_register_device(struct pci_dev *dev) {
 	for (int i = 0; i < MAX_PCI_DEVICE_NUM; i++) {
 		if (pci_dev_raws[i].id == dev->id) {
-			pci_devs[dev_num].name = dev->name;
-			pci_devs[dev_num].id = dev->id;
-			pci_devs[dev_num].base = pci_dev_raws[i].base;
-			pci_devs[dev_num].driver = dev->driver;
-			if (pci_devs[dev_num].driver->init(pci_devs) < 0) {
+			pci_devs[dev_num] = dev;
+			dev->base = pci_dev_raws[i].base;
+			if (dev->driver->init(pci_devs) < 0) {
 				return -1;
 			}
+			dev_num += 1;
 			return 0;
 		}
 	}
