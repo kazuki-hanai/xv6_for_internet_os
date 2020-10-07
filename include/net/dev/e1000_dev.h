@@ -1,6 +1,6 @@
 #pragma once
 
-#include "netdev.h"
+#include "net/netdev.h"
 
 //
 // E1000 hardware definitions: registers and DMA ring format.

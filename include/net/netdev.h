@@ -10,4 +10,5 @@ struct netdev {
 	struct spinlock lock;
 	uint8_t         macaddr[ETH_ADDR_LEN];
 	uint32_t*       regs;
+	void*           rawdev;
 };
