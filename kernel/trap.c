@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "trap.h"
 #include "sys/syscall.h"
 #include "lib/hashmap.h"
 
@@ -22,14 +23,8 @@ extern int devintr();
 static const char* scause_desc(uint64_t stval);
 
 struct hashmap *devintr_callbacks;
-typedef void (*devintr_callback)();
-struct devintr_map {
-	int irq;
-	devintr_callback callback;
-};
 static uint64_t devintr_hash(const void *item, uint64_t seed0, uint64_t seed1);
 static int      devintr_compare(const void* a, const void* b, void* udata);
-static struct devintr_map* devintr_register_callback(int irq, devintr_callback callback);
 
 void
 trapinit(void)
@@ -44,7 +39,6 @@ trapinit(void)
 	}
 	devintr_register_callback(UART0_IRQ, uartintr);
 	devintr_register_callback(VIRTIO0_IRQ, virtio_disk_intr);
-	devintr_register_callback(E1000_IRQ, e1000_intr);
 }
 
 // set up to take exceptions and traps while in the kernel.
@@ -202,7 +196,7 @@ static int devintr_compare(const void* a, const void* b, void* udata) {
 	const struct devintr_map* mb = b;
 	return ma->irq != mb->irq;
 }
-static struct devintr_map* devintr_register_callback(int irq, devintr_callback callback) {
+struct devintr_map* devintr_register_callback(int irq, devintr_callback callback) {
 	return (struct devintr_map*)hashmap_set(
 		devintr_callbacks,
 		&(struct devintr_map){ .irq = irq, .callback = callback});

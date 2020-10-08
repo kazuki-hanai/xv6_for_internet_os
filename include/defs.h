@@ -189,8 +189,6 @@ void            pci_init();
 
 // e1000.c
 void            pci_register_e1000();
-void            e1000_intr();
-int             e1000_transmit(struct mbuf *);
 
 // net.c
 void            net_rx(struct mbuf *);

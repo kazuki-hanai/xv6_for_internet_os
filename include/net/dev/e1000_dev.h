@@ -1,6 +1,6 @@
 #pragma once
 
-#include "net/netdev.h"
+#include "net/dev/netdev.h"
 
 //
 // E1000 hardware definitions: registers and DMA ring format.
@@ -129,14 +129,14 @@ struct rx_desc {
 };
 
 struct e1000_dev {
-	struct spinlock lock;
-	volatile uint32_t*       regs;
-	struct pci_dev* pdev;
-	struct netdev*  ndev;
-	struct tx_desc  tx_ring[TX_RING_SIZE] __attribute__((aligned(16)));
-	struct rx_desc  rx_ring[RX_RING_SIZE] __attribute__((aligned(16)));
-	struct mbuf*    tx_mbuf[TX_RING_SIZE];
-	struct mbuf*    rx_mbuf[RX_RING_SIZE];
+	volatile uint32_t*    regs;
+	struct spinlock       lock;
+	struct pci_dev*       pdev;
+	struct netdev*        ndev;
+	struct tx_desc        tx_ring[TX_RING_SIZE] __attribute__((aligned(16)));
+	struct rx_desc        rx_ring[RX_RING_SIZE] __attribute__((aligned(16)));
+	struct mbuf*          tx_mbuf[TX_RING_SIZE];
+	struct mbuf*          rx_mbuf[RX_RING_SIZE];
 };
 
 // 82540EM Gigabit Ethernet Controller
