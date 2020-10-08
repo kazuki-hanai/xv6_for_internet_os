@@ -14,11 +14,28 @@
 struct netdev*    e1000ndev;
 
 static void e1000_init_core(uint32_t* xregs);
+static int e1000_driver_startup(struct pci_dev* dev);
+static void e1000_alloc_netdev(uint32_t* xregs);
 static int e1000_transmit(struct mbuf *m);
 static void e1000_recv(void);
 static void e1000_intr();
 
-static int e1000_pci_init(struct pci_dev* dev) {
+static struct pci_driver e1000_driver = {
+	.name   = "82540EM Gigabit Ethernet Controller driver",
+	.init = e1000_driver_startup
+};
+static struct pci_dev e1000_pcidev = {
+	.name  = "82540EM Gigabit Ethernet Controller",
+	.id    = ID_82540EM,
+	.base  = 0,
+	.driver = &e1000_driver
+};
+
+void pci_register_e1000() {
+	pci_register_device(&e1000_pcidev);
+}
+
+static int e1000_driver_startup(struct pci_dev* dev) {
 	dev->base[1] = 7;
 	__sync_synchronize();
 
@@ -35,41 +52,6 @@ static int e1000_pci_init(struct pci_dev* dev) {
 	e1000_init_core((uint32_t *)E1000_REG);
 
 	return 0;
-}
-
-static struct pci_driver e1000_driver = {
-	.name   = "82540EM Gigabit Ethernet Controller driver",
-	.init = e1000_pci_init
-};
-static struct pci_dev e1000_pcidev = {
-	.name  = "82540EM Gigabit Ethernet Controller",
-	.id    = ID_82540EM,
-	.base  = 0,
-	.driver = &e1000_driver
-};
-
-void pci_register_e1000() {
-	pci_register_device(&e1000_pcidev);
-}
-
-static void e1000_alloc_netdev(uint32_t* xregs) {
-	struct e1000_dev* e1000dev;
-
-	e1000ndev = ufkalloc(NETDEV_ALIGN(struct e1000_dev));
-	e1000ndev->transmit = e1000_transmit;
-	e1000ndev->recv = e1000_recv;
-	e1000ndev->intr = e1000_intr;
-	
-	devintr_register_callback(E1000_IRQ, e1000ndev->intr);
-	
-	e1000dev = (struct e1000_dev*)GET_RAWDEV(e1000ndev);
-	initlock(&e1000dev->lock, "e1000");
-	e1000dev->regs = xregs;
-	e1000dev->ndev = e1000ndev;
-	e1000dev->pdev = &e1000_pcidev;
-
-	for (int i = 0; i < RX_RING_SIZE; i++)
-		e1000dev->rx_mbuf[i] = mbufalloc(0);
 }
 
 static void e1000_init_core(uint32_t* xregs) {
@@ -136,6 +118,26 @@ static void e1000_init_core(uint32_t* xregs) {
 	e1000dev->regs[E1000_RDTR] = 0; // interrupt after every received packet (no timer)
 	e1000dev->regs[E1000_RADV] = 0; // interrupt after every packet (no timer)
 	e1000dev->regs[E1000_IMS] = (1 << 7); // RXDW -- Receiver Descriptor Write Back
+}
+
+static void e1000_alloc_netdev(uint32_t* xregs) {
+	struct e1000_dev* e1000dev;
+
+	e1000ndev = ufkalloc(NETDEV_ALIGN(struct e1000_dev));
+	e1000ndev->transmit = e1000_transmit;
+	e1000ndev->recv = e1000_recv;
+	e1000ndev->intr = e1000_intr;
+	
+	devintr_register_callback(E1000_IRQ, e1000ndev->intr);
+	
+	e1000dev = (struct e1000_dev*)GET_RAWDEV(e1000ndev);
+	initlock(&e1000dev->lock, "e1000");
+	e1000dev->regs = xregs;
+	e1000dev->ndev = e1000ndev;
+	e1000dev->pdev = &e1000_pcidev;
+
+	for (int i = 0; i < RX_RING_SIZE; i++)
+		e1000dev->rx_mbuf[i] = mbufalloc(0);
 }
 
 static int e1000_transmit(struct mbuf *m) {
