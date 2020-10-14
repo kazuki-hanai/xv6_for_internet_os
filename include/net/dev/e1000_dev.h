@@ -1,8 +1,14 @@
 #pragma once
+
+#include "net/dev/netdev.h"
+
 //
 // E1000 hardware definitions: registers and DMA ring format.
 // from the Intel 82540EP/EM &c manual.
 //
+
+// 82540EM Gigabit Ethernet Controller
+#define ID_82540EM 0x100e8086
 
 /* Registers */
 #define E1000_CTL      (0x00000/4)  /* Device Control Register - RW */
@@ -98,8 +104,7 @@
 #define E1000_TXD_STAT_DD    0x00000001 /* Descriptor Done */
 
 // [E1000 3.3.3]
-struct tx_desc
-{
+struct tx_desc {
 	uint64_t addr;
 	uint16_t length;
 	uint8_t cso;
@@ -114,14 +119,24 @@ struct tx_desc
 #define E1000_RXD_STAT_EOP      0x02    /* End of Packet */
 
 // [E1000 3.2.3]
-struct rx_desc
-{
+struct rx_desc {
 	uint64_t addr;       /* Address of the descriptor's data buffer */
 	uint16_t length;     /* Length of data DMAed into data buffer */
 	uint16_t csum;       /* Packet checksum */
 	uint8_t status;      /* Descriptor status */
 	uint8_t errors;      /* Descriptor Errors */
 	uint16_t special;
+};
+
+struct e1000_dev {
+	volatile uint32_t*    regs;
+	struct spinlock       lock;
+	struct pci_dev*       pdev;
+	struct netdev*        ndev;
+	struct tx_desc        tx_ring[TX_RING_SIZE] __attribute__((aligned(16)));
+	struct rx_desc        rx_ring[RX_RING_SIZE] __attribute__((aligned(16)));
+	struct mbuf*          tx_mbuf[TX_RING_SIZE];
+	struct mbuf*          rx_mbuf[RX_RING_SIZE];
 };
 
 // 82540EM Gigabit Ethernet Controller

@@ -6,6 +6,7 @@
 #include "defs.h"
 #include "net/byteorder.h"
 #include "net/mbuf.h"
+#include "net/dev/netdev.h"
 #include "net/ethernet.h"
 #include "net/arptable.h"
 #include "net/arp.h"
@@ -13,6 +14,7 @@
 #include "net/netutil.h"
 
 extern struct mbufq arp_q;
+extern struct netdev* e1000ndev;
 
 uint8_t local_mac[ETH_ADDR_LEN] = { 0x52, 0x54, 0x00, 0x12, 0x34, 0x56 };
 uint8_t broadcast_mac[ETH_ADDR_LEN] = { 0xFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF };
@@ -38,7 +40,7 @@ eth_send(struct mbuf *m, uint16_t ethtype, uint32_t dip)
 	memmove(ethhdr->shost, local_mac, ETH_ADDR_LEN);
 	memmove(ethhdr->dhost, dhost, ETH_ADDR_LEN);
 
-	if (e1000_transmit(m) == -1) {
+	if (e1000ndev->transmit(m) == -1) {
 		mbuffree(m);
 	};
 }
