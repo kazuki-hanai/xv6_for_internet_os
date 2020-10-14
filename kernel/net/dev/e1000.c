@@ -19,6 +19,7 @@ static void e1000_recv(void);
 static void e1000_intr();
 
 struct netdev* e1000ndev;
+extern struct netdev* e1000ndev;
 
 static struct pci_driver e1000_driver = {
 	.name   = "82540EM Gigabit Ethernet Controller driver",
