@@ -11,14 +11,14 @@
 #include "net/dev/netdev.h"
 #include "net/mbuf.h"
 
-struct netdev*    e1000ndev;
-
 static void e1000_init_core(uint32_t* xregs);
 static int e1000_driver_startup(struct pci_dev* dev);
 static void e1000_alloc_netdev(uint32_t* xregs);
 static int e1000_transmit(struct mbuf *m);
 static void e1000_recv(void);
 static void e1000_intr();
+
+struct netdev* e1000ndev;
 
 static struct pci_driver e1000_driver = {
 	.name   = "82540EM Gigabit Ethernet Controller driver",
