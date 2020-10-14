@@ -19,7 +19,8 @@ static int respond(struct p9_server *srv, struct p9_req *req) {
 		return -1;
 	}
 
-	if (srv->send(&srv->conn, req) == -1) {
+	srv->conn.wsize = req->ofcall.size;
+	if (srv->send(&srv->conn) == -1) {
 		return -1;
 	}
 	return 0;
@@ -404,7 +405,7 @@ static void stop_server(struct p9_server *srv) {
 	close(srv->conn.sockfd);
 	srv->conn.sockfd = 0;
 	free(srv->conn.wbuf);
-	free(srv->conn.rbuf);
+	free(srv->conn._rbuf);
 	free(srv->fs);
 	p9_freefidpool(srv->fpool);
 }
@@ -414,7 +415,7 @@ static void initserver(struct p9_server *srv) {
 	srv->debug = 1;
 	srv->msize = P9_MAXMSGLEN;
 	srv->conn.wbuf = p9malloc(srv->msize);
-	srv->conn.rbuf = p9malloc(srv->msize);
+	srv->conn._rbuf = p9malloc(srv->msize);
 	srv->fpool = p9_allocfidpool();
 	srv->fs = p9malloc(sizeof(struct p9_filesystem));
 	srv->fs->rootpath = "/";
