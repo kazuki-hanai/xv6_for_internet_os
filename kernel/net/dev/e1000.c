@@ -172,7 +172,7 @@ static void e1000_recv(void) {
 	struct e1000_dev* e1000dev = GET_RAWDEV(e1000ndev);
 	// init
 	int index = (e1000dev->regs[E1000_RDT]+1) % RX_RING_SIZE;
-	if (e1000dev->rx_ring[index].status & E1000_RXD_STAT_DD) {
+	while (e1000dev->rx_ring[index].status & E1000_RXD_STAT_DD) {
 		struct mbuf *m = e1000dev->rx_mbuf[index];
 		uint16_t len = e1000dev->rx_ring[index].length;
 		e1000dev->rx_ring[index].status ^= E1000_RXD_STAT_DD;
