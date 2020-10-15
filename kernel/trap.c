@@ -30,7 +30,6 @@ void
 trapinit(void)
 {
 	initlock(&tickslock, "time");
-	hashmap_set_allocator(ufkalloc, ufkfree);
 	if ((devintr_callbacks = hashmap_new(
 		sizeof(struct devintr_map),
 		0, 0, 0, devintr_hash, devintr_compare, 0)) == NULL)

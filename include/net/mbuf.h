@@ -4,19 +4,20 @@
 #define MBUF_DEFAULT_HEADROOM   128
 
 struct mbuf {
-	uint32_t raddr;
-	struct mbuf *next;
-	char *head;
+	uint32_t     raddr;
+	struct mbuf* next;
+	char*        head;
 	unsigned int len;
-	char buf[MBUF_SIZE];
+	char         buf[MBUF_SIZE];
 	union {
 		struct {
 			uint32_t sndnxt;
-			uint8_t flg;
+			uint8_t  flg;
 			uint16_t datalen;
 		} tcp;
-	} params;
-	struct tcp *tcphdr;
+	}            params;
+	struct tcp*  tcphdr;
+	void*        protodata;
 };
 
 char *mbufpull(struct mbuf *m, unsigned int len);
