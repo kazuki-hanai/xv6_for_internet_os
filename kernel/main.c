@@ -5,6 +5,7 @@
 #include "defs.h"
 #include "file.h"
 #include "net/socket.h"
+#include "lib/hashmap.h"
 
 volatile static int started = 0;
 
@@ -22,6 +23,7 @@ main()
 		kvminit();       	// create kernel page table
 		kvminithart();   	// turn on paging
 		procinit();		// process table
+		hashmap_set_allocator(ufkalloc, ufkfree); // initialize hashmap allocator
 		trapinit();		// trap vectors
 		trapinithart();		// install kernel trap vector
 		plicinit();		// set up interrupt controller

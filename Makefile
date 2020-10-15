@@ -111,6 +111,7 @@ KSRCS += \
 	$K/net/tcp.c \
 	$K/net/sock_cb.c \
 	$K/net/socket.c \
+	$K/net/net.c \
 
 # System call and OS Interface for user
 KSRCS += \
