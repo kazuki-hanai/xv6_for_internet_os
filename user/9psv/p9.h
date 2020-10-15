@@ -229,8 +229,11 @@ struct p9_fcall {
 
 struct p9_conn {
 	int sockfd;
+	uint32_t wsize;
 	uint8_t* wbuf;
-	uint8_t* rbuf;
+	uint32_t rsize;
+	uint8_t* _rbuf; // actual buf
+	uint8_t* rbuf;  // offset of _rbuf
 };
 
 struct p9_req {
@@ -260,7 +263,7 @@ int                     p9open(char* path, int mode);
 // req
 struct p9_req*          p9_allocreq();
 void                    p9_freereq(struct p9_req*);
-int                     p9_sendreq(struct p9_conn *conn, struct p9_req *req);
+int                     p9_sendreq(struct p9_conn *conn);
 struct p9_req*          p9_recvreq(struct p9_conn *conn);
 
 // fid

@@ -21,29 +21,36 @@ void p9_freereq(struct p9_req *req) {
 	free(req);
 }
 
-int p9_sendreq(struct p9_conn *conn, struct p9_req *req) {
-	if (write(conn->sockfd, conn->wbuf, req->ofcall.size) <= 0) {
+int p9_sendreq(struct p9_conn *conn) {
+	if (write(conn->sockfd, conn->wbuf, conn->wsize) <= 0) {
 		return -1;
 	}
 	return 0;
 }
 
 struct p9_req* p9_recvreq(struct p9_conn *conn) {
-	int rsize;
-	if ((rsize = read(conn->sockfd, conn->rbuf, P9_MAXMSGLEN)) == -1) {
-		return 0;
+	if (conn->rsize == 0) {
+		if ((conn->rsize = read(conn->sockfd, conn->_rbuf, P9_MAXMSGLEN)) == -1) {
+			return 0;
+		}
+		int size = GBIT32(conn->_rbuf);
+		while(conn->rsize < size) {
+			if ((conn->rsize += read(conn->sockfd, conn->_rbuf+conn->rsize, P9_MAXMSGLEN-conn->rsize)) <= 0) {
+				return 0;
+			}
+		}
+		conn->rbuf = conn->_rbuf;
 	}
 
 	int size = GBIT32(conn->rbuf);
-	while(rsize != size) {
-		if ((rsize += read(conn->sockfd, conn->rbuf+rsize, P9_MAXMSGLEN-rsize)) <= 0) {
-			return 0;
-		}
-	}
 
 	struct p9_req *req;
-	if ((req = parsefcall(conn->rbuf, rsize)) == 0) {
+	if ((req = parsefcall(conn->rbuf, size)) == 0) {
 		return 0;
 	}
+
+	conn->rsize -=  size;
+	conn->rbuf += size;
+
 	return req;
 }

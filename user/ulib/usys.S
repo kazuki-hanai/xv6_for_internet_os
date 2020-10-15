@@ -125,3 +125,8 @@ accept:
  li a7, SYS_accept
  ecall
  ret
+.global calc
+calc:
+ li a7, SYS_calc
+ ecall
+ ret

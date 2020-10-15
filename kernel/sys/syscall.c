@@ -129,6 +129,21 @@ extern uint64_t sys_sockconnect(void);
 extern uint64_t sys_socklisten(void);
 extern uint64_t sys_sockaccept(void);
 
+uint64_t sys_calc() {
+	int num;
+	uint64_t res = 0;
+
+	if(argint(0, &num) < 0)
+		return -1;
+
+	const int NUM_LOOP = 1000000000 / num;
+ 	for (int i = 0; i < NUM_LOOP; i++) {
+ 		res += 1;
+ 	}
+
+	return res;
+}
+
 static uint64_t (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -152,9 +167,10 @@ static uint64_t (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_socket]  sys_socket,
-[SYS_connect]  sys_sockconnect,
+[SYS_connect] sys_sockconnect,
 [SYS_listen]  sys_socklisten,
 [SYS_accept]  sys_sockaccept,
+[SYS_calc]    sys_calc,
 };
 
 void

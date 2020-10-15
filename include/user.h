@@ -32,6 +32,7 @@ int socket(int);
 int connect(int, uint32_t, uint16_t);
 int listen(int, uint16_t);
 int accept(int, uint32_t*, uint16_t*);
+uint64_t calc(int);
 
 // ulib.c
 int stat(const char*, struct stat*);
