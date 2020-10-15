@@ -101,7 +101,7 @@ pipewrite(struct pipe *pi, uint64_t addr, int n)
 }
 
 int
-piperead(struct pipe *pi, uint64_t addr, int n, char nonblockable)
+piperead(struct pipe *pi, uint64_t addr, int n, int nonblockable)
 {
 	int i;
 	struct proc *pr = myproc();

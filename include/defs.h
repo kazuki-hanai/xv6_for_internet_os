@@ -72,7 +72,7 @@ void            end_op();
 // pipe.c
 int             pipealloc(struct file**, struct file**);
 void            pipeclose(struct pipe*, int);
-int             piperead(struct pipe*, uint64_t, int, char);
+int             piperead(struct pipe*, uint64_t, int, int);
 int             pipewrite(struct pipe*, uint64_t, int);
 
 // printf.c
