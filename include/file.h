@@ -7,8 +7,9 @@
 struct file {
 	enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE, FD_SOCK } type;
 	int ref; // reference count
-	char readable;
-	char writable;
+	char readable:1;
+	char writable:1;
+	char nonblockable:1;
 	struct pipe *pipe; // FD_PIPE
 	struct inode *ip;  // FD_INODE and FD_DEVICE
 	struct sock_cb *scb; // FD_SOCK

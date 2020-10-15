@@ -146,7 +146,7 @@ fileread(struct file *f, uint64_t addr, int n)
 		return -1;
 
 	if(f->type == FD_PIPE){
-		r = piperead(f->pipe, addr, n);
+		r = piperead(f->pipe, addr, n, f->nonblockable);
 	} else if(f->type == FD_DEVICE){
 		if(f->major < 0 || f->major >= NDEV || !devsw[f->major].read)
 			return -1;
