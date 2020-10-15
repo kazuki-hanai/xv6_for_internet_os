@@ -161,6 +161,7 @@ UPROGS=\
   	_zombie\
   	_tcp\
 	_9psv\
+	_test_pipe\
   	# _udp\
   	# _udplisten\
 

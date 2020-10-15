@@ -4,38 +4,18 @@
 
 int main(int argc, char **argv)
 {
-	int p[2];
-	
-	if (pipe(p) < 0) {
-		printf("cannot pipe\n");
-		exit(1);
+	int n = atoi(argv[1]);
+	int start = uptime();
+	const int NUM_LOOP = 1000000000;
+	const int NUM_SYSCALL = n;
+	uint64_t res = 0;
+	for (int i = 0; i < NUM_SYSCALL; i++) {
+		res += calc(NUM_SYSCALL);
 	}
-	int pid = fork();
-	if (pid < 0) {
-		printf("cannot fork\n");
-		exit(1);
-	}
-	if(pid > 0) {
-		// close(p[1]);
-		printf("root: wait()\n");
-		int status;
-		if (wait(&status) >= 0) {
-			printf("child exited: %d\n", status);
-		} else {
-			printf("cannot wait\n");
-			exit(1);
-		}
-	} else {
-		sleep(10);
-		// printf("child\n");
-		// close(p[0]);
-		// printf("child2\n");
-		// int a;
-		// if(read(p[0][0], &a, sizeof(a)) > 0) {
-		// 	printf("%d", a);
-		// } else {
-		// 	printf("-1\n");
-		// }
-	}
+
+	int end = uptime();
+
+	printf("num_syscall: %d, num_loop: %d, res: %d, time: %d\n", NUM_SYSCALL, NUM_LOOP/NUM_SYSCALL, res, end-start);
+
 	exit(0);
 }
