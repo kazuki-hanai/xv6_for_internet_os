@@ -51,11 +51,16 @@ static int tcp_acquiresleep(struct sock_cb *scb) {
 		release(&scb->lock);
 		return 0;
 	}
-	release(&scb->lock);
 	struct file *f = scb->f;
 	if (f->nonblockable) {
+		if (scb->state == SOCK_CB_SYN_RCVD) {
+			release(&scb->lock);
+			return 0;
+		}
+		release(&scb->lock);
 		return -1;
 	}
+	release(&scb->lock);
 	acquiresleep(&scb->slock);
 	while (1) {
 		struct proc *proc = myproc();

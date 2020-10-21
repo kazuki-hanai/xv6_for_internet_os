@@ -35,6 +35,7 @@ struct sock_cb {
   struct sleeplock slock;
   struct spinlock lock;
   int socktype;
+  struct sock_cb* acpt_scb;
   enum sock_cb_state state;
   uint16_t sport;
   uint32_t raddr;

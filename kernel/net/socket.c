@@ -139,9 +139,15 @@ uint64_t sockaccept(struct sock_cb *scb, uint32_t* raddr, uint16_t* dport) {
 	struct file* new_file;
 	struct sock_cb* new_scb;
 	int new_fd;
-	new_file = sockcopy(scb->f);
-	new_scb = new_file->scb;
-	
+
+	if (scb->acpt_scb) {
+		new_scb = scb->acpt_scb;
+		new_file = new_scb->f;
+	} else {
+		new_file = sockcopy(scb->f);
+		new_scb = new_file->scb;
+	}	
+
 	if ((new_fd = fdalloc(new_file)) < 0) {
 		goto bad;
 	}
