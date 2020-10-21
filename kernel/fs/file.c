@@ -157,7 +157,7 @@ fileread(struct file *f, uint64_t addr, int n)
 			f->off += r;
 		iunlock(f->ip);
 	} else if(f->type == FD_SOCK) {
-		r = sockrecv(f->scb, addr, n, 1);
+		r = sockrecv(f->scb, addr, n, 1, f->nonblockable);
 	} else {
 		panic("fileread");
 	}
