@@ -88,8 +88,6 @@ int tcp_accept(struct sock_cb* scb, uint32_t* raddr, uint16_t* dport) {
 	if (tcp_acquiresleep(scb) == -1) {
 		return -1;
 	}
-	*raddr = scb->raddr;
-	*dport = scb->dport;
 
 	return 0;
 }
@@ -656,8 +654,6 @@ void tcp_recv(struct mbuf *m, uint16_t len, struct ipv4 *iphdr) {
 	if (scb == 0) {
 		goto fail;
 	}
-
-	printf("%p recv_state: %d\n", scb, scb->state);
 
 	// early return
 	if (scb->state != SOCK_CB_LISTEN && scb->state != SOCK_CB_CLOSED && scb->dport != dport) {
