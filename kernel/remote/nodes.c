@@ -26,10 +26,12 @@ int nodemap_add(uint64_t nid) {
                 }
                 now->next = n;
         }
+        nodemap.client_num += 1;
         release(&nodemap.lock);
 
         return 0;
 }
+
 int nodemap_remove(uint64_t nid) {
         uint64_t hash = nodemap_hash(nid);
 
@@ -50,12 +52,13 @@ int nodemap_remove(uint64_t nid) {
                 }
                 return -1;
         }
+        nodemap.client_num -= 1;
         release(&nodemap.lock);
 }
 
 void node_init() {
-        initlock(&nodemap.lock, "nodelist lock");
         memset(&nodemap, 0, sizeof(nodemap));
+        initlock(&nodemap.lock, "nodelist lock");
 }
 
 int node_add(uint64_t nid) {

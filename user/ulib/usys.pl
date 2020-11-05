@@ -41,3 +41,6 @@ entry("listen");
 entry("connect");
 entry("accept");
 entry("calc");
+entry("getnodes");
+entry("addnode");
+entry("removenode");
