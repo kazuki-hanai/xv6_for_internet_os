@@ -130,7 +130,11 @@ calc:
  li a7, SYS_calc
  ecall
  ret
-<<<<<<< HEAD
+.global setnonblock
+setnonblock:
+ li a7, SYS_setnonblock
+ ecall
+ ret
 .global getnodesnum
 getnodesnum:
  li a7, SYS_getnodesnum
@@ -154,10 +158,5 @@ removenode:
 .global existnode
 existnode:
  li a7, SYS_existnode
-=======
-.global setnonblock
-setnonblock:
- li a7, SYS_setnonblock
->>>>>>> 83416bfc9bb03bae80856d9762b4b2929e4b2d1e
  ecall
  ret

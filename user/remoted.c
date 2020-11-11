@@ -23,6 +23,7 @@ static int read_msg(int csock, struct clster_hdr* hdr) {
 
 	if (!existnode(hdr->nid)) {
 		addnode(hdr->nid);
+		printf("node added: %x\n", hdr->nid);
 	}
 
 	hdr->ctype = LIST_REP;
@@ -52,7 +53,8 @@ static void start_remoted() {
 	
 	while(1) {
 		csock = accept(sock, &raddr, &dport);
-		if (fork() != 0) {
+		if (csock > 0 && fork() != 0) {
+			printf("accepted: %x:%x\n", raddr, dport);
 			break;
 		} 
 	}
@@ -61,7 +63,7 @@ static void start_remoted() {
 	while(1) {
 		struct clster_hdr hdr;
 		if (read_msg(csock, &hdr) < 0) {
-
+			exit(1);
 		}
 
 		if (send_msg(csock, &hdr) < 0) {

@@ -37,6 +37,10 @@ static int nodemap_exist(uint64_t nid) {
 
 	acquire(&nodemap.lock);
 	struct node* n = nodemap.n[hash];
+	if (n == 0) {
+		release(&nodemap.lock);
+		return 0;
+	}
 	while (n->next != 0) {
 		if (n->nid == nid)
 			break;
