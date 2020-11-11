@@ -1,14 +1,14 @@
 #pragma once
 // System call numbers
-#define SYS_fork        1
-#define SYS_exit        2
-#define SYS_wait        3
-#define SYS_pipe        4
-#define SYS_read        5
-#define SYS_kill        6
-#define SYS_exec        7
-#define SYS_fstat       8
-#define SYS_chdir       9
+#define SYS_fork         1
+#define SYS_exit         2
+#define SYS_wait         3
+#define SYS_pipe         4
+#define SYS_read         5
+#define SYS_kill         6
+#define SYS_exec         7
+#define SYS_fstat        8
+#define SYS_chdir        9
 #define SYS_dup         10
 #define SYS_getpid      11
 #define SYS_sbrk        12
@@ -27,3 +27,8 @@
 #define SYS_accept      25
 #define SYS_calc        26
 #define SYS_setnonblock 27
+#define SYS_getnodesnum 28
+#define SYS_getnodes    29
+#define SYS_addnode     30
+#define SYS_removenode  31
+#define SYS_existnode   32

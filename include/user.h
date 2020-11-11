@@ -1,6 +1,8 @@
 #pragma once
 
 #include "types.h"
+#include "nodes.h"
+#include <stdint.h>
 
 struct stat;
 struct rtcdate;
@@ -34,6 +36,11 @@ int listen(int, uint16_t);
 int accept(int, uint32_t*, uint16_t*);
 uint64_t calc(int);
 int setnonblock(int, int);
+int getnodenum();
+int getnodes(struct node_map* nm);
+int addnode(uint64_t nid);
+int removenode(uint64_t nid);
+int existnode(uint64_t nid);
 
 // ulib.c
 int stat(const char*, struct stat*);

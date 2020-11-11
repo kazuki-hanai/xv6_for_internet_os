@@ -135,3 +135,28 @@ setnonblock:
  li a7, SYS_setnonblock
  ecall
  ret
+.global getnodesnum
+getnodesnum:
+ li a7, SYS_getnodesnum
+ ecall
+ ret
+.global getnodes
+getnodes:
+ li a7, SYS_getnodes
+ ecall
+ ret
+.global addnode
+addnode:
+ li a7, SYS_addnode
+ ecall
+ ret
+.global removenode
+removenode:
+ li a7, SYS_removenode
+ ecall
+ ret
+.global existnode
+existnode:
+ li a7, SYS_existnode
+ ecall
+ ret

@@ -54,6 +54,12 @@ argraw(int n)
 	return -1;
 }
 
+int arguint64(int n, uint64_t* ip)
+{
+	*ip = argraw(n);
+	return 0;
+}
+
 // Fetch the nth 32-bit system call argument.
 int
 argint(int n, int *ip)
@@ -124,11 +130,19 @@ extern uint64_t sys_unlink(void);
 extern uint64_t sys_wait(void);
 extern uint64_t sys_write(void);
 extern uint64_t sys_uptime(void);
+// sysnet
 extern uint64_t sys_socket(void);
 extern uint64_t sys_sockconnect(void);
 extern uint64_t sys_socklisten(void);
 extern uint64_t sys_sockaccept(void);
 extern uint64_t sys_setnonblock(void);
+
+// sysremote
+extern uint64_t sys_getnodesnum(void);
+extern uint64_t sys_getnodes(void);
+extern uint64_t sys_addnode(void);
+extern uint64_t sys_removenode(void);
+extern uint64_t sys_existnode(void);
 
 uint64_t sys_calc() {
 	int num;
@@ -146,33 +160,38 @@ uint64_t sys_calc() {
 }
 
 static uint64_t (*syscalls[])(void) = {
-[SYS_fork]        sys_fork,
-[SYS_exit]        sys_exit,
-[SYS_wait]        sys_wait,
-[SYS_pipe]        sys_pipe,
-[SYS_read]        sys_read,
-[SYS_kill]        sys_kill,
-[SYS_exec]        sys_exec,
-[SYS_fstat]       sys_fstat,
-[SYS_chdir]       sys_chdir,
-[SYS_dup]         sys_dup,
-[SYS_getpid]      sys_getpid,
-[SYS_sbrk]        sys_sbrk,
-[SYS_sleep]       sys_sleep,
-[SYS_uptime]      sys_uptime,
-[SYS_open]        sys_open,
-[SYS_write]       sys_write,
-[SYS_mknod]       sys_mknod,
-[SYS_unlink]      sys_unlink,
-[SYS_link]        sys_link,
-[SYS_mkdir]       sys_mkdir,
-[SYS_close]       sys_close,
-[SYS_socket]      sys_socket,
-[SYS_connect]     sys_sockconnect,
-[SYS_listen]      sys_socklisten,
-[SYS_accept]      sys_sockaccept,
-[SYS_calc]        sys_calc,
-[SYS_setnonblock] sys_setnonblock
+[SYS_fork]        = sys_fork,
+[SYS_exit]        = sys_exit,
+[SYS_wait]        = sys_wait,
+[SYS_pipe]        = sys_pipe,
+[SYS_read]        = sys_read,
+[SYS_kill]        = sys_kill,
+[SYS_exec]        = sys_exec,
+[SYS_fstat]       = sys_fstat,
+[SYS_chdir]       = sys_chdir,
+[SYS_dup]         = sys_dup,
+[SYS_getpid]      = sys_getpid,
+[SYS_sbrk]        = sys_sbrk,
+[SYS_sleep]       = sys_sleep,
+[SYS_uptime]      = sys_uptime,
+[SYS_open]        = sys_open,
+[SYS_write]       = sys_write,
+[SYS_mknod]       = sys_mknod,
+[SYS_unlink]      = sys_unlink,
+[SYS_link]        = sys_link,
+[SYS_mkdir]       = sys_mkdir,
+[SYS_close]       = sys_close,
+[SYS_socket]      = sys_socket,
+[SYS_connect]     = sys_sockconnect,
+[SYS_listen]      = sys_socklisten,
+[SYS_accept]      = sys_sockaccept,
+[SYS_calc]        = sys_calc,
+[SYS_setnonblock] = sys_setnonblock,
+[SYS_getnodesnum] = sys_getnodesnum,
+[SYS_getnodes]    = sys_getnodes,
+[SYS_addnode]     = sys_addnode,
+[SYS_removenode]  = sys_removenode,
+[SYS_existnode]   = sys_existnode,
 };
 
 void
