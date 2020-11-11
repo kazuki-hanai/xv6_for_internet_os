@@ -130,3 +130,18 @@ calc:
  li a7, SYS_calc
  ecall
  ret
+.global getnodes
+getnodes:
+ li a7, SYS_getnodes
+ ecall
+ ret
+.global addnode
+addnode:
+ li a7, SYS_addnode
+ ecall
+ ret
+.global removenode
+removenode:
+ li a7, SYS_removenode
+ ecall
+ ret

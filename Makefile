@@ -113,11 +113,16 @@ KSRCS += \
 	$K/net/socket.c \
 	$K/net/net.c \
 
+# Remote
+KSRCS += \
+	 $K/remote/nodes.c \
+
 # System call and OS Interface for user
 KSRCS += \
 	$K/sys/sysproc.c \
 	$K/sys/sysfile.c \
 	$K/sys/sysnet.c \
+	$K/sys/sysremote.c \
 	$K/sys/syscall.c \
 
 ULIBDIR = $U/ulib

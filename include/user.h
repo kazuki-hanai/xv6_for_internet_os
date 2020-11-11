@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include "nodes.h"
 #include <stdint.h>
 
 struct stat;

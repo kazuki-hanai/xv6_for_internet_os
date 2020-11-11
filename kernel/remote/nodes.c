@@ -12,7 +12,7 @@ int nodemap_add(uint64_t nid) {
         uint64_t hash = nodemap_hash(nid);
 
         struct node* n;
-        n = (struct node*) malloc(sizeof(struct node));
+        n = (struct node*) ufkalloc(sizeof(struct node));
         n->nid = nid;
         n->next = 0;
 
@@ -45,6 +45,7 @@ int nodemap_remove(uint64_t nid) {
                         if (now->nid == nid) {
                                 if (prev != 0)
                                         prev->next = now->next;
+				ufkfree(now);
                                 return 0;
                         } 
                         prev = now;
