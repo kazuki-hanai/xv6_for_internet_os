@@ -101,13 +101,17 @@ pipewrite(struct pipe *pi, uint64_t addr, int n)
 }
 
 int
-piperead(struct pipe *pi, uint64_t addr, int n)
+piperead(struct pipe *pi, uint64_t addr, int n, int nonblockable)
 {
 	int i;
 	struct proc *pr = myproc();
 	char ch;
 
 	acquire(&pi->lock);
+	if (nonblockable && pi->nread == pi->nwrite && pi->writeopen) {
+		i = 0;
+		goto end;
+	}
 	while(pi->nread == pi->nwrite && pi->writeopen){  //DOC: pipe-empty
 		if(myproc()->killed){
 			release(&pi->lock);
@@ -123,6 +127,7 @@ piperead(struct pipe *pi, uint64_t addr, int n)
 			break;
 	}
 	wakeup(&pi->nwrite);  //DOC: piperead-wakeup
+end:
 	release(&pi->lock);
 	return i;
 }

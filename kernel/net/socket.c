@@ -105,11 +105,13 @@ struct file* sockcopy(struct file* f) {
 	new_f->type = f->type;
 	new_f->readable = f->readable;
 	new_f->writable = f->writable;
+	new_f->nonblockable = f->nonblockable;
 	if ((new_f->scb = alloc_sock_cb(new_f, f->scb->raddr, f->scb->sport, f->scb->dport, f->scb->socktype)) == 0) {
 		fileclose(f);
 		return 0;
 	}
-	new_f->scb->f = f;
+	new_f->scb->state = f->scb->state;
+	new_f->scb->f = new_f;
 
 	return new_f;
 }
@@ -137,18 +139,28 @@ uint64_t socklisten(struct sock_cb *scb, uint16_t sport) {
 uint64_t sockaccept(struct sock_cb *scb, uint32_t* raddr, uint16_t* dport) {
 	struct file* new_file;
 	struct sock_cb* new_scb;
-	int new_fd;
-	new_file = sockcopy(scb->f);
-	new_scb = new_file->scb;
-	
+	int new_fd = 0;
+
+	if (scb->acpt_scb) {
+		new_scb = scb->acpt_scb;
+		new_file = new_scb->f;
+	} else {
+		new_file = sockcopy(scb->f);
+		if (new_file == 0) {
+			goto bad;
+		}
+		new_scb = new_file->scb;
+		scb->acpt_scb = new_scb;
+		add_sock_cb(new_scb);
+	}
+
 	if ((new_fd = fdalloc(new_file)) < 0) {
 		goto bad;
 	}
 
-	add_sock_cb(new_scb);
 	if (new_scb->socktype == SOCK_TCP) {
 		if (tcp_accept(new_scb, raddr, dport) < 0) {
-			return -1;
+			goto bad;
 		}
 	} else {
 		// TODO: UDP accept
@@ -156,11 +168,15 @@ uint64_t sockaccept(struct sock_cb *scb, uint32_t* raddr, uint16_t* dport) {
 
 	*raddr = new_scb->raddr;
 	*dport = new_scb->dport;
+	scb->acpt_scb = 0;
 
 	return new_fd;
 bad:
-	if (new_file)
-		fileclose(new_file);
+	if (new_fd) {
+		struct proc *p = myproc();
+		p->ofile[new_fd] = 0;
+	}
+
 	return -1;
 }
 
@@ -223,14 +239,14 @@ int socksend(struct sock_cb *scb, uint64_t addr, int n, int is_copyin) {
 	return res;
 }
 
-int sockrecv(struct sock_cb *scb, uint64_t addr, int n, int is_copyout) {
+int sockrecv(struct sock_cb *scb, uint64_t addr, int n, int is_copyout, int nonblockable) {
 	struct proc *pr = myproc();
 
 	struct mbuf *m = 0;
 	int res = 0;
 	// TODO fix busy wait
 	// TODO tcp push check
-	
+
 	if (scb->socktype == SOCK_TCP) {
 		uint16_t sport = scb->sport;
 		uint16_t dport = scb->dport;
@@ -246,6 +262,9 @@ int sockrecv(struct sock_cb *scb, uint64_t addr, int n, int is_copyout) {
 			m = pop_from_scb_rxq(scb);
 
 			if (m == 0) {
+				if (scb->f->nonblockable) {
+					goto end;
+				}
 				continue;
 			}
 			
@@ -274,6 +293,10 @@ int sockrecv(struct sock_cb *scb, uint64_t addr, int n, int is_copyout) {
 		}
 	} else {
 		// busy-wait
+		m = pop_from_scb_rxq(scb);
+		if (m == 0x0 && nonblockable) {
+			goto end;
+		}
 		while (m == 0x0) {
 			m = pop_from_scb_rxq(scb);
 		}
@@ -293,6 +316,7 @@ int sockrecv(struct sock_cb *scb, uint64_t addr, int n, int is_copyout) {
 		}
 		res = acceptable_size;
 	}
+end:
 	return res;
 }
 

@@ -130,3 +130,8 @@ calc:
  li a7, SYS_calc
  ecall
  ret
+.global setnonblock
+setnonblock:
+ li a7, SYS_setnonblock
+ ecall
+ ret
