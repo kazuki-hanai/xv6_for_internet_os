@@ -132,6 +132,7 @@ int             strncmp(const char*, const char*, uint32_t);
 char*           strncpy(char*, const char*, int);
 
 // syscall.c
+int             arguint64(int, uint64_t*);
 int             argint(int, int*);
 int             argstr(int, char*, int);
 int             argaddr(int, uint64_t *);
