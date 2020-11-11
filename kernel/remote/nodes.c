@@ -26,7 +26,7 @@ static int nodemap_add(uint64_t nid) {
                 }
                 now->next = n;
         }
-        nodemap.client_num += 1;
+        nodemap.nodesnum += 1;
         release(&nodemap.lock);
 
         return 0;
@@ -68,13 +68,35 @@ static int nodemap_remove(uint64_t nid) {
                 }
                 return -1;
         }
-        nodemap.client_num -= 1;
+        nodemap.nodesnum -= 1;
         release(&nodemap.lock);
 }
 
 void node_init() {
         memset(&nodemap, 0, sizeof(nodemap));
         initlock(&nodemap.lock, "nodelist lock");
+}
+
+struct node** node_getnodes(int* num) {
+	acquire(&nodemap.lock);
+	*num = node_getnum();
+	struct node** nodes = ufkalloc(sizeof(struct node) * node_getnum());
+	int mapindex = 0;
+	struct node* now = nodemap.n[mapindex];
+	for (int i = 0; i < *num; i++) {
+		nodes[i] = now;
+		if (now->next == 0) {
+			now = nodemap.n[mapindex++];
+		} else {
+			now = now->next;
+		}
+	}
+	release(&nodemap.lock);
+	return nodes;
+}
+
+int node_getnum() {
+	return nodemap.nodesnum;
 }
 
 int node_add(uint64_t nid) {

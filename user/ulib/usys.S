@@ -130,6 +130,11 @@ calc:
  li a7, SYS_calc
  ecall
  ret
+.global getnodesnum
+getnodesnum:
+ li a7, SYS_getnodesnum
+ ecall
+ ret
 .global getnodes
 getnodes:
  li a7, SYS_getnodes
