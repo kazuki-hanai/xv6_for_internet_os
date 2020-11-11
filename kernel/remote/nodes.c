@@ -8,7 +8,7 @@ uint64_t nodemap_hash(uint64_t nid) {
         return nid % NODE_HASH_NUM;
 }
 
-int nodemap_add(uint64_t nid) {
+static int nodemap_add(uint64_t nid) {
         uint64_t hash = nodemap_hash(nid);
 
         struct node* n;
@@ -32,7 +32,22 @@ int nodemap_add(uint64_t nid) {
         return 0;
 }
 
-int nodemap_remove(uint64_t nid) {
+static int nodemap_exist(uint64_t nid) {
+	uint64_t hash = nodemap_hash(nid);
+
+	acquire(&nodemap.lock);
+	struct node* n = nodemap.n[hash];
+	while (n->next != 0) {
+		if (n->nid == nid)
+			break;
+		n = n->next;
+	}
+	release(&nodemap.lock);
+
+	return n->nid == nid;
+}
+
+static int nodemap_remove(uint64_t nid) {
         uint64_t hash = nodemap_hash(nid);
 
         acquire(&nodemap.lock);
@@ -64,6 +79,10 @@ void node_init() {
 
 int node_add(uint64_t nid) {
         return nodemap_add(nid);
+}
+
+int node_exist(uint64_t nid) {
+	return nodemap_exist(nid);
 }
 
 int node_remove(uint64_t nid) {

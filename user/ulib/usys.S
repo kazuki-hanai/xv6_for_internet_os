@@ -145,3 +145,8 @@ removenode:
  li a7, SYS_removenode
  ecall
  ret
+.global existnode
+existnode:
+ li a7, SYS_existnode
+ ecall
+ ret

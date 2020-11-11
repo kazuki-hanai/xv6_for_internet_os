@@ -38,6 +38,7 @@ uint64_t calc(int);
 int getnodes(struct node_map* nm);
 int addnode(uint64_t nid);
 int removenode(uint64_t nid);
+int existnode(uint64_t nid);
 
 // ulib.c
 int stat(const char*, struct stat*);

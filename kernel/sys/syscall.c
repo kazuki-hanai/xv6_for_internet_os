@@ -139,6 +139,7 @@ extern uint64_t sys_sockaccept(void);
 extern uint64_t sys_getnodes(void);
 extern uint64_t sys_addnode(void);
 extern uint64_t sys_removenode(void);
+extern uint64_t sys_existnode(void);
 
 uint64_t sys_calc() {
 	int num;
@@ -185,6 +186,7 @@ static uint64_t (*syscalls[])(void) = {
 [SYS_getnodes]   = sys_getnodes,
 [SYS_addnode]    = sys_addnode,
 [SYS_removenode] = sys_removenode,
+[SYS_existnode]  = sys_existnode,
 };
 
 void

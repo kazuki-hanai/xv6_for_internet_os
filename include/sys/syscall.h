@@ -29,3 +29,4 @@
 #define SYS_getnodes   27
 #define SYS_addnode    28
 #define SYS_removenode 29
+#define SYS_existnode 30

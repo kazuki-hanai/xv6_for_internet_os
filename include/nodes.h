@@ -19,4 +19,5 @@ struct node_map {
 
 void node_init();
 int node_add(uint64_t nid);
+int node_exist(uint64_t nid);
 int node_remove(uint64_t nid);

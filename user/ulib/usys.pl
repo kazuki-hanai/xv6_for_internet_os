@@ -44,3 +44,4 @@ entry("calc");
 entry("getnodes");
 entry("addnode");
 entry("removenode");
+entry("existnode");

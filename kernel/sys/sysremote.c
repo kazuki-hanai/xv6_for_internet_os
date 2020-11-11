@@ -10,7 +10,16 @@ uint64_t sys_getnodes(void) {
 	return 0;
 }
 
-uint64_t sys_getnode(void) {
+uint64_t sys_existnode(void) {
+	uint64_t nid;
+	if (arguint64(0, &nid) < 0) {
+		return -1;
+	}
+
+	if (node_add(nid) < 0) {
+		return -1;
+	}
+
 	return 0;
 }
 

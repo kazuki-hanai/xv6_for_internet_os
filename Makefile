@@ -168,6 +168,7 @@ UPROGS=\
   	_tcp\
 	_9psv\
 	_test_pipe\
+	_remoted\
   	# _udp\
   	# _udplisten\
 
