@@ -135,6 +135,8 @@ extern uint64_t sys_socket(void);
 extern uint64_t sys_sockconnect(void);
 extern uint64_t sys_socklisten(void);
 extern uint64_t sys_sockaccept(void);
+extern uint64_t sys_setnonblock(void);
+
 // sysremote
 extern uint64_t sys_getnodesnum(void);
 extern uint64_t sys_getnodes(void);
@@ -184,6 +186,7 @@ static uint64_t (*syscalls[])(void) = {
 [SYS_listen]      = sys_socklisten,
 [SYS_accept]      = sys_sockaccept,
 [SYS_calc]        = sys_calc,
+[SYS_setnonblock] = sys_setnonblock
 [SYS_getnodesnum] = sys_getnodesnum,
 [SYS_getnodes]    = sys_getnodes,
 [SYS_addnode]     = sys_addnode,

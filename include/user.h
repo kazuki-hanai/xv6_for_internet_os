@@ -35,6 +35,7 @@ int connect(int, uint32_t, uint16_t);
 int listen(int, uint16_t);
 int accept(int, uint32_t*, uint16_t*);
 uint64_t calc(int);
+int setnonblock(int, int);
 int getnodenum();
 int getnodes(struct node_map* nm);
 int addnode(uint64_t nid);

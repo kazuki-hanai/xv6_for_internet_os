@@ -41,6 +41,7 @@ entry("listen");
 entry("connect");
 entry("accept");
 entry("calc");
+entry("setnonblock");
 entry("getnodesnum");
 entry("getnodes");
 entry("addnode");

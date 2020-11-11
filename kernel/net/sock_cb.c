@@ -20,6 +20,7 @@ struct sock_cb* alloc_sock_cb(struct file *f, uint32_t raddr, uint16_t sport, ui
 	scb->state = SOCK_CB_CLOSED;
 	initlock(&scb->lock, "scb lock");
 	initsleeplock(&scb->slock, "scb sleep lock");
+	scb->acpt_scb = 0;
 	scb->socktype = socktype;
 	scb->raddr = raddr;
 	scb->sport = sport;

@@ -465,3 +465,15 @@ sys_pipe(void)
 	return 0;
 }
 
+uint64_t
+sys_setnonblock(void)
+{
+	struct file *f;
+	int val;
+	if(argfd(0, 0, &f) < 0 || argint(1, &val)) {
+		return -1;
+	}
+
+	f->nonblockable = (char)val;
+	return 0;
+}

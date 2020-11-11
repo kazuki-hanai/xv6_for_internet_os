@@ -17,7 +17,7 @@ uint64_t         sockaccept(struct sock_cb *, uint32_t*, uint16_t*);
 uint64_t         socklisten(struct sock_cb *, uint16_t);
 uint64_t         sockconnect(struct sock_cb *, uint32_t, uint16_t);
 int              socksend(struct sock_cb*, uint64_t, int, int);
-int              sockrecv(struct sock_cb*, uint64_t, int, int);
+int              sockrecv(struct sock_cb*, uint64_t, int, int, int);
 void             sockclose(struct sock_cb*);
 
 uint16_t         get_new_sport();

@@ -4,6 +4,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "file.h"
 #include "net/byteorder.h"
 #include "net/mbuf.h"
 #include "net/netutil.h"
@@ -45,6 +46,21 @@ static uint16_t tcp_checksum(uint32_t ip_src, uint32_t ip_dst, uint8_t ip_p, str
 }
 
 static int tcp_acquiresleep(struct sock_cb *scb) {
+	acquire(&scb->lock);
+	if (scb->state == SOCK_CB_ESTAB) {
+		release(&scb->lock);
+		return 0;
+	}
+	struct file *f = scb->f;
+	if (f->nonblockable) {
+		if (scb->state == SOCK_CB_SYN_RCVD) {
+			release(&scb->lock);
+			return 0;
+		}
+		release(&scb->lock);
+		return -1;
+	}
+	release(&scb->lock);
 	acquiresleep(&scb->slock);
 	while (1) {
 		struct proc *proc = myproc();
@@ -64,16 +80,14 @@ int tcp_listen(struct sock_cb *scb) {
 	// TODO SOCK_CB_LISTEN STATE
 	// -> change the connection from passive to active
 	// "error: connection already exists"
+	scb->state = SOCK_CB_LISTEN;
 	return 0;
 }
 
 int tcp_accept(struct sock_cb* scb, uint32_t* raddr, uint16_t* dport) {
-	scb->state = SOCK_CB_LISTEN;
 	if (tcp_acquiresleep(scb) == -1) {
 		return -1;
 	}
-	*raddr = scb->raddr;
-	*dport = scb->dport;
 
 	return 0;
 }

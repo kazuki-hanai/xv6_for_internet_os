@@ -26,8 +26,9 @@
 #define SYS_listen      24
 #define SYS_accept      25
 #define SYS_calc        26
-#define SYS_getnodes    27
-#define SYS_addnode     28
-#define SYS_removenode  29
-#define SYS_existnode   30
-#define SYS_getnodesnum 31
+#define SYS_setnonblock 27
+#define SYS_getnodesnum 28
+#define SYS_getnodes    29
+#define SYS_addnode     30
+#define SYS_removenode  31
+#define SYS_existnode   32

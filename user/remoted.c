@@ -3,6 +3,7 @@
 #include "net/sock_cb.h"
 
 #define MAX_MSG 1024
+#define REMOTED_PORT 2091
 
 const uint8_t LIST_REQ = 1;
 const uint8_t LIST_REP = 2;
@@ -20,16 +21,31 @@ static int read_msg(int csock, struct clster_hdr* hdr) {
 	}
 	hdr = (struct clster_hdr*) buf;
 
+	if (!existnode(hdr->nid)) {
+		addnode(hdr->nid);
+	}
+
+	hdr->ctype = LIST_REP;
+
 	return 0;
 }
 
 static int send_msg(int csock, struct clster_hdr* hdr) {
+	char buf[MAX_MSG];
+
+	memmove(buf, hdr, sizeof(*hdr));
+
+	int wsize = -1;
+	if ((wsize = write(csock, buf, MAX_MSG)) < 0) {
+		return -1;
+	}
 	return 0;
 }
 
 static void start_remoted() {
 	int sock = socket(SOCK_TCP);
-	listen(sock, 4000);
+	listen(sock, REMOTED_PORT);
+	
 	uint32_t raddr;
 	uint16_t dport;
 	int csock;

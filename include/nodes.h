@@ -1,4 +1,3 @@
-
 #include "spinlock.h"
 #include <stdint.h>
 
